@@ -107,8 +107,8 @@
 ;------- config ---------------------------------------------------------------
   ; default settings from user file
   CONFIGFILE = getenv("HOME")+"/.icon_plot.rc"
-  print(CONFIGFILE)
-  if (isfile(CONFIGFILE)) then
+  if (isfilepresent(CONFIGFILE)) then
+    print("Found configfile:"+CONFIGFILE)
     loadscript(CONFIGFILE)
   end if
   
@@ -123,7 +123,6 @@
 ;===============================================================
 ;----- MAIN PROGRAM --------------------------------------------
 ;- options handling + checking
- begin
   plotMode  = PLOTMODE
 
   wcStrt    = systemfunc("date")
@@ -594,4 +593,3 @@
    end if
   end if
   frame(wks)
-end
