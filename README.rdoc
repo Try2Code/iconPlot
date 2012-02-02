@@ -1,0 +1,68 @@
+= iconPlot - General purpose plot script for the ICON climate model
+
+This package contains a plotscript for: 
+  * contour and vector/streamline plots
+  * overlay of both
+  * vertical sections
+  * representing the ICON grid
+
+== Installation
+
+Download and run icon_plot.ncl directly with ncl
+
+   ncl icon_plot.ncl altLibDir='"."'
+
+=== Requirements
+
+NCL 6.0 and CDO 1.5.x are required
+
+== Usage
+=== Basic Usage:
+  ncl icon_plot.ncl 'iFile="path/file.nc"' 'varName="ELEV"' 'oFile="test"' timeStep=1 levIndex=1
+
+=== Select an special area of the globe with mapLLC (LowerLeftCorner) and mapURC (UpperRightCorner)   
+  ncl icon_plot.ncl 'iFile="path/file.nc"' 'varName="W"'    'mapLLC=(/35.0, -8/)' 'mapURC=(/55, 8/)'
+
+=== Masking:
+  ncl icon_plot.ncl 'iFile="oce_aqua_planet_O.R2B04L4_0001.nc"' 'varName="ELEV"' 'maskName="wet_c"' 
+  ncl icon_plot.ncl 'iFile="oce.nc"' 'varName="W"' 'maskName="topo"' 'maskFile="icon_mask.nc"' 
+
+=== Vectorplot:
+  ncl icon_plot.ncl 'iFile="oce.nc"' 'vecVars="u-veloc v-veloc"' 'oFile="test"'
+
+=== Vertical cross section:
+  ncl icon_plot.ncl 'iFile="iconOutput.nc"' 'secLC=(/ 0.0,-90.0 /)' 'secRC=(/ 0.0,90.0/)' 'oType="png"' 'rStrg=""' 'tStrg="ICON coupled aqual planet"'
+
+=== Overlay plot (vectors over contour plot)
+  ncl icon_plot.ncl  'iFile="iconOutput.nc"' 'varName="T"' 'vecVars="u-veloc v-veloc"'
+same for current atmo input
+  ncl icon_plot.ncl  'iFile="atm.nc"' 'varName="T"' 'vecVars="U V"'
+
+=== Atmosphere input plotted on the 3rd height level
+  ncl icon_plot.ncl  'iFile="atm.nc"' 'varName="T"' 'atmLev="h"' levIndex=2
+=== Same but on pressure level
+  ncl icon_plot.ncl  'iFile="atm.nc"' 'varName="T"' 'atmLev="p"' levIndex=2
+
+Options can be combined execept showGrid=True with vector and overlay plots
+
+
+== Support, Issues, Bugs, ...
+
+  use mail
+
+== License
+
+iconPlot uses the GPLv2 License
+
+:include LICENSE
+
+
+---
+
+= Other stuff
+
+Author::   Ralf Mueller <stark.dreamdetective@gmail.com>
+Requires:: NCL 6.0, CDO 1.5
+License::  Copyright 2011 by Ralf Mueller
+           Released under GPLv2 license.  See the LICENSE
+           file included in the distribution.
