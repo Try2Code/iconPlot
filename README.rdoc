@@ -40,11 +40,12 @@ same for current atmo input
 
 === Atmosphere input plotted on the 3rd height level
   ncl icon_plot.ncl  'iFile="atm.nc"' 'varName="T"' 'atmLev="h"' levIndex=2
-=== Same but on pressure level
+same but on pressure level
   ncl icon_plot.ncl  'iFile="atm.nc"' 'varName="T"' 'atmLev="p"' levIndex=2
 
 Options can be combined execept showGrid=True with vector and overlay plots
 
+More examples can be found here: https://code.zmaw.de/projects/cdo/wiki/Ram#ICON-plot.
 
 == Support, Issues, Bugs, ...
 
