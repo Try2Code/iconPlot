@@ -347,13 +347,13 @@ end
 undef("getLonLats")
 procedure getLonLats(variable,filehandle,x,y)
 begin
-  lonlat  = str_split(variable@coordinates," ")
-  lon     = lonlat(0)
-  lat     = lonlat(1)
-  x       = filehandle->$lon$
-  y       = filehandle->$lat$
-  x       = x * RAD2DEG
-  y       = y * RAD2DEG
+  lonlat = str_split(variable@coordinates," ")
+  lon    = lonlat(0)
+  lat    = lonlat(1)
+  x      = filehandle->$lon$
+  y      = filehandle->$lat$
+  x      = x * RAD2DEG
+  y      = y * RAD2DEG
 end
 ;-------------------------------------------------------------------------------
 ; get variable from a certain file
@@ -1195,15 +1195,18 @@ end
 ;---------------------------------------------------------------
 ; set the coordinates bounds for an ICON data field
 undef("setBounds")
-procedure setBounds(resource,filehandle,x,y)
+procedure setBounds(resource,filehandle,x,y,debug)
 begin
   ; add the bounds to the resource if bounds are present
   if (isatt(x,"bounds")) then
-    xbounds = File
-    resource@sfXCellBounds = x
+    xbounds = filehandle->$x@bounds$
+    if (debug) print(""+x@bounds) end if
+    resource@sfXCellBounds = xbounds
   end if
   if (isatt(y,"bounds")) then
-    resource@sfYCellBounds = y
+    ybounds = filehandle->$y@bounds$
+    if (debug) print(""+y@bounds) end if
+    resource@sfYCellBounds = ybounds
   end if
 end
 ;---------------------------------------------------------------

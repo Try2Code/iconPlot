@@ -471,7 +471,7 @@
   if (getHorizGridType(iFile,ivarname) .eq. "unstructured") then
     if (plotMode.eq."scalar" .or. plotMode.eq."overlay") 
       setCoordinates(ResC,x,y)
-      ;setBounds(ResC,x,y)
+      setBounds(ResC,File,x,y,DEBUG)
     end if
   end if
 
