@@ -119,18 +119,18 @@ task :test_atm_3d do
   scalarPlot(ATM_PLOT_TEST_FILE,ofile,OFMT,varname)
   show(ofile)
 end
+desc "x11 test"
+task :test_x11 do
+  ofile          = 'test_x11'
+  varname        = 'T'
+  scalarPlot(ATM_PLOT_TEST_FILE,ofile,OFMT,varname,['oType=\'"x11"\''])
+end
 desc "perform halflog plot"
 task :test_halflog do
   ofile          = 'test_halflog'
   varname        = 'T'
   Cdo.debug=true
   tfile = Cdo.mulc(100,:in => "-subc,5 -abs -selname,T #{OCE_PLOT_TEST_FILE}")
-# FileUtils.mv(tfile,tfile+".nc")
-# tfile += ".nc"
-# pp tfile
-  FileUtils.cp(tfile,"my.nc")
-  pp Cdo.infov(:in => tfile)
-
   image = scalarPlot(tfile,ofile,OFMT,varname,['selMode=\'"halflog"\'','minVar=-1 maxVar=1000 atmLev=\'"m"\'',
                                                 '\'mapLLC=(/ -10.0,-80.0 /)\' \'mapURC=(/ 100.0,-10.0 /)\''])
   show(image)
