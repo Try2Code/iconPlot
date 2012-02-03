@@ -317,6 +317,19 @@ begin
   return str
 end
 ;-------------------------------------------------------------------------------
+; Return the size of coordinates
+undef("getCoordSizes")
+function getCoordSizes(variable,filehandle)
+begin
+  lonlat  = str_split(variable@coordinates," ")
+  lon     = lonlat(0)
+  lat     = lonlat(1)
+  lonSize = dimsizes(filehandle->$lon$)
+  latSize = dimsizes(filehandle->$lat$)
+
+  return (/lonSize,latSize/)
+end
+;-------------------------------------------------------------------------------
 ; Return the coordinates of a given variable in radians
 undef("getCoordinates")
 function getCoordinates(variable,filehandle)
@@ -332,15 +345,15 @@ end
 ;-------------------------------------------------------------------------------
 ; Return the coordinates of a given variable in degrees
 undef("getLonLats")
-function getLonLats(variable,filehandle)
+procedure getLonLats(variable,filehandle,x,y)
 begin
   lonlat  = str_split(variable@coordinates," ")
   lon     = lonlat(0)
   lat     = lonlat(1)
-  x       = filehandle->$lon$*RAD2DEG
-  y       = filehandle->$lat$*RAD2DEG
-
-  return (/x,y/)
+  x       = filehandle->$lon$
+  y       = filehandle->$lat$
+  x       = x * RAD2DEG
+  y       = y * RAD2DEG
 end
 ;-------------------------------------------------------------------------------
 ; get variable from a certain file
@@ -1178,6 +1191,20 @@ procedure setCoordinates(resource,lons,lats)
 begin
   resource@sfXArray = lons
   resource@sfYArray = lats
+end
+;---------------------------------------------------------------
+; set the coordinates bounds for an ICON data field
+undef("setBounds")
+procedure setBounds(resource,filehandle,x,y)
+begin
+  ; add the bounds to the resource if bounds are present
+  if (isatt(x,"bounds")) then
+    xbounds = File
+    resource@sfXCellBounds = x
+  end if
+  if (isatt(y,"bounds")) then
+    resource@sfYCellBounds = y
+  end if
 end
 ;---------------------------------------------------------------
 ; Print out some information about the used map

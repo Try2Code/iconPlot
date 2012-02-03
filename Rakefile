@@ -105,11 +105,16 @@ task :test_oce_2d do
 end
 desc "select regions"
 task :test_mapselect do
-  ofile          = 'test_mapSelect.' + OFMT
-  del(ofile)
+  ofile          = 'test_mapSelect'
   varname        = 'ELEV'
-  scalarPlot(OCE_PLOT_TEST_FILE,ofile,OFMT,varname,[ '\'mapLLC=(/ -100.0,-15.0 /)\' \'mapURC=(/ 35.0,65.0 /)\''])
-  show(ofile)
+  show(scalarPlot(OCE_PLOT_TEST_FILE,ofile,OFMT,varname,[ '\'mapLLC=(/ -100.0,-15.0 /)\' \'mapURC=(/ 35.0,65.0 /)\'']))
+  show(scalarPlot(OCE_PLOT_TEST_FILE,ofile,OFMT,varname,[ '\'mapLLC=(/ -100.0,-15.0 /)\' \'mapURC=(/ 35.0,65.0 /)\'','maskName=\'"wet_c"\'']))
+end
+desc "masking with ocean's wet_c"
+task :test_mask do
+  ofile          = 'test_mask'
+  varname        = 'ELEV'
+  show(scalarPlot(OCE_PLOT_TEST_FILE,ofile,OFMT,varname,['maskName=\'"wet_c"\'']))
 end
 desc "perform simple atm plot from 3d var"
 task :test_atm_3d do

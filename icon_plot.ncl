@@ -373,9 +373,10 @@
           bounds = getBoundsFromFile(lonCo,latCo,gridFile)
         end if
       else
-        lonlats = getLonLats(var,File)
-        x       = lonlats(0,:)
-        y       = lonlats(1,:)
+        lonlatSizes = getCoordSizes(var,File)
+        x           = new(lonlatSizes(0),double)
+        y           = new(lonlatSizes(1),double)
+        getLonLats(var,File,x,y)
         if (showGrid) then
           bounds  = getBoundsOfCoordinates(var,File)
         end if
@@ -468,7 +469,10 @@
 
 
   if (getHorizGridType(iFile,ivarname) .eq. "unstructured") then
-    if (plotMode.eq."scalar" .or. plotMode.eq."overlay") setCoordinates(ResC,x,y) end if
+    if (plotMode.eq."scalar" .or. plotMode.eq."overlay") 
+      setCoordinates(ResC,x,y)
+      ;setBounds(ResC,x,y)
+    end if
   end if
 
   if (plotMode.eq."vector") then
