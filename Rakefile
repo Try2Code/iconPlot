@@ -1,6 +1,7 @@
 require 'rake/clean'
 require 'thread'
 require 'pp'
+require 'cdo'
 
 SRC                   = ["icon_plot.ncl","icon_plot_lib.ncl"]
 HOSTS                 = ["m300064@blizzard.dkrz.de"]
@@ -109,6 +110,21 @@ task :test_atm_3d do
   varname        = 'T'
   scalarPlot(ATM_PLOT_TEST_FILE,ofile,OFMT,varname)
   show(ofile)
+end
+desc "perform halflog plot"
+task :test_halflog do
+  ofile          = 'test_halflog'
+  varname        = 'T'
+  Cdo.debug=true
+  tfile = Cdo.mulc(100,:in => "-subc,5 -abs -selname,T #{OCE_PLOT_TEST_FILE}")
+  FileUtils.mv(tfile,tfile+".nc")
+  tfile += ".nc"
+  pp tfile
+  FileUtils.cp(tfile,"my.nc")
+  pp Cdo.infov(:in => tfile)
+
+  image = scalarPlot(tfile,ofile,OFMT,varname,['selMode=\'"halflog"\'','minVar=1 maxVar=1000 atmLev=\'"m"\''])
+  show(image)
 end
 desc "perform simple atm plot from 2d var"
 task :test_atm_2d do
