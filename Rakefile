@@ -103,6 +103,14 @@ task :test_oce_2d do
   scalarPlot(OCE_PLOT_TEST_FILE,ofile,OFMT,varname)
   show(ofile)
 end
+desc "select regions"
+task :test_mapselect do
+  ofile          = 'test_mapSelect.' + OFMT
+  del(ofile)
+  varname        = 'ELEV'
+  scalarPlot(OCE_PLOT_TEST_FILE,ofile,OFMT,varname,[ '\'mapLLC=(/ -100.0,-15.0 /)\' \'mapURC=(/ 35.0,65.0 /)\''])
+  show(ofile)
+end
 desc "perform simple atm plot from 3d var"
 task :test_atm_3d do
   ofile          = 'test_icon_plot.' + OFMT
@@ -117,13 +125,14 @@ task :test_halflog do
   varname        = 'T'
   Cdo.debug=true
   tfile = Cdo.mulc(100,:in => "-subc,5 -abs -selname,T #{OCE_PLOT_TEST_FILE}")
-  FileUtils.mv(tfile,tfile+".nc")
-  tfile += ".nc"
-  pp tfile
+# FileUtils.mv(tfile,tfile+".nc")
+# tfile += ".nc"
+# pp tfile
   FileUtils.cp(tfile,"my.nc")
   pp Cdo.infov(:in => tfile)
 
-  image = scalarPlot(tfile,ofile,OFMT,varname,['selMode=\'"halflog"\'','minVar=1 maxVar=1000 atmLev=\'"m"\''])
+  image = scalarPlot(tfile,ofile,OFMT,varname,['selMode=\'"halflog"\'','minVar=-1 maxVar=1000 atmLev=\'"m"\'',
+                                                '\'mapLLC=(/ -10.0,-80.0 /)\' \'mapURC=(/ 100.0,-10.0 /)\''])
   show(image)
 end
 desc "perform simple atm plot from 2d var"
