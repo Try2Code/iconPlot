@@ -283,7 +283,7 @@
 
   if (plotMode.eq."vector" .or. plotMode.eq."overlay" .or. plotMode.eq."section" .or. plotMode .eq. "hoffmueller") then
     if (horizonalGridType .ne. "unstructured") then ; regular grid expected, i.e. remappgin is NOT required
-      rFile = addfile(iFile,"r")
+      rFile = addfile(iFile+".nc","r")
     else
       ; performe some remapping to a regular grid because ncl cannot draw vector
       ; from unstructured grids
@@ -295,14 +295,14 @@
         print("PERFORM remapnn again!")
         remapForVecPlot(iFile,remapFilename,resolution,useMask,plotMode,DEBUG,addVars)
       end if
-      rFile = addfile( remapFilename, "r" )
+      rFile = addfile( remapFilename+".nc", "r" )
     end if
     if (plotMode .eq. "hoffmueller") then ; perform zonmean
       zonmeanFilename = setZonmeanFilename(remapFilename,ivarname,atmLev)
       zonmean4HoffmuellerPlot(remapFilename,ivarname,zonmeanFilename)
     end if
   end if
-  File  = addfile( iFile, "r" )
+  File  = addfile( iFile+".nc", "r" )
 
   if (DEBUG) printVarNames(File) end if
 

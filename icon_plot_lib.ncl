@@ -89,6 +89,15 @@ begin
   end do
   return(str_match(dimNames,matches(0)))
 end
+;---------------------------------------------------------------
+; procedure warper for array_append_record
+undef("array_append_record_proc")
+procedure array_append_record_proc(array,addition)
+begin
+  arrayCopy = array_append_record(array,addition,0)
+
+  array     = arrayCopy
+end
 ;-------------------------------------------------------------------------------
 ; Read a horizontal field of the variable 'varname' from the given filehandle.
 ; If it is time dependend or has a vertival axis, use the given values for
@@ -338,7 +347,7 @@ end
 undef("getVarFromFile")
 function getVarFromFile(varname,filename)
 begin 
-  f = addfile(filename,"r")
+  f = addfile(filename+".nc","r")
   var = f->$varname$
   return var
 end
@@ -386,8 +395,11 @@ begin
 
   myScale    = logfirst
   levels     = ""
+  ;levels     = new(1,float)
   if (first .eq. 0) then
     levels = str_concat((/levels,delimiter,"0"/))
+    ;array_append_record_proc(levels,0.0)
+    print(levels)
   end if 
   current    = first
   if (current .lt. 0) then
@@ -396,11 +408,13 @@ begin
       do ticIndex=0,2
         current = - tics(ticIndex)*10^(logfirst-scaleChange)
         levels = str_concat((/levels,delimiter,flt2string(doubletofloat(current))/))
+        ;array_append_record_proc(levels,doubletofloat(current))
       end do
     end do
   end if
   if (first.lt.0 .and. last.gt.0) then
     levels = str_concat((/levels,delimiter,"0"/))
+    ;array_append_record_proc(levels,0.0)
   end if
   if (last .gt. 0) then
     tics = tics4positive
@@ -415,13 +429,16 @@ begin
       do ticIndex=0,2
         current = tics(ticIndex)*10^(myScale)
         levels = str_concat((/levels,delimiter,flt2string(doubletofloat(current))/))
+        ;array_append_record_proc(levels,current)
       end do
       j = j + 1
     end do
     levels = str_concat((/levels,delimiter,flt2string(doubletofloat(last))/))
+    ;array_append_record_proc(levels,last)
   end if
-
   return(str_split(levels,"|"))
+ ;print(levels)
+ ;return(levels)
 end
 ;---------------------------------------------------------------
 ; Print all variable names of a given file
@@ -488,7 +505,7 @@ undef("getMaskVar")
 function getMaskVar(maskvarname,filehandle,hasOtherMaskfile,maskfilename,timestep,levelindex,plotmode)
 begin
   if (hasOtherMaskfile) then
-    mfilehandle = addfile( maskfilename, "r" )
+    mfilehandle = addfile( maskfilename+".nc","r" )
   else
     mfilehandle = filehandle
   end if
@@ -513,7 +530,7 @@ undef("getMaskDim")
 function getMaskDim(maskvarname,filehandle,hasOtherMaskfile)
 begin
   if (hasOtherMaskfile) then
-    filehandle   = addfile( maskFile, "r" )
+    filehandle   = addfile( maskFile+".nc","r" )
   end if
   checkVarname(maskvarname, filehandle)
   maskdims = getfilevardims(filehandle,maskvarname)
@@ -551,7 +568,7 @@ begin
 
   if (.not. isfilepresent(remapfilename)) return False end if
 
-  orgFile             = addfile (infilename , "r")
+  orgFile             = addfile (infilename+".nc" , "r")
   orgTime             = getfilevardimsizes(orgFile,"time")
 
   if (.not. has_var(orgFile,varname)) then
@@ -564,7 +581,7 @@ begin
     orgvertdim          = orgFile->$orgvertdimname$
   end if
 
-  remapFile           = addfile(remapfilename,"r")
+  remapFile           = addfile(remapfilename+".nc","r")
   remapTime           = getfilevardimsizes(remapFile,"time")
   ; test if the given variable can be found
   if (.not. has_var(remapFile,varname)) then
@@ -676,7 +693,7 @@ end
 undef("getBoundsFromFile")
 function getBoundsFromFile(lonname,latname,filename)
 begin
-  f             = addfile(filename,"r")
+  f             = addfile(filename+".nc","r")
   boundslonName = f->$lonname$@bounds
   boundslatName = f->$latname$@bounds
   boundslon     = f->$boundslonName$ * RAD2DEG
@@ -1216,7 +1233,7 @@ end
 undef("getVarLevelType")
 function getVarLevelType(filename,varname)
 begin
-  f       = addfile(filename,"r")
+  f       = addfile(filename+".nc","r")
   vertdim = getVertDim(f,f->$varname$)
   if (ismissing(vertdim)) then
     delete(f)
