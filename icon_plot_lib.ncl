@@ -515,7 +515,7 @@ end
 ;---------------------------------------------------------------
 ; Read a variable from the given or an optional file
 undef("getMaskVar")
-function getMaskVar(maskvarname,filehandle,hasOtherMaskfile,maskfilename,timestep,levelindex,plotmode)
+function getMaskVar(maskvarname,filehandle,hasOtherMaskfile,maskfilename,timestep,levelindex,plotmode,horizontalgridtype)
 begin
   if (hasOtherMaskfile) then
     mfilehandle = addfile( maskfilename+".nc","r" )
@@ -523,8 +523,12 @@ begin
     mfilehandle = filehandle
   end if
   checkVarname(maskvarname, mfilehandle)
-  if (plotmode.eq."scalar" .or. plotmode.eq."overlay") then
-    maskvar = selIconField(maskvarname,mfilehandle,timestep,levelindex)
+    if (plotmode.eq."scalar" .or. plotmode.eq."overlay") then
+  if (horizontalgridtype.eq."unstructured") then
+      maskvar = selIconField(maskvarname,mfilehandle,timestep,levelindex)
+    else
+      maskvar = selRegularField(maskvarname,mfilehandle,timestep,levelindex)
+    end if
   else
     if (plotmode.eq."vector") then
       maskvar = selRegularField(maskvarname,mfilehandle,timestep,levelindex)

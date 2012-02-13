@@ -310,12 +310,12 @@
   if( useMask ) then
     mFile = File
     if (isvar("maskFile")) then
-      maskVar = getMaskVar(maskName,File,True,maskFile,timeStep,levIndex,plotMode)
+      maskVar = getMaskVar(maskName,File,True,maskFile,timeStep,levIndex,plotMode,horizonalGridType)
     else
       if (plotMode.eq."vector" .or. plotMode.eq."section") then
-        maskVar = getMaskVar(maskName,rFile,False,"",timeStep,levIndex,plotMode)
+        maskVar = getMaskVar(maskName,rFile,False,"",timeStep,levIndex,plotMode,horizonalGridType)
       else
-        maskVar = getMaskVar(maskName,File,False,"",timeStep,levIndex,plotMode)
+        maskVar = getMaskVar(maskName,File,False,"",timeStep,levIndex,plotMode,horizonalGridType)
       end if
     end if
   end if
@@ -540,8 +540,8 @@
     draw(plot)
   end if
   if (plotMode.eq."scalar") then
-    if (DEBUG) print("Gridtype is "+getGridType(var)) end if
-    plot                     = gsn_csm_contour_map(wks,var,ResC)
+    if (DEBUG .and. horizonalGridType.eq."unstructured") print("Gridtype is "+getGridType(var)) end if
+    plot = gsn_csm_contour_map(wks,var,ResC)
 
     if (showGrid) then
       if ( horizonalGridType .ne. "unstructured") then
