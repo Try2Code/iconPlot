@@ -1,0 +1,276 @@
+#! /usr/bin/env perl
+
+=head1 NAME
+
+=encoding utf8
+
+nclsh - Wrapper for NCL interpreter providing simplified passing of parameters
+
+=head1 SYNOPSIS
+
+B<nclsh> [I<FILE>] [I<OPTION>]... [I<ARG>]... 
+
+=head1 DESCRIPTION
+
+This is a replacement for calling the NCAR Command Language (NCL) directly 
+whenever you need to pass command line arguments to NCL without twisting your
+fingers into a knot.
+
+It simply translates the parameters into a form recognized by NCL, and then
+runs the B<ncl> command as configured on your system.
+Within nclsh, ncl is run with the '-n' option,
+i.e. print output is not prefixed by element indices.
+
+=head2 Parameter translation
+
+Any command line parameter is parsed and put into NCL syntax according to
+these rules:
+
+=over
+
+=item * 
+Parameters beginning with '+', '-' or '--' are options.
+
+=item * 
+Options that are continued with '=' take the remainder of the parameter as 
+value
+
+=item * 
+Values may be scalar or arrays; array elements are separated by ',' or ':'.
+
+=item * 
+Values are of type boolean ('True' or 'False', case-insensitive), numeric,
+or string.
+
+=item * 
+Options without value are taken to be boolean. Prefix '+' assigns 'False',
+prefix '-' or '--' assigns 'True'.
+
+=item * 
+If an option without value begins with '-no' or '--no', and the option name
+is longer than 2 characters, the leading 'no' is stripped from the option,
+and its value becomes 'False'.
+
+=item * 
+The first non-option parameter is taken to be the NCL script file name. Its
+treatment is described below
+
+=item * 
+Any remaining non-option parameters are assigned to a string array option
+named 'ARGS'. Therefore, 'ARGS' is not a valid option name for user options.
+If there are no such parameters, 'ARGS' is undefined.
+
+=item * 
+All options are passed to NCL as variable assignment. Variable name is the 
+option name without the '+', '-', '--', or 'no' prefixes. Scalar values are
+assigned as NCL scalar, array values with NCL array syntax. All non-numeric
+and non-boolean values are surrounded by NCL's string quote '"'.
+
+=item * 
+For array assignments, all elements must have the same type. So, if elements
+are not recognized to be all numeric or all boolean, all elements in that
+array are interpreted as strings and quoted.
+
+=back
+
+Also note that, when calling nclsh, the usual shell restrictions apply when
+you want to embed white space or meta-characters into your string values.
+
+=head2 Examples
+
+  nclsh -format=pdf            ->  ncl format="pdf"
+  nclsh --format=pdf           ->  ncl format="pdf"
+  nclsh +format=pdf            ->  ncl format="pdf"
+  nclsh -values=12,34.56,78e9  ->  ncl values=(/12,34.56,78e9/)
+  nclsh -variables=slp:sst     ->  ncl variables=(/"slp","sst"/)
+  nclsh -verbose               ->  ncl verbose=True
+  nclsh +verbose               ->  ncl verbose=False
+  nclsh -noverbose             ->  ncl verbose=False
+
+I<Please note:>
+
+  nclsh -no                    ->  ncl no=True
+  nclsh +no                    ->  ncl no=False
+  nclsh +noverbose             ->  ncl noverbose=False
+  nclsh -values=12,True,78e9   ->  ncl values=(/"12","True","78e9"/)
+
+=head2 Script file
+
+If a NCL script name has been recognized in the parameter list, nclsh checks 
+if the first line of this file contains the she-bang (#!) sequence.
+If this is the case, the whole script is copied to a temporary file with the
+first line commented out by NCLs comment character ';'.
+This allows using nclsh as command script interpreter. The recommended way to
+do this is heading your NCL script with the following line:
+
+  #! /usr/bin/env nclsh
+
+Note that, in this case, any error message refers to the temp file name
+instead of the original script file name. However this should make no
+difference when using line numbers as only the first line is altered and
+no lines are deleted or added.
+
+=head1 SEE ALSO
+
+The NCL website L<http://www.ncl.ucar.edu/>, providing all you ever wanted to know
+about NCL, and possibly more.
+
+=head1 AUTHOR
+
+Written by Karl-Hermann Wieners, but ultimately inspired by Ralf Müller.
+
+=head1 COPYRIGHT
+
+Copyright (c) 2012 Max-Planck-Institut für Meteorologie, Hamburg, Germany
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.  This file is offered as-is,
+without any warranty.
+
+=cut
+
+#
+# $Id: nclsh 216 2012-02-17 20:38:10Z m221078 $
+#
+
+use warnings;
+use strict;
+
+# Routines for generating safe temp files.
+use File::Temp qw(tempfile);
+
+my @args = (); # Non-option arguments (file names etc.)
+my %opts = (); # Options and their values
+
+my @params = (); # Parameter list for NCL call
+my $file; # NCL script file name
+
+# Parse command line and store results in @args and %opts
+
+for my $arg (@ARGV) {
+    if($arg =~ /^(\+|--?)(\w+)(=(.*))?$/) {
+        # Anything looking like an option is handled here.
+        # $1 is option prefix, $2 is the option name, $4 are assigned values.
+        # $3 is the optional value assignment (= and values)
+
+        # Special option name ARGS is reserved for passing non-option args.
+        $2 ne 'ARGS' or die("Sorry: option name ARGS is reserved and may not be used!\n");
+
+        if(defined($3)) {
+            # If a value is assigned to the option, store it in %opts.
+            # Make sure that lists (separated by : or ,) are split.
+            my @vals = split(/[,:]/, $4, -1);
+            $opts{$2} = \@vals;
+        }
+        else {
+            # Options w/o assignment are taken to be Boolean.
+            if($1 eq '+') {
+                # Prefix + switches off named option
+                $opts{$2} = [ 'False' ];
+            }
+            elsif(length($2) > 2 && substr($2, 0, 2) eq 'no') {
+                # Prefixes --no... and -no... also denote switched off options.
+                # Option name is set by removing leading 'no' from name.
+                # Bare '-no' is taken as is, i.e. switched on with name 'no'.
+                $opts{substr($2, 2)} = [ 'False' ];
+            }
+            else {
+                # All other cases denote options that are switched on.
+                $opts{$2} = [ 'True' ];
+            }
+        }
+    }
+    else {
+        # Non-option i.e non-prefixed arguments are handled here.
+        
+        if(defined($file)) {
+            # All except the first argument are put into the ARGS list
+            push(@args, $arg);
+        }
+        else {
+            # First non-option argument is taken to be the script file 
+            $file = $arg;
+        }
+    }
+}
+
+# Transform options and arguments to NCL style
+
+# Transform options to be stored in NCL parameter list
+while(my ($key, $val) = each(%opts)) {
+    my @vals = @$val;
+
+    # All non-numeric and non-boolean values are considered strings.
+    # If one element in the value list is a string, all are stringified.
+    my $is_boolean = ! grep(!/^(true|false)$/i, @vals);
+    my $is_numeric = ! $is_boolean && 
+        ! grep(!/^[+-]?(\d+|\d+\.\d*|\d*\.\d+)([ed][-+]?\d+)?$/i, @vals);
+    my $is_string = ! $is_numeric && ! $is_boolean;
+    
+    # Add quotes to string values.
+    if($is_string) {
+        @vals = map { '"'.$_.'"' } @vals;
+    }
+
+    # Capitalize booleans properly
+    if($is_boolean) {
+        @vals = map { uc(substr($_,0,1)).lc(substr($_,1)) } @vals;
+    }
+
+    # Store values into parameter list with option name as variable id.
+    if(@vals == 1) {
+        # Single value options are stored as scalar value.
+        push(@params, $key.'='.$vals[0]);
+    }
+    else {
+        # Multi-valued options are passed as array.
+        push(@params, $key.'=(/'.join(',', @vals).'/)');
+    }
+}
+
+# Transform non-option args. These are all put into a string array named ARGS.
+if(@args) {
+    push(@params, 'ARGS=(/'.join(',', map { '"'.$_.'"' } @args).'/)');
+}
+
+# Handle the script file
+
+if(defined($file)) {
+    # Check if first line contains she-bang.
+    # If so, copy contents to a temporary file, disabling first line.
+    # This allows using nclsh as script interpreter, but changes error messages
+    # to contain the temp file name instead of the script file name.
+
+    open(my $file_handle, '<', $file) or die("Sorry: cannot open file: $!\n");
+    if(defined($_ = <$file_handle>) && /^#!/) {
+        # First line is she-bang line.
+
+        # Temp file should be removed at exit.
+        my($temp_handle, $temp_name) = tempfile(UNLINK=>1);
+        # Comment out she-bang line for temp file
+        s/^/\;/;
+        print $temp_handle ($_);
+        # Copy remaining lines into temp file
+        while(<$file_handle>) {
+            print $temp_handle ($_);
+        }
+        push(@params, $temp_name);
+    }
+    else {
+        push(@params, $file);
+    }
+    close($file_handle);
+}
+
+# Add option for non-verbose printing within NCL.
+unshift(@params, '-n');
+
+# @todo Provide debugging output on demand
+# while(my ($key, $val) = each(@params)) {
+#     print("$key: '$val'\n");
+# }
+
+# Must use system (not exec) to have temp file removed at exit
+system('ncl', @params);
+
