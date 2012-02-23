@@ -58,7 +58,7 @@ This is useful for write script which call other NCL application.
 
 == Support, Issues, Bugs, ...
 
-  use mail
+  write an issue or use mail
 
 == License
 
