@@ -605,12 +605,9 @@
      pres                  = True;            polyline mods desired
      pres@gsnFrame         = False;                don't turn page yet
      pres@gsnDraw          = False;                don't draw yet
-     pres@gsLineColor      = "Black";           color of lines
+     pres@gsLineColor      = "black";           color of lines
      pres@gsLineThicknessF = 2.0;             line thickness
-     gsn_polyline(wks,plot(1),(/ secLC(0),secRC(0) /),(/ secLC(1),secRC(1) /),pres)
-     resP                  = True; modify the panel plot
-     resP@txString         = ""
-     resP@gsnPanelLabelBar = False; no common colorbar
+     dummy = gsn_add_polyline(wks,plot(1),(/ secLC(0),secRC(0) /),(/ secLC(1),secRC(1) /),pres)
 
      draw(plot(1))
    end if
