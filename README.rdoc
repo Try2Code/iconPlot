@@ -47,7 +47,7 @@ Options can be combined execept showGrid=True with vector and overlay plots
 
 More examples can be found here: https://code.zmaw.de/projects/cdo/wiki/Ram#ICON-plot.
 
-== Recommondations
+== Recommendations
 
 Use the provided ncl wrapper script nclsh (see contrib dir, https://github.com/Try2Code/iconPlot/tree/master/contrib) from Karl-Hermann Wieners. This will reduce the quoting to tolerable amount:
   ncl icon_plot.ncl 'iFile="iconOutput.nc"' 'secLC=(/ 0.0,-90.0 /)' 'secRC=(/ 0.0,90.0/)' 'oType="png"' 'varName="T"' vecVars='"u v"'
