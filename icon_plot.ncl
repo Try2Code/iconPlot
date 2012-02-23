@@ -36,7 +36,9 @@
 ; iFile         : input file (based in ICON horizonal Grid or regular lonlat grid)
 ; oFile         : plot file wihtout extension (it set by the output type: oType)
 ; varName       : name of the variable to (contour) plot
-; vecVars       : space separated string of the 2 vector components u and v to draw a vector plot
+; vecVars       : space separated string of the 2 vector components u and v to
+;                 draw a vector plot, array notation is also possible:
+;                 vecVars='"u v"' or vecVars='(/"u","v"/)'
 ;
 ; Optional Parameter:
 ; oType         : output graphics format (ps, eps, png, default: eps)
@@ -96,7 +98,7 @@
 ;---------------------------------------------------------------
 ; Authors       : Ralf Mueller (ralf.mueller@zmaw.de)
 ;                 Stephan Lorenz (stephan.lorenz@zmaw.de)
-; VERSION       : r7884 (2012-01-26)
+; VERSION       : r8012 (2012-01-26)
 ;---------------------------------------------------------------
 
  load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
@@ -243,8 +245,19 @@
     ivarname = varName
   else
     if (isvar("vecVars")) then
-      vecs = str_split(vecVars," ")
-      ivarname = vecs(0)
+      size  = dimsizes(vecVars)
+      if (1.lt.size) then
+        ivarname = vecVars(0)
+      else
+        if (isstring(vecVars)) then
+        vecs = str_split(vecVars," ")
+        ivarname = vecs(0)
+        else
+          print("Cannot determinte input variable! Please provide varName or vecVars.")
+          exit
+        end if
+      end if
+      delete(size)
     else
       print("Cannot determinte input variable! Please provide varName or vecVars.")
       exit
@@ -261,19 +274,25 @@
   horizonalGridType = getHorizGridType(iFile,ivarname)
   ;----------------------------------------------------------------------------
 
-  ; EXPECT A REGULAR GRID FOR VECTOR PLOT AS YOU GET IT FROM ------------------
+  ; DETERMINE THE PLOTMODE ----------------------------------------------------
   if (isvar("vecVars")) then
     ; expectes is a string or an array of size 2: "u-veloc v-veloc" or (/"u-veloc","v-veloc"/)
-    if (isstring(vecVars)) then
-      vecVars_ = str_split(vecVars," ")
-      delete(vecVars)
-      vecVars = vecVars_
+    if (1 .eq. dimsizes(vecVars)) then
+      if (isstring(vecVars)) then
+        vecVars_ = str_split(vecVars," ")
+        delete(vecVars)
+        vecVars = vecVars_
+      else
+        print("Please provide a valid description of vector variables")
+        exit
+      end if
     end if
     plotMode = "vector"
     if (isvar("varName")) plotMode = "overlay" end if
   else
     plotMode = "scalar"
   end if
+
   if ( (isvar("secLC").or.isvar("secRC")).ne.(isvar("secLC").and.isvar("secRC"))) then
     print("Please provide secLC AND secRC for generatin a section plot!")
     exit
