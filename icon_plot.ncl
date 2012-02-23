@@ -589,7 +589,7 @@
      shift4SecMap(res)
    end if
 
-   plot(0)               = gsn_csm_contour(wks,trans,res);   create plot
+   plot(0) = gsn_csm_contour(wks,trans,res);   create plot
    draw(plot(0))
 
    if (showSecMap) then
@@ -610,7 +610,7 @@
      gsn_polyline(wks,plot(1),(/ secLC(0),secRC(0) /),(/ secLC(1),secRC(1) /),pres)
      resP                  = True; modify the panel plot
      resP@txString         = ""
-     resP@gsnPanelLabelBar = False; add common colorbar
+     resP@gsnPanelLabelBar = False; no common colorbar
 
      draw(plot(1))
    end if
