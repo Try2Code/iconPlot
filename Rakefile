@@ -195,7 +195,7 @@ task :test_section_oce do
     :showSecMap => "True",
     :secPoints => 100
   }
-  ofile = "test_section_ice"
+  ofile = "test_section_oce"
   scalarPlot(OCE_PLOT_TEST_FILE,ofile,OFMT,DEFAULT_VARNAME,secopts)
   ofile += ".#{OFMT}"
   show(ofile)
