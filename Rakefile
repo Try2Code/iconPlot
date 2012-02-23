@@ -413,6 +413,9 @@ task :test_colors do
   colors = %w|white black firebrick peachpuff orangered navyblue peru yellow wheat1 gray55 thistle coral dodgerblue seagreen maroon gold turquoise mediumorchid|
   defaultPlot(OCE_PLOT_TEST_FILE   ,'test_colors',
                                    :colormap => colors.reverse.join(','))
+  colormap = 'BlGrYeOrReVi200'
+  defaultPlot(OCE_PLOT_TEST_FILE   ,'test_colors',
+                                   :colormap => colormap,:mapType => 'ortho')
 end
 #==============================================================================
 # Test collections
