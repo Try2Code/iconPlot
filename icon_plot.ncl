@@ -404,6 +404,8 @@
 
     scaleVar(var,scaleFactor)
 
+    ; set selMode automatically
+    if (isvar("minVar") .and. isvar("maxVar")) selMode = "manual" end if
     ; set minVar_maxVar for plotting
     if(.not. isvar("minVar")) minVar = min(var) end if
     if(.not. isvar("maxVar")) maxVar = max(var) end if
