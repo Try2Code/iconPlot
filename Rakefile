@@ -144,6 +144,13 @@ task :test_halflog do
                                                 :mapLLC => '-10.0,-80.0' ,:mapURC =>'100.0,-10.0')
   show(image)
 end
+desc "test setting of min/maxVar"
+task :test_minmax do
+  images = []
+  images << scalarPlot(OCE_PLOT_TEST_FILE,'test_minmax_3d',OFMT,'T',:levIndex => 2,:maxVar => 16, :minVar => 10)
+  images << scalarPlot(OCE_PLOT_TEST_FILE,'test_minmax_2d',OFMT,'ELEV', :maxVar => 0.4, :minVar => -0.4)
+  images.each {|image| show(image)}
+end
 desc "perform simple atm plot from 2d var"
 task :test_atm_2d do
   ofile          = 'test_icon_plot.' + OFMT
