@@ -1284,10 +1284,16 @@ end
 ;---------------------------------------------------------------
 ; determine the horizontal grid type (unstructured or lonlat)
 undef("getHorizGridType")
-function getHorizGridType(filename,varname)
+function getHorizGridType(filename,varname,isIcon)
 begin
-print("CDO:"+CDO)
-  gridtype = systemfunc(CDO+" -griddes -selname,"+varname+" -seltimestep,1 "+filename+" | grep gridtype | cut -d ' ' -f 4")
+  if (isIcon) then
+    print("DEBUG:"+isIcon)
+    gridtype = "unstructured"
+  else
+    print("CDO:"+CDO)
+    print("Call cdo griddes for determine the horizontal gridtype")
+    gridtype = systemfunc(CDO+" -griddes -selname,"+varname+" -seltimestep,1 "+filename+" | grep gridtype | cut -d ' ' -f 4")
+  end if
   print("Found horizontal grid of type: "+gridtype)
   return gridtype
 end
@@ -1676,3 +1682,6 @@ begin
   end if
   return vc
 end
+
+;
+; vim:list

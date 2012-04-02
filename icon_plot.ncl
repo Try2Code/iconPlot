@@ -50,6 +50,8 @@
 ; streamLine    : display streamlines instead of vectors
 ; timeStep      : no of timestep (default:0)
 ; levIndex      : vertical level index (default:0)
+; isIcon        : input is horiz. ICON style netcdf data (default:false), 
+;                 manually set this to prevent from checks
 ; minVar/maxVar : set the lower/upper limit of the labelbar
 ; mapLLC        : (lon,lat) value array of the Lower Left Corner of the map
 ; mapURC        : (lon,lat) ------- || ------- Upper Right Corner of the map
@@ -62,9 +64,9 @@
 ; satDist       : satelite distance (default:20.0)
 ; scaleFactor   : optional scale factor
 ; selMode       : mode for level spacing of the plot:
-;                  halflog (uses half logarythmic levels,i.e. 1,2,5 per decade), 
-;                  manual (automatic linear spacing with usage of minVar and maxVar)
-;                  auto (default: let do ncl the spacing)
+;                 halflog (uses half logarythmic levels,i.e. 1,2,5 per decade), 
+;                 manual (automatic linear spacing with usage of minVar and maxVar)
+;                 auto (default: let do ncl the spacing)
 ; scaleLimit    : Limits the number of decades for levels in selMode-halflog
 ; minVar/maxVar : min/maximal Value to plot for selMode=manual or halflog
 ; numLevs       : set a number of labels for manual selMode only. NumCol=numLevs+2
@@ -113,7 +115,7 @@
     print("Found configfile:"+CONFIGFILE)
     loadscript(CONFIGFILE)
   end if
-  
+
   if ( .not. isvar("altLibDir") )  then
     print("load default library from /pool/data/ICON/tools")
     loadscript("/pool/data/ICON/tools/icon_plot_lib.ncl")
@@ -174,6 +176,7 @@
   if (.not. isvar("scaleFactor")) scaleFactor = 1               end if
   if (.not. isvar("colormap"))    colormap    = "BlueDarkRed18" end if
   if (.not. isvar("k2c"))         k2c         = True            end if
+  if (.not. isvar("isIcon"))      isIcon      = False           end if
 
   if (.not.isvar("mapType"))      mapType      = "lonlat"        end if
   if ( mapType .eq. "NHps" .and. .not.isvar("mapLLC")) mapLLC = (/-45., 45./)  end if
@@ -271,7 +274,7 @@
     end if
   end if
   ; DETERMINE HORIZONTAL GRID -------------------------------------------------
-  horizonalGridType = getHorizGridType(iFile,ivarname)
+  horizonalGridType = getHorizGridType(iFile,ivarname,isIcon)
   ;----------------------------------------------------------------------------
 
   ; DETERMINE THE PLOTMODE ----------------------------------------------------
@@ -306,7 +309,7 @@
     else
       ; performe some remapping to a regular grid because ncl cannot draw vector
       ; from unstructured grids
-      ; TODO addVars=(/ "PS","PHIS"/) 
+      ; TODO addVars=(/ "PS","PHIS"/)
       remapFilename = setRemapFilename(iFile,iType,atmLev)
       print("remapFilename:"+remapFilename)
       if (.not. checkRemappedFile(iFile,remapFilename,ivarname,iType,atmLev,atmPLevs,atmHLevs) ) then
@@ -405,7 +408,11 @@
     scaleVar(var,scaleFactor)
 
     ; set selMode automatically
-    if (isvar("minVar") .and. isvar("maxVar")) selMode = "manual" end if
+    if (isvar("minVar") .and. isvar("maxVar"))  then
+      if (selMode .eq. "auto") then
+        selMode = "manual"
+      end if
+    end if
     ; set minVar_maxVar for plotting
     if(.not. isvar("minVar")) minVar = min(var) end if
     if(.not. isvar("maxVar")) maxVar = max(var) end if
@@ -463,7 +470,7 @@
   if (plotMode .eq. "hoffmueller") then ; create hoffmuelle diagram
     ; select the whole time series
     ; and plot it with
-    ; plot = gsn_csm_lat_time(wks, shov(0,{-80:80},:), res) 
+    ; plot = gsn_csm_lat_time(wks, shov(0,{-80:80},:), res)
   end if
   if (iType .eq. "atm" .and. ivarname .eq. "T" .and. k2c) var = var - 273.15 end if ;atmosphere used to write out Kelvin
 
@@ -489,8 +496,8 @@
 
 
 
-  if (getHorizGridType(iFile,ivarname) .eq. "unstructured") then
-    if (plotMode.eq."scalar" .or. plotMode.eq."overlay") 
+  if (getHorizGridType(iFile,ivarname,isIcon) .eq. "unstructured") then
+    if (plotMode.eq."scalar" .or. plotMode.eq."overlay")
       setCoordinates(ResC,x,y)
       ;setBounds(ResC,File,x,y,DEBUG)
     end if
@@ -500,7 +507,7 @@
     setAutomaticPlotCaptions(ResC,plotMode,vecVars(0),File,iFile,timeStep,levIndex,iType,atmLev,k2c)
   else
     setAutomaticPlotCaptions(ResC,plotMode,varName,File,iFile,timeStep,levIndex,iType,atmLev,k2c)
-  end if 
+  end if
 
   if (plotMode.eq."section") then
     if ( ismissing(getVertDim(File,var)) ) then
@@ -580,7 +587,7 @@
     else
       plot = new(1,graphic)
     end if
-    points   = ispan(0,secPoints-1,1)*1.0 
+    points   = ispan(0,secPoints-1,1)*1.0
 
     res  = setDefaultSectionResource(points,secPoints,secLC,secRC)
     setAutomaticPlotCaptions(res,plotMode,varName,File,iFile,timeStep,levIndex,iType,atmLev,k2c)
@@ -615,3 +622,5 @@
    end if
   end if
   frame(wks)
+;
+; vim:list

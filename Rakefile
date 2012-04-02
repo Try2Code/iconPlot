@@ -2,6 +2,8 @@ require 'rake/clean'
 require 'thread'
 require 'pp'
 require 'cdo'
+require 'test/unit/assertions'
+include Test::Unit::Assertions
 
 SRC                   = ["icon_plot.ncl","icon_plot_lib.ncl"]
 HOSTS                 = ["m300064@blizzard.dkrz.de"]
@@ -143,6 +145,27 @@ task :test_halflog do
   image = scalarPlot(tfile,ofile,OFMT,varname,:selMode =>'halflog',:minVar =>-1, :maxVar => 1000, :atmLe => 'm',
                                                 :mapLLC => '-10.0,-80.0' ,:mapURC =>'100.0,-10.0')
   show(image)
+
+  varname='W'
+  ifile = "#{ENV['HOME']}/data/icon/issues/2219/OCE_BASE_4cpu_iconR2B04-ocean_etopo40_planet_0001.nc"
+  image = scalarPlot(ifile,ofile,OFMT,varname,:selMode =>'halflog',:minVar =>-0.5, :maxVar => 0.5, :scaleLimit => 3,:timeStep => 36)
+  show(image)
+  image = scalarPlot(ifile,ofile,OFMT,varname,:selMode =>'halflog',:timeStep => 36)
+  show(image)
+end
+desc "test isIcon switch"
+task :test_isIcon do
+  ofile          = 'test_icon_plot'
+  varname        = 'T'
+  tstart = Time.new
+  image = scalarPlot(OCE_PLOT_TEST_FILE,ofile,OFMT,varname,:levIndex => 2)
+  tdiff = Time.new - tstart
+  show(image)
+  tstart = Time.new
+  image = scalarPlot(OCE_PLOT_TEST_FILE,ofile,OFMT,varname,:levIndex => 2,:isIcon => "True")
+  tdiffisIcon = Time.new - tstart
+  show(image)
+  assert(tdiffisIcon < tdiff,"setting isIcon seems to slow down the plotting")
 end
 desc "test setting of min/maxVar"
 task :test_minmax do
