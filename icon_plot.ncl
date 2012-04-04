@@ -3,105 +3,6 @@
 ; For scalar variables the underlying grid can be used instead of automatic
 ; contour lines. Both modes are capable of masking the input files before
 ; plotting, see the command line options below for details.
-;---------------------------------------------------------------
-; Basic Usage:
-;   ncl icon_plot.ncl 'iFile="path/file.nc"' 'varName="ELEV"' 'oFile="test"' timeStep=1 levIndex=1
-;
-; Select an special area of the globe with mapLLC (LowerLeftCorner) and mapURC (UpperRightCorner)   
-;   ncl icon_plot.ncl 'iFile="path/file.nc"' 'varName="W"'    'mapLLC=(/35.0, -8/)' 'mapURC=(/55, 8/)'
-;
-; Masking:
-;   ncl icon_plot.ncl 'iFile="oce_aqua_planet_O.R2B04L4_0001.nc"' 'varName="ELEV"' 'maskName="wet_c"' 
-;   ncl icon_plot.ncl 'iFile="oce.nc"' 'varName="W"' 'maskName="topo"' 'maskFile="icon_mask.nc"' 
-;
-; Vectorplot:
-;   ncl icon_plot.ncl 'iFile="oce.nc"' 'vecVars="u-veloc v-veloc"' 'oFile="test"'
-;
-; Vertical cross section:
-;   ncl icon_plot.ncl 'iFile="iconOutput.nc"' 'secLC=(/ 0.0,-90.0 /)' 'secRC=(/ 0.0,90.0/)' 'oType="png"' 'rStrg=""' 'tStrg="ICON coupled aqual planet"'
-;
-; Overlay plot (vectors over contour plot)
-;   ncl icon_plot.ncl  'iFile="iconOutput.nc"' 'varName="T"' 'vecVars="u-veloc v-veloc"'
-; same for current atmo input
-;   ncl icon_plot.ncl  'iFile="atm.nc"' 'varName="T"' 'vecVars="U V"'
-;
-; Atmosphere input plotted on the 3rd height level
-;   ncl icon_plot.ncl  'iFile="atm.nc"' 'varName="T"' 'atmLev="h"' levIndex=2
-; Same but on pressure level
-;   ncl icon_plot.ncl  'iFile="atm.nc"' 'varName="T"' 'atmLev="p"' levIndex=2
-; Options can be combined execept showGrid=True with vector and overlay plots
-;---------------------------------------------------------------
-;
-; Required Parameter:
-; iFile         : input file (based in ICON horizonal Grid or regular lonlat grid)
-; oFile         : plot file wihtout extension (it set by the output type: oType)
-; varName       : name of the variable to (contour) plot
-; vecVars       : space separated string of the 2 vector components u and v to
-;                 draw a vector plot, array notation is also possible:
-;                 vecVars='"u v"' or vecVars='(/"u","v"/)'
-;
-; Optional Parameter:
-; oType         : output graphics format (ps, eps, png, default: eps)
-; resolution    : resolution string whish is used for remapping the icon data
-;                 to regular grid (default: r90x45)
-; vecRefLength  : reference vector length (default: 8.0)
-; vecColByLen   : should vectors get coloured according to their lengths (default:False)
-; vecMinDist    : minimal distance between vectors (default:0.017)
-; streamLine    : display streamlines instead of vectors
-; timeStep      : no of timestep (default:0)
-; levIndex      : vertical level index (default:0)
-; isIcon        : input is horiz. ICON style netcdf data (default:false), 
-;                 manually set this to prevent from checks
-; minVar/maxVar : set the lower/upper limit of the labelbar
-; mapLLC        : (lon,lat) value array of the Lower Left Corner of the map
-; mapURC        : (lon,lat) ------- || ------- Upper Right Corner of the map
-;                  use -180 to 180 for longitude !
-; secLC, secRC  : start and and point of a vertical section (no default value)
-;                 section is plotted it secLC and secRC are present
-; showSecMap    : display the location of the vertical section in an additional map (default:true)
-; centerLon     : center longitute for satelite view (default:30.)
-; centerLat     : center latitude for satelite view (default:20.)
-; satDist       : satelite distance (default:20.0)
-; scaleFactor   : optional scale factor
-; selMode       : mode for level spacing of the plot:
-;                 halflog (uses half logarythmic levels,i.e. 1,2,5 per decade), 
-;                 manual (automatic linear spacing with usage of minVar and maxVar)
-;                 auto (default: let do ncl the spacing)
-; scaleLimit    : Limits the number of decades for levels in selMode-halflog
-; minVar/maxVar : min/maximal Value to plot for selMode=manual or halflog
-; numLevs       : set a number of labels for manual selMode only. NumCol=numLevs+2
-;                 (Not set directly, but used for computing the contour level spacing. default=10)
-; contLevs      : set individual contour levels (not yet)
-; mapType       : projection type (default: lonlat), other: ortho (not compatible with showGrid), NHps
-;                 and SHps (polar stereographic projections centered at the north and south pole respectively),
-;                 sat (satelite view, use option centerLat, centerLon and satDist)
-; mapLine       : (logical) draws continent lines on the plot (foreground/transparent)
-; maskName      : variable to mask with. maskName is expected NOT to have time dimension
-;                  'maskName="none"' is same as default (no mask variable)
-; maskFile      : optional Filename of the mask variable maskName
-;                  it's only taken into account, if maskName is given
-; lonCo/latCo   : default coordinate variables (default: clon/clat)
-; gridFile      : use the given file for reading the coordintes (comming from lonCo and latCo)
-; lStrg         : left string
-; rStrg         : right string
-; tStrg         : title string
-; bStrg         : base string - default is prgr name and time stamp only
-; maxView       : (logical) maximize plot area on paper (not for buildbot -> convert to png)
-; colormap      : string for predefined colormaps of the plot (e.g. 'colormap="BlAqGrYeOrReVi200"')
-; showGrid      : display polygon lines with filled colors instead of contour plot
-; showNcd       : display NDC Grid to find Normalized Device Coordinates on the plot
-; k2c           : if True, perform Kelvin2Celsius shift (default:True)
-;
-; ATMOSPEHRE STUFF:
-; atmLev        : chooses vertical plot levels for atmosphere input (h: height,p:pressure,m:modellevel,default:p)
-;---------------------------------------------------------------
-; altLibDir     : Alternative directory for loading icon_plot_lib.ncl
-; cdo           : Path to an alternative cdo version
-;---------------------------------------------------------------
-; Authors       : Ralf Mueller (ralf.mueller@zmaw.de)
-;                 Stephan Lorenz (stephan.lorenz@zmaw.de)
-; VERSION       : r8012 (2012-01-26)
-;---------------------------------------------------------------
 
  load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
  load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
@@ -126,6 +27,109 @@
 ;--- end config ---------------------------------------------------------------
 ;===============================================================
 ;----- MAIN PROGRAM --------------------------------------------
+  if (isvar("help")) then
+    dq = str_get_dq()
+    print(";---------------------------------------------------------------")
+    print("; Basic Usage:")
+    print(";   ncl icon_plot.ncl 'iFile=" + dq + "path/file.nc" + dq + "' 'varName=" + dq + "ELEV" + dq + "' 'oFile=" + dq + "test" + dq + "' timeStep=1 levIndex=1")
+    print(";")
+    print("; Select an special area of the globe with mapLLC (LowerLeftCorner) and mapURC (UpperRightCorner)   ")
+    print(";   ncl icon_plot.ncl 'iFile=" + dq + "path/file.nc" + dq + "' 'varName=" + dq + "W" + dq + "'    'mapLLC=(/35.0, -8/)' 'mapURC=(/55, 8/)'")
+    print(";")
+    print("; Masking:")
+    print(";   ncl icon_plot.ncl 'iFile=" + dq + "oce_aqua_planet_O.R2B04L4_0001.nc" + dq + "' 'varName=" + dq + "ELEV" + dq + "' 'maskName=" + dq + "wet_c" + dq + "' ")
+    print(";   ncl icon_plot.ncl 'iFile=" + dq + "oce.nc" + dq + "' 'varName=" + dq + "W" + dq + "' 'maskName=" + dq + "topo" + dq + "' 'maskFile=" + dq + "icon_mask.nc" + dq + "' ")
+    print(";")
+    print("; Vectorplot:")
+    print(";   ncl icon_plot.ncl 'iFile=" + dq + "oce.nc" + dq + "' 'vecVars=" + dq + "u-veloc v-veloc" + dq + "' 'oFile=" + dq + "test" + dq + "'")
+    print(";")
+    print("; Vertical cross section:")
+    print(";   ncl icon_plot.ncl 'iFile=" + dq + "iconOutput.nc" + dq + "' 'secLC=(/ 0.0,-90.0 /)' 'secRC=(/ 0.0,90.0/)' 'oType=" + dq + "png" + dq + "' 'rStrg=" + dq + "" + dq + "' 'tStrg=" + dq + "ICON coupled aqual planet" + dq + "'")
+    print(";")
+    print("; Overlay plot (vectors over contour plot)")
+    print(";   ncl icon_plot.ncl  'iFile=" + dq + "iconOutput.nc" + dq + "' 'varName=" + dq + "T" + dq + "' 'vecVars=" + dq + "u-veloc v-veloc" + dq + "'")
+    print("; same for current atmo input")
+    print(";   ncl icon_plot.ncl  'iFile=" + dq + "atm.nc" + dq + "' 'varName=" + dq + "T" + dq + "' 'vecVars=" + dq + "U V" + dq + "'")
+    print(";")
+    print("; Atmosphere input plotted on the 3rd height level")
+    print(";   ncl icon_plot.ncl  'iFile=" + dq + "atm.nc" + dq + "' 'varName=" + dq + "T" + dq + "' 'atmLev=" + dq + "h" + dq + "' levIndex=2")
+    print("; Same but on pressure level")
+    print(";   ncl icon_plot.ncl  'iFile=" + dq + "atm.nc" + dq + "' 'varName=" + dq + "T" + dq + "' 'atmLev=" + dq + "p" + dq + "' levIndex=2")
+    print("; Options can be combined execept showGrid=True with vector and overlay plots")
+    print(";---------------------------------------------------------------")
+    print(";")
+    print("; Required Parameter:")
+    print("; iFile         : input file (based in ICON horizonal Grid or regular lonlat grid)")
+    print("; oFile         : plot file wihtout extension (it set by the output type: oType)")
+    print("; varName       : name of the variable to (contour) plot")
+    print("; vecVars       : space separated string of the 2 vector components u and v to")
+    print(";                 draw a vector plot, array notation is also possible:")
+    print(";                 vecVars='" + dq + "u v" + dq + "' or vecVars='(/" + dq + "u" + dq + "," + dq + "v" + dq + "/)'")
+    print(";")
+    print("; Optional Parameter:")
+    print("; oType         : output graphics format (ps, eps, png, default: eps)")
+    print("; resolution    : resolution string whish is used for remapping the icon data")
+    print(";                 to regular grid (default: r90x45)")
+    print("; vecRefLength  : reference vector length (default: 8.0)")
+    print("; vecColByLen   : should vectors get coloured according to their lengths (default:False)")
+    print("; vecMinDist    : minimal distance between vectors (default:0.017)")
+    print("; streamLine    : display streamlines instead of vectors")
+    print("; timeStep      : no of timestep (default:0)")
+    print("; levIndex      : vertical level index (default:0)")
+    print("; isIcon        : input is horiz. ICON style netcdf data (default:false), ")
+    print(";                 manually set this to prevent from checks")
+    print("; minVar/maxVar : set the lower/upper limit of the labelbar")
+    print("; mapLLC        : (lon,lat) value array of the Lower Left Corner of the map")
+    print("; mapURC        : (lon,lat) ------- || ------- Upper Right Corner of the map")
+    print(";                  use -180 to 180 for longitude !")
+    print("; secLC, secRC  : start and and point of a vertical section (no default value)")
+    print(";                 section is plotted it secLC and secRC are present")
+    print("; showSecMap    : display the location of the vertical section in an additional map (default:true)")
+    print("; centerLon     : center longitute for satelite view (default:30.)")
+    print("; centerLat     : center latitude for satelite view (default:20.)")
+    print("; satDist       : satelite distance (default:20.0)")
+    print("; scaleFactor   : optional scale factor")
+    print("; selMode       : mode for level spacing of the plot:")
+    print(";                 halflog (uses half logarythmic levels,i.e. 1,2,5 per decade), ")
+    print(";                 manual (automatic linear spacing with usage of minVar and maxVar)")
+    print(";                 auto (default: let do ncl the spacing)")
+    print("; scaleLimit    : Limits the number of decades for levels in selMode-halflog")
+    print("; minVar/maxVar : min/maximal Value to plot for selMode=manual or halflog")
+    print("; numLevs       : set a number of labels for manual selMode only. NumCol=numLevs+2")
+    print(";                 (Not set directly, but used for computing the contour level spacing. default=10)")
+    print("; contLevs      : set individual contour levels (not yet)")
+    print("; mapType       : projection type (default: lonlat), other: ortho (not compatible with showGrid), NHps")
+    print(";                 and SHps (polar stereographic projections centered at the north and south pole respectively),")
+    print(";                 sat (satelite view, use option centerLat, centerLon and satDist)")
+    print("; mapLine       : (logical) draws continent lines on the plot (foreground/transparent)")
+    print("; maskName      : variable to mask with. maskName is expected NOT to have time dimension")
+    print(";                  'maskName=" + dq + "none" + dq + "' is same as default (no mask variable)")
+    print("; maskFile      : optional Filename of the mask variable maskName")
+    print(";                  it's only taken into account, if maskName is given")
+    print("; lonCo/latCo   : default coordinate variables (default: clon/clat)")
+    print("; gridFile      : use the given file for reading the coordintes (comming from lonCo and latCo)")
+    print("; lStrg         : left string")
+    print("; rStrg         : right string")
+    print("; tStrg         : title string")
+    print("; bStrg         : base string - default is prgr name and time stamp only")
+    print("; maxView       : (logical) maximize plot area on paper (not for buildbot -> convert to png)")
+    print("; colormap      : string for predefined colormaps of the plot (e.g. 'colormap=" + dq + "BlAqGrYeOrReVi200" + dq + "')")
+    print("; showGrid      : display polygon lines with filled colors instead of contour plot")
+    print("; showNcd       : display NDC Grid to find Normalized Device Coordinates on the plot")
+    print("; k2c           : if True, perform Kelvin2Celsius shift (default:True)")
+    print(";")
+    print("; ATMOSPEHRE STUFF:")
+    print("; atmLev        : chooses vertical plot levels for atmosphere input (h: height,p:pressure,m:modellevel,default:p)")
+    print(";---------------------------------------------------------------")
+    print("; altLibDir     : Alternative directory for loading icon_plot_lib.ncl")
+    print("; cdo           : Path to an alternative cdo version")
+    print(";---------------------------------------------------------------")
+    print("; Authors       : Ralf Mueller (ralf.mueller@zmaw.de)")
+    print(";                 Stephan Lorenz (stephan.lorenz@zmaw.de)")
+    print("; VERSION       : r8012 (2012-01-26)")
+    print(";---------------------------------------------------------------")
+    exit()
+  end if
 ;- options handling + checking
   plotMode  = PLOTMODE
 
