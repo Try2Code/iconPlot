@@ -34,12 +34,19 @@ def iconPlot(ifile,ofile,otype,varname,vartype='scalar',opts=[])
     warn "Input file #{ifile} dows NOT exist!"
     exit
   end
-  varIdent = (vartype == 'scalar') ? "-varName=#{varname}" : "-vecVars=#{varname.split(' ').join(',')}"
+  varIdent = case vartype
+             when 'scalar'  then "-varName=#{varname}"
+             when 'vector'  then "-vecVars=#{varname.split(' ').join(',')}"
+             when 'scatter' then "-plotMode=scatter -vecVars#{varname.split(' ').join(',')}"
+             else
+               warn "Wrong variable type #{vartype}"
+               exit
+             end
 
   opts[:tStrg] =ofile
 
   cmd   ="./contrib/nclsh #{SRC[0]} "
-  cmd << " -altLibDir=#{libdir} #{varIdent} -iFile=#{ifile} -oFile=#{ofile} -oType=#{otype} cdo=#{CDO}"
+  cmd << " -altLibDir=#{libdir} #{varIdent} -iFile=#{ifile} -oFile=#{ofile} -oType=#{otype} cdo=#{CDO} -isIcon -DEBUG"
   opts.each {|k,v| cmd << " -"<< [k,v].join('=') }
   puts cmd
   sh cmd
@@ -134,7 +141,7 @@ desc "x11 test"
 task :test_x11 do
   ofile          = 'test_x11'
   varname        = 'T'
-  scalarPlot(ATM_PLOT_TEST_FILE,ofile,OFMT,varname,:oType => 'x11')
+  scalarPlot(OCE_PLOT_TEST_FILE,ofile,OFMT,varname,:oType => 'x11')
 end
 desc "perform halflog plot"
 task :test_halflog do
@@ -415,6 +422,13 @@ task :test_reg_sections do
   show(*images)
 end
 
+desc "Scatter plots"
+task :test_scatter do
+  ifile = OCE_REGPLOT_TEST_FILE
+  ofile = "test_scatter"
+  image = iconPlot(ifile,ofile,OFMT,'T S','scatter')
+  show(image)
+end
 
 # -----------------------------------------------------------------------------
 # uncategoriesed tests on
