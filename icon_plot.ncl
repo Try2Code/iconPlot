@@ -131,8 +131,6 @@
     exit()
   end if
 ;- options handling + checking
-  plotMode  = PLOTMODE
-
   wcStrt    = systemfunc("date")
 
   print("+++++ "+wcStrt)
@@ -175,6 +173,7 @@
   if (.not. isvar("maxView"))     maxView     = False           end if
   if (.not. isvar("scaleLimit"))  scaleLimit  = 2               end if
   if (.not. isvar("selMode"))     selMode     = "auto"          end if
+  if (.not. isvar("plotMode"))    plotMode   = "scalar"         end if
   if (.not. isvar("timeStep"))    timeStep    = 0               end if
   if (.not. isvar("levIndex"))    levIndex    = 0               end if
   if (.not. isvar("scaleFactor")) scaleFactor = 1               end if
@@ -294,10 +293,16 @@
         exit
       end if
     end if
-    plotMode = "vector"
-    if (isvar("varName")) plotMode = "overlay" end if
+    if (plotMode .ne. "scatter") then
+      plotMode = "vector"
+      if (isvar("varName")) plotMode = "overlay" end if
+    end if
   else
-    plotMode = "scalar"
+    if (isvar("scatVars")) then
+      plotMode = "scatter"
+    else
+      plotMode = "scalar"
+    end if
   end if
 
   if ( (isvar("secLC").or.isvar("secRC")).ne.(isvar("secLC").and.isvar("secRC"))) then
@@ -447,7 +452,7 @@
     scaleVar(uvar,scaleFactor)
     scaleVar(vvar,scaleFactor)
 
-    if ( useMask .and. plotMode.eq."vector") then
+    if ( useMask ) then
       uvar = mask(uvar,maskVar,1)
       vvar = mask(vvar,maskVar,1)
     end if
@@ -457,6 +462,18 @@
     if(.not. isvar("minVar")) minVar = min(velocity) end if
     if(.not. isvar("maxVar")) maxVar = max(velocity) end if
     checkMinMaxVar(minVar,maxVar)
+  end if
+  if (plotMode.eq."scatter") then; scatter plot ================================
+    xvarname = vecVars(0)
+    yvarname = vecVars(1)
+    xvar = selField(xvarname,File,timeStep,levIndex,horizonalGridType)
+    yvar = selField(yvarname,File,timeStep,levIndex,horizonalGridType)
+    scaleVar(xvar,scaleFactor)
+    scaleVar(yvar,scaleFactor)
+    if ( useMask ) then
+      xvar = mask(xvar,maskVar,1)
+      yvar = mask(yvar,maskVar,1)
+    end if
   end if
   if (plotMode.eq."section") then; section mode ================================
     print(rFile)
@@ -584,6 +601,9 @@
       plotGrid(wks,plot,var,x,bounds,File,ResC,DEBUG)
     end if
   end if
+  if (plotMode.eq."scatter") then
+    plot = gsn_csm_xy(wks,xvar,yvar,ResC)
+  end if
   if (plotMode.eq."section") then
 
     if (showSecMap) then
@@ -625,6 +645,9 @@
      draw(plot(1))
    end if
   end if
+
+  if (DEBUG) print(ResC) end if
+
   frame(wks)
 ;
 ; vim:list
