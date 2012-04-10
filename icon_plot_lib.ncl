@@ -21,7 +21,6 @@
   DEFAULTLON = "clon"
   DEFAULTLAT = "clat"
   RAD2DEG    = 45./atan(1.)
-  PLOTMODE   = "scalar"
   ABORTMSG   = "Abort Script."
   NUMLEVS    = 10
   CDO        = "cdo"
@@ -811,7 +810,7 @@ end
 ;---------------------------------------------------------------
 ; Create a default NCL resource
 undef("setDefaultResource")
-procedure setDefaultResource(resource,vertiallabelbar)
+procedure setDefaultResource(resource,verticallabelbar)
 begin
   resource@gsnMaximize          = False
 ; resource@gsnPaperOrientation  = "landscape"  ; turns plot on paper
@@ -820,7 +819,7 @@ begin
   resource@gsnSpreadColors      = True
 
   resource@cnFillOn             = True   ;  writes labelbar, no contour labels
-  resource@cnLinesOn            = True
+  resource@cnLinesOn            = False
   resource@cnInfoLabelOn        = False
 
   FontHeight0               = 0.012
@@ -839,7 +838,7 @@ begin
   resource@cnFillOn               = True
 
   resource@lbLabelBarOn             = True
-  if (vertiallabelbar .eq. True) then
+  if (verticallabelbar .eq. True) then
     resource@lbOrientation            = "vertical"
   else
     resource@pmLabelBarHeightF        = 0.12
@@ -849,7 +848,8 @@ begin
   resource@lbLabelAutoStride        = True
   resource@lbLabelFontHeightF       = FontHeight1     ;   color bar labels
 
-  resource@cnFillMode           = "rasterfill"
+  resource@cnFillMode           = "RasterFill"
+  ;resource@cnFillMode           = "CellFill"
   resource@cnRasterSmoothingOn  = True
   resource@mpGreatCircleLinesOn = True
   resource@stMinArrowSpacingF   = 0.001
