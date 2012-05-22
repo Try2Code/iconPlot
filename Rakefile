@@ -46,6 +46,9 @@ end
 def showVector(*args)
   @plotter.showVector(*args)
 end
+def del(*args)
+  @plotter.del(*args)
+end
 
 def grepTests(pattern)
   tests = Rake::Task.tasks.find_all {|t| t.name =~ pattern}
@@ -316,10 +319,10 @@ COMPARISON.each {|itype,ifile|
 desc "Plot dat from a regular grid"
 task :test_reg_3d do
   ofile = 'test_oce_reg_3d'
-  scalarPlot(OCE_REGPLOT_TEST_FILE,ofile,OFMT,'T')
+  scalarPlot(OCE_REGPLOT_TEST_FILE,ofile,'T')
   show(ofile+'.'+OFMT)
   ofile = 'test_atm_reg_3d'
-  scalarPlot(ATM_REGPLOT_TEST_FILE,ofile,OFMT,'T')
+  scalarPlot(ATM_REGPLOT_TEST_FILE,ofile,'T')
   show(ofile+'.'+OFMT)
 end
 # vectors
@@ -390,7 +393,7 @@ desc "Scatter plots"
 task :test_scatter do
   ifile = OCE_REGPLOT_TEST_FILE
   ofile = "test_scatter"
-  image = iconPlot(ifile,ofile,OFMT,'T S','scatter')
+  image = iconPlot(ifile,ofile,'T S','scatter')
   show(image)
 end
 
