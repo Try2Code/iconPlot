@@ -1,0 +1,20 @@
+require 'rubygems'
+$:.unshift File.join(File.dirname(__FILE__),"..","lib")
+
+spec = Gem::Specification.new do |s|
+  s.name              = "iconPlot"
+  s.version           = '0.0.1'
+  s.platform          = Gem::Platform::RUBY
+  s.files             = ["lib/iconPlot.rb"] + ["gemspec"] + ["contrib/nclsh"] + Dir.glob("lib/*ncl")
+  s.test_file         = "test/test_iconPlot.rb"
+  s.description       = "Plot with ncl via Ruby"
+  s.summary           = "Plot with ncl via Ruby"
+  s.author            = "Ralf Mueller"
+  s.email             = "stark.dreamdetective@gmail.com"
+  s.homepage          = "https://github.com/Try2Code/iconPlot"
+#  s.extra_rdoc_files  = ["README.rdoc","COPYING"]
+  s.license           = "GPLv2"
+  s.required_ruby_version = ">= 1.9"
+end
+
+# vim:ft=ruby
