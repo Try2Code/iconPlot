@@ -1,24 +1,25 @@
 require 'fileutils'
 
 class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug)
-  Defaults = {
-    :caller  => "#{ENV['HOME']}/local/bin/nclsh",
-    :plotter => "#{ENV['HOME']}/src/git/icon/scripts/postprocessing/tools/icon_plot.ncl",
-    :libdir  => "#{ENV['HOME']}/src/git/icon/scripts/postprocessing/tools",
-    :otype   => 'png',
-    :display => 'sxiv',
-    :cdo     => ENV['CDO'].nil? ? 'cdo' : ENV['CDO'],
-    :debug   => false
-  }
-
   def IconPlot.gemPath
     gemSearcher = Gem::GemPathSearcher.new
-    gemspec = gemSearcher.find('iconPlot')
+    gemspec     = gemSearcher.find('iconPlot')
     gemspec.gem_dir
   end
   def initialize(*args)
     super(*args)
-    self.each_pair {|k,v| self[k] = Defaults[k] if v.nil? }
+
+    gempath = IconPlot.gemPath
+    defaults = {
+      :caller  => [gempath,'contrib','nclsh'].join(File::SEPARATOR),
+      :plotter => [gempath,'lib','icon_plot.ncl'].join(File::SEPARATOR),
+      :libdir  => [gempath,'lib'].join(File::SEPARATOR),
+      :otype   => 'png',
+      :display => 'sxiv',
+      :cdo     => ENV['CDO'].nil? ? 'cdo' : ENV['CDO'],
+      :debug   => false
+    }
+    self.each_pair {|k,v| self[k] = defaults[k] if v.nil? }
   end
   def plot(ifile,ofile,varname,vartype='scalar',opts=[])
     unless File.exists?(ifile)
