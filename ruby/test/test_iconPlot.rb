@@ -12,12 +12,7 @@ class TestIconPlot < Test::Unit::TestCase
   ATM_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/atm.nc'
   OCE_REGPLOT_TEST_FILE = ENV['HOME']+'/data/icon/regular_oce.nc' #remapnn,r180x90
   ATM_REGPLOT_TEST_FILE = ENV['HOME']+'/data/icon/regular_atm.nc' #remapnn,n63 (no sections), r180x90 (with sections)
-  COMPARISON            = {:oce => OCE_PLOT_TEST_FILE, :atm => ATM_PLOT_TEST_FILE}
-  COMPARISON_REG        = {:oce => OCE_REGPLOT_TEST_FILE, :atm => ATM_REGPLOT_TEST_FILE}
-  COMPARISON            = {:oce => OCE_PLOT_TEST_FILE, :atm => ATM_PLOT_TEST_FILE}
-  COMPARISON_REG        = {:oce => OCE_REGPLOT_TEST_FILE, :atm => ATM_REGPLOT_TEST_FILE}
   OFMT                  = 'png'
-  DEFAULT_VARNAME       = 'T'
   PLOT_CMD              = 'sxiv'
   CDO                   = ENV['CDO'].nil? ? 'cdo' : ENV['CDO']
   if 'thingol' == `hostname`.chomp
@@ -28,5 +23,11 @@ class TestIconPlot < Test::Unit::TestCase
       ip.show(ip.scalarPlot(OCE_PLOT_TEST_FILE,ofile,"T",:levIndex => 2))
       ip.show(ip.vectorPlot(OCE_PLOT_TEST_FILE,ofile,"u-veloc v-veloc",:levIndex => 2))
     end
+  end
+  def test_defaults
+    p = IconPlot.new
+    assert_includes(p.caller.split(File::SEPARATOR),'gems')
+    assert_includes(p.plotter.split(File::SEPARATOR),'gems')
+    assert_includes(p.libdir.split(File::SEPARATOR),'gems')
   end
 end
