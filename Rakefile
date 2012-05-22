@@ -2,6 +2,8 @@ require 'rake/clean'
 require 'thread'
 require 'pp'
 require 'cdo'
+require 'iconPlot'
+require 'jobqueue'
 require 'test/unit/assertions'
 include Test::Unit::Assertions
 
@@ -27,51 +29,24 @@ CLEAN.add(*Dir.glob(["test_*.png","remapnn_*nc","zonmean_*.nc"]))
 
 @lock = Mutex.new
 
-# some helper methods for ease calling the icon plot scripts
-def iconPlot(ifile,ofile,otype,varname,vartype='scalar',opts=[])
-  libdir = FileUtils.pwd
-  unless File.exists?(ifile)
-    warn "Input file #{ifile} dows NOT exist!"
-    exit
-  end
-  varIdent = case vartype
-             when 'scalar'  then "-varName=#{varname}"
-             when 'vector'  then "-vecVars=#{varname.split(' ').join(',')}"
-             when 'scatter' then "-plotMode=scatter -vecVars#{varname.split(' ').join(',')}"
-             else
-               warn "Wrong variable type #{vartype}"
-               exit
-             end
+@plotter = IconPlot.new("contrib/nclsh","icon_plot.ncl",".",nil,nil,nil,true)
 
-  opts[:tStrg] =ofile
-
-  cmd   ="./contrib/nclsh #{SRC[0]} "
-  cmd << " -altLibDir=#{libdir} #{varIdent} -iFile=#{ifile} -oFile=#{ofile} -oType=#{otype} cdo=#{CDO} -isIcon -DEBUG"
-  opts.each {|k,v| cmd << " -"<< [k,v].join('=') }
-  puts cmd
-  sh cmd
-
-  return "#{ofile}.#{otype}"
+def show(*args)
+  @plotter.show(*args)
 end
-def scalarPlot(ifile,ofile,otype,varname,opts={})
-  iconPlot(ifile,ofile,otype,varname,'scalar',opts)
+def iconPlot(*args)
+  @plotter.plot(*args)
 end
-def vectorPlot(ifile,ofile,otype,varname,opts={})
-  iconPlot(ifile,ofile,otype,varname,'vector',opts)
+def defaultPlot(*args)
+  @plotter.defaultPlot(*args)
+end
+def scalarPlot(*args)
+  @plotter.scalarPlot(*args)
+end
+def showVector(*args)
+  @plotter.showVector(*args)
 end
 
-def del(file)
-  FileUtils.rm(file) if File.exists?(file)
-end
-def show(*files)
-  files.flatten.each {|file| sh "#{PLOT_CMD} #{file} &" }
-end
-def defaultPlot(ifile,ofile,opts={})
-  show(scalarPlot(ifile,ofile,OFMT,DEFAULT_VARNAME,opts))
-end
-def showVector(ifile,ofile,vars,opts={})
-  show(vectorPlot(ifile,ofile,OFMT,vars,opts))
-end
 def grepTests(pattern)
   tests = Rake::Task.tasks.find_all {|t| t.name =~ pattern}
 end
@@ -104,7 +79,7 @@ desc "perform simple oce plot from 3d var"
 task :test_oce_3d do
   ofile          = 'test_icon_plot'
   varname        = 'T'
-  scalarPlot(OCE_PLOT_TEST_FILE,ofile,OFMT,varname,:levIndex => 2)
+  scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:levIndex => 2)
   ofile          += '.' + OFMT
   show(ofile)
 end
@@ -113,35 +88,35 @@ task :test_oce_2d do
   ofile          = 'test_icon_plot.' + OFMT
   del(ofile)
   varname        = 'ELEV'
-  scalarPlot(OCE_PLOT_TEST_FILE,ofile,OFMT,varname)
+  scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname)
   show(ofile)
 end
 desc "select regions"
 task :test_mapselect do
   ofile          = 'test_mapSelect'
   varname        = 'ELEV'
-  show(scalarPlot(OCE_PLOT_TEST_FILE,ofile,OFMT,varname,:mapLLC => '-100.0,-15.0' ,:mapURC => '35.0,65.0'))
-  show(scalarPlot(OCE_PLOT_TEST_FILE,ofile,OFMT,varname,:mapLLC => '-100.0,-15.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c'))
+  show(scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:mapLLC => '-100.0,-15.0' ,:mapURC => '35.0,65.0'))
+  show(scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:mapLLC => '-100.0,-15.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c'))
 end
 desc "masking with ocean's wet_c"
 task :test_mask do
   ofile          = 'test_mask'
   varname        = 'ELEV'
-  show(scalarPlot(OCE_PLOT_TEST_FILE,ofile,OFMT,varname,:maskName => 'wet_c'))
+  show(scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:maskName => 'wet_c'))
 end
 desc "perform simple atm plot from 3d var"
 task :test_atm_3d do
   ofile          = 'test_icon_plot.' + OFMT
   del(ofile)
   varname        = 'T'
-  scalarPlot(ATM_PLOT_TEST_FILE,ofile,OFMT,varname)
+  scalarPlot(ATM_PLOT_TEST_FILE,ofile,varname)
   show(ofile)
 end
 desc "x11 test"
 task :test_x11 do
   ofile          = 'test_x11'
   varname        = 'T'
-  scalarPlot(OCE_PLOT_TEST_FILE,ofile,OFMT,varname,:oType => 'x11')
+  scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:oType => 'x11')
 end
 desc "perform halflog plot"
 task :test_halflog do
@@ -149,15 +124,15 @@ task :test_halflog do
   varname        = 'T'
   Cdo.debug=true
   tfile = Cdo.mulc(100,:in => "-subc,5 -abs -selname,T #{OCE_PLOT_TEST_FILE}")
-  image = scalarPlot(tfile,ofile,OFMT,varname,:selMode =>'halflog',:minVar =>-1, :maxVar => 1000, :atmLe => 'm',
+  image = scalarPlot(tfile,ofile,varname,:selMode =>'halflog',:minVar =>-1, :maxVar => 1000, :atmLe => 'm',
                                                 :mapLLC => '-10.0,-80.0' ,:mapURC =>'100.0,-10.0')
   show(image)
 
   varname='W'
   ifile = "#{ENV['HOME']}/data/icon/issues/2219/OCE_BASE_4cpu_iconR2B04-ocean_etopo40_planet_0001.nc"
-  image = scalarPlot(ifile,ofile,OFMT,varname,:selMode =>'halflog',:minVar =>-0.5, :maxVar => 0.5, :scaleLimit => 3,:timeStep => 36)
+  image = scalarPlot(ifile,ofile,varname,:selMode =>'halflog',:minVar =>-0.5, :maxVar => 0.5, :scaleLimit => 3,:timeStep => 36)
   show(image)
-  image = scalarPlot(ifile,ofile,OFMT,varname,:selMode =>'halflog',:timeStep => 36)
+  image = scalarPlot(ifile,ofile,varname,:selMode =>'halflog',:timeStep => 36)
   show(image)
 end
 desc "test isIcon switch"
@@ -165,11 +140,11 @@ task :test_isIcon do
   ofile          = 'test_icon_plot'
   varname        = 'T'
   tstart = Time.new
-  image = scalarPlot(OCE_PLOT_TEST_FILE,ofile,OFMT,varname,:levIndex => 2)
+  image = scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:levIndex => 2)
   tdiff = Time.new - tstart
   show(image)
   tstart = Time.new
-  image = scalarPlot(OCE_PLOT_TEST_FILE,ofile,OFMT,varname,:levIndex => 2,:isIcon => "True")
+  image = scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:levIndex => 2,:isIcon => "True")
   tdiffisIcon = Time.new - tstart
   show(image)
   assert(tdiffisIcon < tdiff,"setting isIcon seems to slow down the plotting")
@@ -177,8 +152,8 @@ end
 desc "test setting of min/maxVar"
 task :test_minmax do
   images = []
-  images << scalarPlot(OCE_PLOT_TEST_FILE,'test_minmax_3d',OFMT,'T',:levIndex => 2,:maxVar => 16, :minVar => 10)
-  images << scalarPlot(OCE_PLOT_TEST_FILE,'test_minmax_2d',OFMT,'ELEV', :maxVar => 0.4, :minVar => -0.4)
+  images << scalarPlot(OCE_PLOT_TEST_FILE,'test_minmax_3d','T',:levIndex => 2,:maxVar => 16, :minVar => 10)
+  images << scalarPlot(OCE_PLOT_TEST_FILE,'test_minmax_2d','ELEV', :maxVar => 0.4, :minVar => -0.4)
   images.each {|image| show(image)}
 end
 desc "perform simple atm plot from 2d var"
@@ -186,7 +161,7 @@ task :test_atm_2d do
   ofile          = 'test_icon_plot.' + OFMT
   del(ofile)
   varname        = 'SKT'
-  scalarPlot(ATM_PLOT_TEST_FILE,ofile,OFMT,varname)
+  scalarPlot(ATM_PLOT_TEST_FILE,ofile,varname)
   show(ofile)
 end
 
@@ -199,7 +174,7 @@ task :test_plotlevels_oce do
   (0...maxlev).each {|lev|
     otag          = "test_icon_oce_plotlevel_#{lev}"
     threads << Thread.new(otag,varname,lev) {|ofile,varname,lev|
-      ofile = scalarPlot(OCE_PLOT_TEST_FILE,otag,OFMT,varname,:levIndex =>lev)
+      ofile = scalarPlot(OCE_PLOT_TEST_FILE,otag,varname,:levIndex =>lev)
       @lock.synchronize{ images << ofile }
     }
   }
@@ -214,7 +189,7 @@ task :test_plotlevels_atm do
   (0...maxlev).each {|lev|
     otag          = "test_icon_atm_plotlevel_#{lev}"
     threads << Thread.new(otag,varname,lev) {|ofile,varname,lev|
-      ofile = scalarPlot(ATM_PLOT_TEST_FILE,otag,OFMT,varname,:levIndex => lev,:atmLev =>'m')
+      ofile = scalarPlot(ATM_PLOT_TEST_FILE,otag,varname,:levIndex => lev,:atmLev =>'m')
       @lock.synchronize{ images << ofile }
     }
   }
@@ -224,19 +199,6 @@ end
 
 # vertical cross sections
 desc "Try to plot vertical section of ocean model output"
-task :test_section_oce do
-  images = []
-  secopts = {
-    :secLC => '0,80',
-    :secRC => '0,-80',
-    :showSecMap => "True",
-    :secPoints => 100
-  }
-  ofile = "test_section_oce"
-  scalarPlot(OCE_PLOT_TEST_FILE,ofile,OFMT,DEFAULT_VARNAME,secopts)
-  ofile += ".#{OFMT}"
-  show(ofile)
-end
 desc "plot section of ocean and atmosphere (height, pressure and model level)"
 task :test_sections do
   images = []
@@ -249,11 +211,11 @@ task :test_sections do
   COMPARISON.each {|itype,ifile|
     ofile = "test_section_#{itype.to_s}"
     if itype == :atm
-      scalarPlot(ifile,ofile+'h',OFMT,DEFAULT_VARNAME,secopts.merge(:atmLev => "h",:tStrg => "atm: height levels"));images << ofile+'h'
-      scalarPlot(ifile,ofile+'p',OFMT,DEFAULT_VARNAME,secopts.merge(:atmLev => "p",:tStrg => "atm: pressure levels"));images << ofile+'p'
-      scalarPlot(ifile,ofile+'m',OFMT,DEFAULT_VARNAME,secopts.merge(:atmLev => "m",:tStrg => "atm: model levels"));images << ofile+'m'
+      scalarPlot(ifile,ofile+'h',DEFAULT_VARNAME,secopts.merge(:atmLev => "h",:tStrg => "atm: height levels"));images << ofile+'h'
+      scalarPlot(ifile,ofile+'p',DEFAULT_VARNAME,secopts.merge(:atmLev => "p",:tStrg => "atm: pressure levels"));images << ofile+'p'
+      scalarPlot(ifile,ofile+'m',DEFAULT_VARNAME,secopts.merge(:atmLev => "m",:tStrg => "atm: model levels"));images << ofile+'m'
     else
-      scalarPlot(ifile,ofile,OFMT,DEFAULT_VARNAME,secopts.merge(:tStrg => 'oce: ocean depth')); images << ofile
+      scalarPlot(ifile,ofile,DEFAULT_VARNAME,secopts.merge(:tStrg => 'oce: ocean depth')); images << ofile
     end
   }
   images.map! {|i| i+= ".#{OFMT}"}
@@ -263,22 +225,24 @@ end
 # vector plots from ICON input
 desc "plot vectors of ocean input"
 task :test_vector_oce do
-  showVector(OCE_PLOT_TEST_FILE,'test_vector_oce','u-veloc v-veloc')
-  showVector(OCE_PLOT_TEST_FILE,'test_vector_oce','u-veloc v-veloc',:mapType     => 'ortho')
-  showVector(OCE_PLOT_TEST_FILE,'test_stream_oce','u-veloc v-veloc',:streamLine  => 'True')
-  showVector(OCE_PLOT_TEST_FILE,'test_stream_oce','u-veloc v-veloc',:streamLine  => 'True',:mapType => 'ortho')
-  showVector(OCE_PLOT_TEST_FILE,'test_vector_oce','u-veloc v-veloc',:vecColByLen => 'True')
-  showVector(OCE_PLOT_TEST_FILE,'test_stream_oce','u-veloc v-veloc',:streamLine  => 'True',:vecColByLen =>'True')
+  jq = JobQueue.new
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce','u-veloc v-veloc') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce','u-veloc v-veloc',:mapType     => 'ortho') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce','u-veloc v-veloc',:streamLine  => 'True') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce','u-veloc v-veloc',:streamLine  => 'True',:mapType => 'ortho') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce','u-veloc v-veloc',:vecColByLen => 'True') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce','u-veloc v-veloc',:streamLine  => 'True',:vecColByLen =>'True') }
+  jq.run
 end
 desc "plot vectors of atm input"
 task :test_vector_atm do
   ofile = 'test_vector_atm'
   images  =  []
 
-  images << vectorPlot(ATM_PLOT_TEST_FILE,ofile+'0',OFMT,'U V',        :vecRefLength => 0.01)
-  images << vectorPlot(ATM_PLOT_TEST_FILE,ofile+'1',OFMT,'U V',        :vecRefLength => 0.01,:mapType => 'NHps')
-  images << vectorPlot(ATM_PLOT_TEST_FILE,ofile+'_stream_0',OFMT,'U V',:streamLine   => "True")
-  images << vectorPlot(ATM_PLOT_TEST_FILE,ofile+'_stream_1',OFMT,'U V',:streamLine   => "True",:mapType => 'NHps')
+  images << vectorPlot(ATM_PLOT_TEST_FILE,ofile+'0','U V',        :vecRefLength => 0.01)
+  images << vectorPlot(ATM_PLOT_TEST_FILE,ofile+'1','U V',        :vecRefLength => 0.01,:mapType => 'NHps')
+  images << vectorPlot(ATM_PLOT_TEST_FILE,ofile+'_stream_0','U V',:streamLine   => "True")
+  images << vectorPlot(ATM_PLOT_TEST_FILE,ofile+'_stream_1','U V',:streamLine   => "True",:mapType => 'NHps')
 
   pp images
   show(images)
@@ -318,7 +282,7 @@ COMPARISON.each {|itype,ifile|
   desc "overlay plot from 2d variable (#{itypeS})"
   task "test_overlay_2d_#{itypeS}".to_sym do
     ofile = "test_overlay_2d_#{itypeS}"
-    image = iconPlot(ifile,ofile,OFMT,var2d,'scalar',
+    image = iconPlot(ifile,ofile,var2d,'scalar',
                      :vecVars => vecvars,
                      :mapType => "ortho",
                      :atmLev => "m",
@@ -327,7 +291,7 @@ COMPARISON.each {|itype,ifile|
                      :vecRefLength => 0.04)
     show(image)
     ofile = "test_overlay_stream_2d_#{itypeS}"
-    image = iconPlot(ifile,ofile,OFMT,var2d,'scalar',
+    image = iconPlot(ifile,ofile,var2d,'scalar',
                      :vecVars => vecvars,
                      :mapType => "ortho",
                      :atmLev => "m",
@@ -397,7 +361,7 @@ task :test_reg_section_oce do
     :secPoints => 100
   }
   ofile = "test_reg_section_oce"
-  show(scalarPlot(OCE_REGPLOT_TEST_FILE,ofile,OFMT,DEFAULT_VARNAME,secopts))
+  show(scalarPlot(OCE_REGPLOT_TEST_FILE,ofile,DEFAULT_VARNAME,secopts))
 end
 desc "plot section of ocean and atmosphere (height, pressure and model level)"
 task :test_reg_sections do
@@ -411,11 +375,11 @@ task :test_reg_sections do
   COMPARISON_REG.each {|itype,ifile|
     ofile = "test_section_#{itype.to_s}"
     if itype == :atm
-      scalarPlot(ifile,ofile+'h',OFMT,DEFAULT_VARNAME,secopts.merge(:atmLev => "h"));images << ofile+'h'
-      scalarPlot(ifile,ofile+'p',OFMT,DEFAULT_VARNAME,secopts.merge(:atmLev => "p"));images << ofile+'p'
-      scalarPlot(ifile,ofile+'m',OFMT,DEFAULT_VARNAME,secopts.merge(:atmLev => "m"));images << ofile+'m'
+      scalarPlot(ifile,ofile+'h',DEFAULT_VARNAME,secopts.merge(:atmLev => "h"));images << ofile+'h'
+      scalarPlot(ifile,ofile+'p',DEFAULT_VARNAME,secopts.merge(:atmLev => "p"));images << ofile+'p'
+      scalarPlot(ifile,ofile+'m',DEFAULT_VARNAME,secopts.merge(:atmLev => "m"));images << ofile+'m'
     else
-      scalarPlot(ifile,ofile,OFMT,DEFAULT_VARNAME,secopts); images << ofile
+      scalarPlot(ifile,ofile,DEFAULT_VARNAME,secopts); images << ofile
     end
   }
   images.map! {|i| i+= ".#{OFMT}"}
