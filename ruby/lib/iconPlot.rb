@@ -21,18 +21,18 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
     }
     self.each_pair {|k,v| self[k] = defaults[k] if v.nil? }
   end
-  def plot(ifile,ofile,varname,vartype='scalar',opts=[])
+  def plot(ifile,ofile,varname,vartype='scalar',opts={})
     unless File.exists?(ifile)
       warn "Input file #{ifile} dows NOT exist!"
       exit
     end
-    varIdent = case vartype
+    varIdent = case vartype.to_s
                when 'scalar'  then "-varName=#{varname}"
                when 'vector'  then "-vecVars=#{varname.split(' ').join(',')}"
                when 'scatter' then "-plotMode=scatter -vecVars#{varname.split(' ').join(',')}"
                else
                  warn "Wrong variable type #{vartype}"
-                 exit
+                 raise ArgumentError
                end
 
     opts[:tStrg] =ofile
