@@ -16,6 +16,9 @@ or use nclsh from the contrib directory for easyer command line options
 
    nclsh icon_plot.ncl -altLibDir=.
 
+Note that a config file $HOME/.icon_plot.rc is read in if available. Any 
+commandline options can be set here. This is especially usefull for setting the altLibDir.
+
 == Requirements
 
 NCL 6.0 and CDO 1.5.x are required
