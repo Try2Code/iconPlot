@@ -447,12 +447,6 @@ task :test_colors do
                                    :colormap => colormap,:mapType => 'ortho')
 end
 #==============================================================================
-desc "module methods test"
-task :mtest do
-  Module.defaultPlot(OCE_PLOT_TEST_FILE   ,'test_colors',
-                                   :colormap => 'testcmap')
-end
-#==============================================================================
 # Test collections
 desc "Run all tests"
 task :all_tests do
