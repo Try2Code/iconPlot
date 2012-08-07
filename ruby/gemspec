@@ -3,7 +3,7 @@ $:.unshift File.join(File.dirname(__FILE__),"..","lib")
 
 spec = Gem::Specification.new do |s|
   s.name              = "iconPlot"
-  s.version           = '0.0.2'
+  s.version           = '0.0.3'
   s.platform          = Gem::Platform::RUBY
   s.files             = ["lib/iconPlot.rb"] + ["gemspec"] + ["contrib/nclsh"] + Dir.glob("lib/*ncl")
   s.test_file         = "test/test_iconPlot.rb"
@@ -14,7 +14,9 @@ spec = Gem::Specification.new do |s|
   s.homepage          = "https://github.com/Try2Code/iconPlot"
   s.license           = "GPLv2"
   s.required_ruby_version = ">= 1.8"
-  s.add_dependency('cdo','extcsv')
+  s.add_dependency('cdo')
+  s.add_dependency('extcsv')
+  s.add_dependency('gnuplot')
 end
 
 # vim:ft=ruby

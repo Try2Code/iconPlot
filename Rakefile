@@ -427,10 +427,10 @@ if 'thingol' == `hostname`.chomp
   task :test_show_grid do
     require 'jobqueue'
     jq = JobQueue.new
-    jq.push(Module,:defaultPlot,OCE_PLOT_TEST_FILE   ,'test_show_grid_oce',:showGrid => "True")
-    jq.push(Module,:defaultPlot,OCE_PLOT_TEST_FILE   ,'test_show_grid_oce_ortho',:showGrid => "True",:mapType => "ortho")
-    jq.push(Module,:defaultPlot,ATM_PLOT_TEST_FILE   ,'test_show_grid_atm',:showGrid => "True",:atmLev => "m")
-    jq.push(Module,:defaultPlot,OCE_REGPLOT_TEST_FILE,'test_show_reg_grid',:showGrid => "True")
+    jq.push(@plotter,:defaultPlot,OCE_PLOT_TEST_FILE   ,'test_show_grid_oce',:showGrid => "True")
+    jq.push(@plotter,:defaultPlot,OCE_PLOT_TEST_FILE   ,'test_show_grid_oce_ortho',:showGrid => "True",:mapType => "ortho")
+    jq.push(@plotter,:defaultPlot,ATM_PLOT_TEST_FILE   ,'test_show_grid_atm',:showGrid => "True",:atmLev => "m")
+    jq.push(@plotter,:defaultPlot,OCE_REGPLOT_TEST_FILE,'test_show_reg_grid',:showGrid => "True")
     jq.run
   end
 end
@@ -445,6 +445,12 @@ task :test_colors do
   colormap = 'testcmap'
   defaultPlot(OCE_PLOT_TEST_FILE   ,'test_colors',
                                    :colormap => colormap,:mapType => 'ortho')
+end
+#==============================================================================
+desc "module methods test"
+task :mtest do
+  Module.defaultPlot(OCE_PLOT_TEST_FILE   ,'test_colors',
+                                   :colormap => 'testcmap')
 end
 #==============================================================================
 # Test collections
