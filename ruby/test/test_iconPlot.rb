@@ -9,6 +9,7 @@ class TestIconPlot < Test::Unit::TestCase
   PLOTLIB = "/home/ram/src/git/icon/scripts/postprocessing/tools"
   LS                    = 'ls -crtlh'
   OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/oce.nc'
+  OCELONG_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/oceLong.nc'
   ATM_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/atm.nc'
   OCE_REGPLOT_TEST_FILE = ENV['HOME']+'/data/icon/regular_oce.nc' #remapnn,r180x90
   ATM_REGPLOT_TEST_FILE = ENV['HOME']+'/data/icon/regular_atm.nc' #remapnn,n63 (no sections), r180x90 (with sections)
@@ -29,5 +30,9 @@ class TestIconPlot < Test::Unit::TestCase
     assert_includes(p.caller.split(File::SEPARATOR),'gems')
     assert_includes(p.plotter.split(File::SEPARATOR),'gems')
     assert_includes(p.libdir.split(File::SEPARATOR),'gems')
+  end
+  def test_levelPlot
+    p = IconPlot.new
+    p.show( p.levelPlot(OCELONG_PLOT_TEST_FILE,'test_levelPlot_00','T',:operation => :fldmax))
   end
 end

@@ -43,6 +43,12 @@ end
 def scalarPlot(*args)
   @plotter.scalarPlot(*args)
 end
+def levelPlot(*args)
+  @plotter.levelPlot(*args)
+end
+def scatterPlot(*args)
+  @plotter.scatterPlot(*args)
+end
 def showVector(*args)
   @plotter.showVector(*args)
 end
@@ -132,7 +138,7 @@ task :test_halflog do
   show(image)
 
   varname='W'
-  ifile = "#{ENV['HOME']}/data/icon/issues/2219/OCE_BASE_4cpu_iconR2B04-ocean_etopo40_planet_0001.nc"
+  ifile = "#{ENV['HOME']}/data/icon/issues/2352/TC33_iconR2B04-ocean_etopo40_planet_0001.nc"
   image = scalarPlot(ifile,ofile,varname,:selMode =>'halflog',:minVar =>-0.5, :maxVar => 0.5, :scaleLimit => 3,:timeStep => 36)
   show(image)
   image = scalarPlot(ifile,ofile,varname,:selMode =>'halflog',:timeStep => 36)
@@ -150,7 +156,8 @@ task :test_isIcon do
   image = scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:levIndex => 2,:isIcon => "True")
   tdiffisIcon = Time.new - tstart
   show(image)
-  assert(tdiffisIcon < tdiff,"setting isIcon seems to slow down the plotting")
+  #assert(tdiffisIcon < tdiff,"setting isIcon seems to slow down the plotting")
+  # assert is switched off because iconPlot sets isIcon be default
 end
 desc "test setting of min/maxVar"
 task :test_minmax do
@@ -396,6 +403,14 @@ task :test_scatter do
   image = iconPlot(ifile,ofile,'T S','scatter')
   show(image)
 end
+desc "Level plots"
+task :test_levelPlot do
+  ifile = OCE_REGPLOT_TEST_FILE
+  ofile = "test_levelPlot"
+  image = levelPlot(ifile,ofile,'T')
+  show(image)
+end
+
 
 # -----------------------------------------------------------------------------
 # uncategoriesed tests on
@@ -425,6 +440,9 @@ task :test_colors do
   defaultPlot(OCE_PLOT_TEST_FILE   ,'test_colors',
                                    :colormap => colors.reverse.join(','))
   colormap = 'BlGrYeOrReVi200'
+  defaultPlot(OCE_PLOT_TEST_FILE   ,'test_colors',
+                                   :colormap => colormap,:mapType => 'ortho')
+  colormap = 'testcmap'
   defaultPlot(OCE_PLOT_TEST_FILE   ,'test_colors',
                                    :colormap => colormap,:mapType => 'ortho')
 end
