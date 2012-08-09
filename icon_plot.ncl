@@ -513,14 +513,11 @@
     drawNDCGrid(wks)
   end if
 
-  ResC = True
-
-  setDefaultResource(ResC,True)
+  ResC = setDefaultResource(True)
 
   if (maxView) ResC@gsnMaximize = True end if
 
   if (useMask) setMaskColor(wks,ResC) end if
-
 
 
   if (getHorizGridType(iFile,ivarname,isIcon) .eq. "unstructured") then
@@ -606,6 +603,7 @@
       end if
       plotGrid(wks,plot,var,x,bounds,File,ResC,DEBUG)
     end if
+    draw(plot)
   end if
   if (plotMode.eq."scatter") then
     plot = gsn_csm_xy(wks,xvar,yvar,ResC)
