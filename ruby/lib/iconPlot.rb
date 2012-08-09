@@ -83,7 +83,18 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
         :output_time_format => '"%d.%m.%y \n %H:%M"',:size => "1600,600")
       return "#{ofile}.png"
   end
-  def scatterPlot(ifile,ofile,varname,opts={})
+  def scatterPlot(ifile,ofile,xVarname,yVarname,opts={})
+    # is there a variable which discribes different regions in the ocean
+    regionVar = opts[:regionVar].nil? ? 'rregio_c' : opts[:regionVar]
+    hasRegion = Cdo.showname(:in => ifile).join.split.include?(regionName)
+    unless hasRegion
+      warn "Variable '#{regionName}' for showing regions is NOT found in the input '#{ifile}'!"
+      warn "Going on without plotting regions!"
+      varnames = varnames[0,2]
+      groupBy = []
+    else
+      groupBy = [regionName]
+    end
   end
 
   def del(file)
