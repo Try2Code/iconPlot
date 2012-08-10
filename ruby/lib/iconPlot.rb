@@ -3,7 +3,9 @@ require 'cdo'
 require 'extcsv'
 require 'shellwords'
 
-class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug)
+class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug,:isIcon)
+  VERSION = '0.0.4'
+
   def IconPlot.gemPath
     gemSearcher = Gem::GemPathSearcher.new
     gemspec     = gemSearcher.find('iconPlot')
@@ -20,6 +22,7 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
       :otype   => 'png',
       :display => 'sxiv',
       :cdo     => ENV['CDO'].nil? ? 'cdo' : ENV['CDO'],
+      :isIcon  => true,
       :debug   => false
     }
     self.each_pair {|k,v| self[k] = defaults[k] if v.nil? }
@@ -41,7 +44,9 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
     opts[:tStrg] =ofile
 
     cmd   = [self.caller,self.plotter].join(' ')
-    cmd << " -altLibDir=#{self.libdir} #{varIdent} -iFile=#{ifile} -oFile=#{ofile} -oType=#{self.otype} -isIcon -DEBUG"
+    cmd << " -altLibDir=#{self.libdir} #{varIdent} -iFile=#{ifile} -oFile=#{ofile} -oType=#{self.otype}"
+    cmd << " -isIcon" if self.isIcon
+    cmd << " -DEBUG"  if self.debug
     opts.each {|k,v| cmd << " -"<< [k,v].join('=') }
     puts cmd if self.debug
     out = IO.popen(cmd).read
