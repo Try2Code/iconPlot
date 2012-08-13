@@ -14,6 +14,7 @@ DST                   = HOSTS.map {|v| v + ':' + DIR}
 CP                    = 'scp -p'
 LS                    = 'ls -crtlh'
 OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/oce.nc'
+OCELSM_PLOT_TEST_FILE = ENV['HOME']+'/data/icon/oce_lsm.nc'
 ATM_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/atm.nc'
 OCE_REGPLOT_TEST_FILE = ENV['HOME']+'/data/icon/regular_oce.nc' #remapnn,r180x90
 ATM_REGPLOT_TEST_FILE = ENV['HOME']+'/data/icon/regular_atm.nc' #remapnn,n63 (no sections), r180x90 (with sections)
@@ -215,6 +216,8 @@ task :test_sections do
   secopts = {
     :secLC      => '0,80',
     :secRC      => '0,-80',
+    :secLC      => '-45,-70',
+    :secRC      =>  '30,80',
     :showSecMap => "True",
     :secPoints  => 100
   }
@@ -230,6 +233,71 @@ task :test_sections do
   }
   images.map! {|i| i+= ".#{OFMT}"}
   show(*images)
+end
+
+desc "Section with different types of masking"
+task :test_masked_section do
+  secopts = {
+    :secLC      => '-45,-70',
+    :secRC      =>  '30,80',
+    :showSecMap => "True",
+    :secPoints  => 201,
+    :maskName   => 'wet_c',
+    :secMode    => 'straight'
+  }
+  # enable regular grided data
+  @plotter.isIcon = false
+  @plotter.debug  = true
+  %w[r90x45 r180x90 r360x180].each {|resolution|
+    #next unless resolution == 'r360x180'
+    show(scalarPlot(OCELSM_PLOT_TEST_FILE,'test_masked_section_' + resolution,'T',secopts.merge(:resolution => resolution)))
+    remappedFile = "remapnn_#{resolution}_"+File.basename(OCELSM_PLOT_TEST_FILE)
+    unless File.exist?(remappedFile)
+      warn "file #{remappedFile} does not exist!!!!!"
+      next
+    end
+    ofile = 'test_showMask_' + resolution
+    #show(scalarPlot(remappedFile,ofile,'wet_c',:mapLLC => "0,30",:mapURC => "40,90",:withLines => false,:fillMode => "CellFill"))
+  }
+end
+
+desc "Compare sections on great circle and straight lines"
+task :test_secmode do
+  q = JobQueue.new
+
+  {
+    :atlantic      => [-45,-70,30,80],
+    :merdidian_20W => [-20,-70,-20,70],
+    :merdidian_20E => [20,-70,20,70],
+    :acc           => [-100,-65,100,-45],
+    :sohth         => [0,-30,360,-30],
+    :equator       => [-100,0,100,0]
+  }.each {|sec,corners|
+   #next unless sec == :acc
+    startLat,startLon,endLat,endLon = corners
+    secopts = {
+      :secLC      => [startLat,startLon].join(','),
+      :secRC      => [endLat,endLon].join(','),
+      :showSecMap => "True",
+      :secPoints  => 201,
+      :maskName   => 'wet_c',
+      :resolution => 'r360x180'
+    }
+    # enable regular grided data
+    @plotter.isIcon = true
+    @plotter.debug  = true
+    %w[straight circle].each {|secmode|
+      q.push {
+        show(scalarPlot(OCELSM_PLOT_TEST_FILE,
+                      ['test_secMode',secmode,sec].join("_"),
+                      'T',
+                      secopts.merge(:secMode => secmode,
+                                    :tStrg => 'secMode - '+secmode,
+                                    :rStrg =>"'s|#{[startLat,startLon].join(',')}||e|#{[endLat,endLon].join(',')}|'" )))
+      }
+    }
+  }
+  q.run
 end
 
 # vector plots from ICON input
@@ -445,6 +513,14 @@ task :test_colors do
   colormap = 'testcmap'
   defaultPlot(OCE_PLOT_TEST_FILE   ,'test_colors',
                                    :colormap => colormap,:mapType => 'ortho')
+end
+
+desc "test for labeled contour lines"
+task :test_line_labels do
+  colormap = 'testcmap'
+  defaultPlot(OCE_PLOT_TEST_FILE ,'test_withLines',     :mapType => "ortho",:colormap => "test_cmap",:withLines => false)
+  defaultPlot(OCE_PLOT_TEST_FILE ,'test_withoutLines',  :mapType => "ortho",:colormap => "test_cmap",:withLines => true)
+  defaultPlot(OCE_PLOT_TEST_FILE ,'test_withLineLabels',:mapType => "ortho",:colormap => "test_cmap",:withLineLabels => true)
 end
 #==============================================================================
 # Test collections
