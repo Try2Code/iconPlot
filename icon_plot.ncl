@@ -26,6 +26,7 @@
   end if
 ;--- end config ---------------------------------------------------------------
 ;==============================================================================
+  VERSION = "0.0.4"
 ;----- MAIN PROGRAM -----------------------------------------------------------
   if (isvar("help")) then
     dq = str_get_dq()
@@ -84,11 +85,15 @@
     print(";                  use -180 to 180 for longitude !")
     print("; secLC, secRC  : start and and point of a vertical section (no default value)")
     print(";                 section is plotted it secLC and secRC are present")
+    print("; secMode       : perform transection along a great crice or on a straight line")
+    print(";                 possible values: circle, straight (default)")
+    print(";               : ATTENTION: using 'circle' for sections with a small angle wrt the equator is NOT RECOMMENDED")
     print("; showSecMap    : display the location of the vertical section in an additional map (default:true)")
     print("; centerLon     : center longitute for satelite view (default:30.)")
     print("; centerLat     : center latitude for satelite view (default:20.)")
     print("; satDist       : satelite distance (default:20.0)")
     print("; scaleFactor   : optional scale factor")
+    print("; fillMode      : how to color contour plots,i.e. sets cnFillMode: CellFill or RasterFill (default:RasterFill)")
     print("; selMode       : mode for level spacing of the plot:")
     print(";                 halflog (uses half logarythmic levels,i.e. 1,2,5 per decade), ")
     print(";                 manual (automatic linear spacing with usage of minVar and maxVar)")
@@ -114,6 +119,8 @@
     print("; bStrg         : base string - default is prgr name and time stamp only")
     print("; maxView       : (logical) maximize plot area on paper (not for buildbot -> convert to png)")
     print("; colormap      : string for predefined colormaps of the plot (e.g. 'colormap=" + dq + "BlAqGrYeOrReVi200" + dq + "')")
+    print("; withLines     : draw lines between each contour color (default:True)")
+    print("; withLineLabels: label the countour lines with theri values (auto-enable withLines, default:False)")
     print("; showGrid      : display polygon lines with filled colors instead of contour plot")
     print("; showNcd       : display NDC Grid to find Normalized Device Coordinates on the plot")
     print("; k2c           : if True, perform Kelvin2Celsius shift (default:True)")
@@ -126,7 +133,8 @@
     print(";---------------------------------------------------------------")
     print("; Authors       : Ralf Mueller (ralf.mueller@zmaw.de)")
     print(";                 Stephan Lorenz (stephan.lorenz@zmaw.de)")
-    print("; VERSION       : r8012 (2012-01-26)")
+    print(";                 Einar Olason (einar.olason@zmaw.de)")
+    print("; VERSION       : " + VERSION +" (2012-08-13)")
     print(";---------------------------------------------------------------")
     exit()
   end if
@@ -157,19 +165,22 @@
   end if
   print("Outputfile '"+str_concat((/oFile,".",oType/))+"' will be created in "+systemfunc("dirname "+iFile))
 
-  if (.not. isvar("DEBUG"))       DEBUG       = False           end if
-  if (.not. isvar("showGrid"))    showGrid    = False           end if
-  if (.not. isvar("showNdc"))     showNdc     = False           end if
-  if (.not. isvar("maxView"))     maxView     = False           end if
-  if (.not. isvar("scaleLimit"))  scaleLimit  = 2               end if
-  if (.not. isvar("selMode"))     selMode     = "auto"          end if
-  if (.not. isvar("plotMode"))    plotMode   = "scalar"         end if
-  if (.not. isvar("timeStep"))    timeStep    = 0               end if
-  if (.not. isvar("levIndex"))    levIndex    = 0               end if
-  if (.not. isvar("scaleFactor")) scaleFactor = 1               end if
-  if (.not. isvar("colormap"))    colormap    = "BlueDarkRed18" end if
-  if (.not. isvar("k2c"))         k2c         = True            end if
-  if (.not. isvar("isIcon"))      isIcon      = False           end if
+  if (.not. isvar("DEBUG"))          DEBUG          = False           end if
+  if (.not. isvar("showGrid"))       showGrid       = False           end if
+  if (.not. isvar("showNdc"))        showNdc        = False           end if
+  if (.not. isvar("maxView"))        maxView        = False           end if
+  if (.not. isvar("scaleLimit"))     scaleLimit     = 2               end if
+  if (.not. isvar("selMode"))        selMode        = "auto"          end if
+  if (.not. isvar("plotMode"))       plotMode       = "scalar"        end if
+  if (.not. isvar("timeStep"))       timeStep       = 0               end if
+  if (.not. isvar("levIndex"))       levIndex       = 0               end if
+  if (.not. isvar("scaleFactor"))    scaleFactor    = 1               end if
+  if (.not. isvar("fillMode"))       fillMode       = "RasterFill"    end if
+  if (.not. isvar("colormap"))       colormap       = "BlueDarkRed18" end if
+  if (.not. isvar("withLines"))      withLines      = True            end if
+  if (.not. isvar("withLineLabels")) withLineLabels = False           end if
+  if (.not. isvar("k2c"))            k2c            = True            end if
+  if (.not. isvar("isIcon"))         isIcon         = False           end if
 
   if (.not.isvar("mapType"))      mapType      = "lonlat"        end if
   if ( mapType .eq. "NHps" .and. .not.isvar("mapLLC")) mapLLC = (/-45., 45./)  end if
@@ -188,14 +199,15 @@
   if (.not.isvar("vecColByLen"))  vecColByLen  = False           end if
   if (.not.isvar("vecMinDist"))   vecMinDist   = 0.017           end if
   if (.not.isvar("streamLine"))   streamLine   = False           end if
-  if (.not.isvar("secPoints"))    secPoints    = 161              end if
-  ; default + optional coordinates
-  if (.not.isvar("lonCo"))         lonCo       =  DEFAULTLON     end if
-  if (.not.isvar("latCo"))         latCo       =  DEFAULTLAT     end if
+  if (.not.isvar("secPoints"))    secPoints    = 161             end if
+;   default + optional coordinates
+  if (.not.isvar("lonCo"))         lonCo       = DEFAULTLON     end if
+  if (.not.isvar("latCo"))         latCo       = DEFAULTLAT     end if
 
-  if (.not.isvar("showSecMap")) showSecMap     =  True           end if
-  ; ATMOSPEHRE SETUP ----------------------------------------------------------
-  if (.not.isvar("atmLev"))     atmLev         =  "p"           end if
+  if (.not.isvar("secMode"))    secMode        = "straight"     end if
+  if (.not.isvar("showSecMap")) showSecMap     = True           end if
+;   ATMOSPEHRE SETUP ----------------------------------------------------------
+  if (.not.isvar("atmLev"))     atmLev         = "p"           end if
   if (.not.isvar("atmPLevs")) then
     atmPLevSetup = (/10000,100000,2500/); unit: Pa
     atmPLevs     = ispan(atmPLevSetup(0),atmPLevSetup(1),atmPLevSetup(2))*1.0
@@ -331,7 +343,7 @@
       ; performe some remapping to a regular grid because ncl cannot draw vector
       ; from unstructured grids
       ; TODO addVars=(/ "PS","PHIS"/)
-      remapFilename = setRemapFilename(iFile,iType,atmLev)
+      remapFilename = setRemapFilename(iFile,iType,resolution,atmLev)
       print("remapFilename:"+remapFilename)
       if (.not. checkRemappedFile(iFile,remapFilename,ivarname,iType,atmLev,atmPLevs,atmHLevs) ) then
         addVars=(/""/)
@@ -513,7 +525,7 @@
     drawNDCGrid(wks)
   end if
 
-  ResC = setDefaultResource(True)
+  ResC = setDefaultResource(True,withLines,withLineLabels,fillMode)
 
   if (maxView) ResC@gsnMaximize = True end if
 
@@ -538,7 +550,7 @@
       print("Cannot plot vertical section of a 2D variable: "+varName)
       exit
     end if
-    trans           = setSection(secLC,secRC,secPoints,var)
+    trans           = setSection(secLC,secRC,secPoints,var,secMode)
     vertdim         = getVertDim(File,var)
     trans!0         = vertdim
     trans&$vertdim$ = var&$vertdim$
@@ -568,6 +580,7 @@
       setDefaultVectorPlot(ResC,5.0,vecRefLength,"CurlyVector",vecMinDist)
 
       vc = plotVecOrStream(vecColByLen,streamLine,uvar,vvar,velocity,ResC,wks,True)
+      draw(vc)
     end if
   end if
   if (plotMode.eq."overlay") then
@@ -580,7 +593,7 @@
 
     ResC@gsnDraw             = False
     ResC@gsnFrame            = False
-    vc   = plotVecOrStream(vecColByLen,streamLine,uvar,vvar,velocity,ResC2,wks,False)
+    vc   = plotVecOrStream(vecColByLen,streamLine,uvar,vvar,var,ResC2,wks,False)
 
     plot = gsn_csm_contour_map(wks,var,ResC)
     if (showGrid) then
@@ -644,7 +657,12 @@
      pres@gsnDraw          = False;                don't draw yet
      pres@gsLineColor      = "black";           color of lines
      pres@gsLineThicknessF = 2.0;             line thickness
-     dummy = gsn_add_polyline(wks,plot(1),(/ secLC(0),secRC(0) /),(/ secLC(1),secRC(1) /),pres)
+     pathRes               = getSectionPathForMap(secLC,secRC,secPoints,secMode)
+     if (DEBUG) then
+       print("PATHRES lon - lat")
+       print(pathRes@lon + "      " + pathRes@lat)
+     end if
+     pathLine              = gsn_add_polyline(wks,plot(1),pathRes@lon, pathRes@lat,pres)
 
      draw(plot(1))
    end if

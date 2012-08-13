@@ -566,9 +566,9 @@ end
 ;---------------------------------------------------------------
 ; set filename for the automatically remapped file
 undef("setRemapFilename")
-function setRemapFilename(filename,itype,atmlev)
+function setRemapFilename(filename,itype,resolution,atmlev)
 begin
-  return setNewFilename(filename,"remapnn",itype,atmlev)
+  return setNewFilename(filename,"remapnn_"+resolution,itype,atmlev)
 end
 undef("setZonmeanFilename")
 function setZonmeanFilename(filename,itype,atmlev)
@@ -817,17 +817,38 @@ end
 ;---------------------------------------------------------------
 ; Create a default NCL resource
 undef("setDefaultResource")
-procedure setDefaultResource(resource,verticallabelbar)
+function setDefaultResource(verticallabelbar,withLines,withLineLabels,fillMode)
 begin
-  resource@gsnMaximize          = False
-; resource@gsnPaperOrientation  = "landscape"  ; turns plot on paper
-; resource@wkPaperSize          = "A4"
-  resource@gsnFrame             = False
-  resource@gsnSpreadColors      = True
+  resource                          = True
 
-  resource@cnFillOn             = True   ;  writes labelbar, no contour labels
-  resource@cnLinesOn            = False
-  resource@cnInfoLabelOn        = False
+  resource@gsnMaximize              = False
+;     resource@gsnPaperOrientation  = "landscape";   turns plot on paper
+;     resource@wkPaperSize          = "A4"
+  resource@gsnFrame                 = False
+  resource@gsnDraw                  = False;                don't draw yet
+  resource@gsnSpreadColors          = True
+  resource@cnFillOn                 = True;     writes labelbar, no contour labels
+
+; lines/labels inside the plot ================================================
+  resource@cnLinesOn                = False
+  resource@cnLineLabelsOn           = False
+  if (withLineLabels ) then
+    withLines                       = True
+    resource@cnLineLabelsOn         = True
+    resource@cnLineLabelFontHeightF = 0.006
+    resource@cnLineLabelFontThicknessF = 0.006
+  end if
+  if (withLines) resource@cnLinesOn = True end if
+
+  ; representation of missing values ===========================================
+  delete(resource@cnMissingValFillPattern);     no longer filling missing value areas
+  delete(resource@cnMissingValFillColor);       no longer filling missing value areas
+  resource@cnMissingValPerimOn          = True
+  resource@cnMissingValFillPattern      = -1;                set the missing value fill pattern to 5
+  resource@cnMissingValFillScaleF       = 0.9;              increase the density of the fill pattern (default   = 1.0)
+  resource@cnMissingValPerimColor       = "black";          change the missing value perimeter to black
+  resource@cnMissingValPerimDashPattern = 1;           set the dash pattern of the missing value perimeter to 1
+  resource@cnMissingValPerimThicknessF  = 1.0;         increase the thickness of the missing value perimeter 3X
 
   FontHeight0               = 0.012
   FontHeight1               = 0.015
@@ -842,8 +863,7 @@ begin
   resource@gsnStringFontHeightF = FontHeight0
 
   resource@mpFillOn               = True
-  resource@cnFillOn               = True
-
+; label settings ==============================================================
   resource@lbLabelBarOn             = True
   if (verticallabelbar .eq. True) then
     resource@lbOrientation            = "vertical"
@@ -855,11 +875,12 @@ begin
   resource@lbLabelAutoStride        = True
   resource@lbLabelFontHeightF       = FontHeight1     ;   color bar labels
 
-  resource@cnFillMode           = "RasterFill"
-  ;resource@cnFillMode           = "CellFill"
+  resource@cnFillMode           = fillMode
   resource@cnRasterSmoothingOn  = True
   resource@mpGreatCircleLinesOn = True
   resource@stMinArrowSpacingF   = 0.001
+
+  return resource
 end
 ;---------------------------------------------------------------
 undef("setDefaultSectionResource")
@@ -876,7 +897,7 @@ begin
   resource@tmXBValues                   = (/points(0),points(secpoints-1)/);  points to label values
   labels = new(dimsizes(p),string)
   labels = p
-  print(""+labels)
+;print(""+labels)
  ;resource@tmXBLabels                   = labels
   resource@tmXBLabels                   = (/ seclc(1) +"N, "+ seclc(0)+"E" , secrc(1)+"N, "+secrc(0)+"E" /)
 
@@ -885,13 +906,16 @@ begin
   resource@lbLabelAutoStride            = True;          nice label bar label stride
   resource@gsnSpreadColors              = True;          use full range of colormap
   resource@cnLinesOn                    = False;         turn off countour lines
+ ; if (useContourLines)
+  resource@cnLinesOn             = True
+  resource@cnLineLabelsOn        = True
   resource@lbOrientation                = "vertical";    vertical label bar
   resource@pmLabelBarOrthogonalPosF     = -0.05;         move label bar closer to plot
   resource@lbTitlePosition              = "Bottom"
 ;   resource@gsnYAxisIrregular2Log      = True
 
-  delete(resource@cnMissingValFillPattern);     no longer filling missing value areas
-  delete(resource@cnMissingValFillColor);       no longer filling missing value areas
+;  delete(resource@cnMissingValFillPattern);     no longer filling missing value areas
+;  delete(resource@cnMissingValFillColor);       no longer filling missing value areas
   resource@cnMissingValFillColor        = "gray30"
   resource@cnMissingValPerimOn          = True
 
@@ -1316,18 +1340,79 @@ begin
   return gridtype
 end
 ;---------------------------------------------------------------
+; compute the straight line between two corners
+undef("getStraightPath")
+function getStraightPath(startCorner,endCorner,npoints)
+begin
+  startLat = tofloat(startCorner(1))
+  endLat   = tofloat(endCorner(1))
+  startLon = tofloat(startCorner(0))
+  endLon   = tofloat(endCorner(0))
+
+  if (startLon .lt. 0.0) then
+    startLon = startLon + 360.0
+    endLon   = endLon   + 360.0
+  end if
+
+  lats = fspan(startLat,endLat,npoints)
+  lons = fspan(startLon,endLon,npoints)
+  ; dont let the lons be greater than 360, because theses values will not be in
+  ; the data. Otherwise an interpolation error will occur
+  lons = where(lons.gt.360, lons-360.0, lons)
+
+  distRes     = True
+  distRes@lat = lats
+  distRes@lon = lons
+
+  return distRes
+end
+;---------------------------------------------------------------
+; compute the distance between two points of great circle
+undef("getCirclePath")
+function getCirclePath(startCorner,endCorner,npoints)
+begin
+  startLat = startCorner(1)
+  endLat   = endCorner(1)
+
+  startLon = startCorner(0)
+  endLon   = endCorner(0)
+
+  distRes     = True
+  dist        = gc_latlon(startLat,startLon,endLat,endLon,npoints,2)
+  distRes@lat = dist@gclat
+  distRes@lon = dist@gclon
+
+  return distRes
+end
+;---------------------------------------------------------------
+; compute the path of the cross-section
+undef("getSectionPath")
+function getSectionPath(secLC,secRC,npoints,secMode)
+begin
+  if (secMode .eq. "straight") then
+    pathRes = getStraightPath(secLC,secRC,secPoints)
+  else
+    pathRes = getCirclePath(secLC,secRC,secPoints)
+  end if
+  return pathRes
+end
+;---------------------------------------------------------------
+; compute the path of the cross-section but suitable for plotting in a separate Map
+undef("getSectionPathForMap")
+function getSectionPathForMap(secLC,secRC,npoints,secMode)
+begin
+  pathRes     = getSectionPath(secLC,secRC,secPoints,secMode)
+  pathRes@lon = where(pathRes@lon.lt.pathRes@lon(0),pathRes@lon + 360.0,pathRes@lon)
+  return pathRes
+end
+;---------------------------------------------------------------
 ; setting for vertical cross sections based on remapped icon data
 undef("setSection")
-function setSection(secLC,secRC,npoints,var)
+function setSection(secLC,secRC,npoints,var,secMode)
 begin
-  leftlat  = secLC(1)
-  rightlat = secRC(1)
+  pathRes = getSectionPath(secLC,secRC,npoints,secMode)
 
-  leftlon  = secLC(0)
-  rightlon = secRC(0)
-
-  dist     = gc_latlon(leftlat,leftlon,rightlat,rightlon,npoints,2)
-  trans    = linint2_points(var&lon,var&lat,var,True,dist@gclon,dist@gclat,2)
+  trans   = linint2_points(var&lon,var&lat,var,True,pathRes@lon,pathRes@lat,2)
 
   return trans
 end
