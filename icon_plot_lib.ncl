@@ -18,12 +18,13 @@
 ;                 Stephan Lorenz (stephan.lorenz@zmaw.de)
 ;-------------------------------------------------------------------------------
 ; some global defaults
-  DEFAULTLON = "clon"
-  DEFAULTLAT = "clat"
-  RAD2DEG    = 45./atan(1.)
-  ABORTMSG   = "Abort Script."
-  NUMLEVS    = 10
-  CDO        = "cdo"
+  DEFAULTLON   = "clon"
+  DEFAULTLAT   = "clat"
+  RAD2DEG      = 45./atan(1.)
+  ABORTMSG     = "Abort Script."
+  NUMLEVS      = 10
+  CDO          = "cdo"
+  DEFAULTCOLOR = "BlueDarkRed18"
 ;-------------------------------------------------------------------------------
 procedure setCDO(path)
 begin
@@ -817,7 +818,7 @@ end
 ;---------------------------------------------------------------
 ; Create a default NCL resource
 undef("setDefaultResource")
-function setDefaultResource(verticallabelbar,withLines,withLineLabels,fillMode)
+function setDefaultResource(verticallabelbar,withLines,withLineLabels,fillMode,userColors)
 begin
   resource                          = True
 
@@ -827,6 +828,10 @@ begin
   resource@gsnFrame                 = False
   resource@gsnDraw                  = False;                don't draw yet
   resource@gsnSpreadColors          = True
+  if (.not. userColors) then
+    resource@gsnSpreadColorEnd = 120                  ; color number to end with
+    resource@gsnSpreadColorStart = 4                        ; color number to start with 
+  end if
   resource@cnFillOn                 = True;     writes labelbar, no contour labels
 
 ; lines/labels inside the plot ================================================
@@ -835,7 +840,7 @@ begin
   if (withLineLabels ) then
     withLines                       = True
     resource@cnLineLabelsOn         = True
-    resource@cnLineLabelFontHeightF = 0.006
+    resource@cnLineLabelFontHeightF = 0.008
     resource@cnLineLabelFontThicknessF = 0.006
   end if
   if (withLines) resource@cnLinesOn = True end if

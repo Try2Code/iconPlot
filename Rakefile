@@ -105,8 +105,8 @@ desc "select regions"
 task :test_mapselect do
   ofile          = 'test_mapSelect'
   varname        = 'ELEV'
-  show(scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:mapLLC => '-100.0,-15.0' ,:mapURC => '35.0,65.0'))
-  show(scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:mapLLC => '-100.0,-15.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c'))
+  show(scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0'))
+  show(scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c'))
 end
 desc "masking with ocean's wet_c"
 task :test_mask do
@@ -273,7 +273,7 @@ task :test_secmode do
     :sohth         => [0,-30,360,-30],
     :equator       => [-100,0,100,0]
   }.each {|sec,corners|
-   #next unless sec == :acc
+   #next unless sec == :atlantic
     startLat,startLon,endLat,endLon = corners
     secopts = {
       :secLC      => [startLat,startLon].join(','),

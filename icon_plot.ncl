@@ -176,7 +176,12 @@
   if (.not. isvar("levIndex"))       levIndex       = 0               end if
   if (.not. isvar("scaleFactor"))    scaleFactor    = 1               end if
   if (.not. isvar("fillMode"))       fillMode       = "RasterFill"    end if
-  if (.not. isvar("colormap"))       colormap       = "BlueDarkRed18" end if
+  if (.not. isvar("colormap")) then
+    colormap   = DEFAULTCOLOR
+    userColors = False
+  else
+    userColors = True
+  end if
   if (.not. isvar("withLines"))      withLines      = True            end if
   if (.not. isvar("withLineLabels")) withLineLabels = False           end if
   if (.not. isvar("k2c"))            k2c            = True            end if
@@ -525,7 +530,7 @@
     drawNDCGrid(wks)
   end if
 
-  ResC = setDefaultResource(True,withLines,withLineLabels,fillMode)
+  ResC = setDefaultResource(True,withLines,withLineLabels,fillMode,userColors)
 
   if (maxView) ResC@gsnMaximize = True end if
 
