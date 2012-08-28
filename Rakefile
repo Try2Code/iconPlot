@@ -14,6 +14,7 @@ DST                   = HOSTS.map {|v| v + ':' + DIR}
 CP                    = 'scp -p'
 LS                    = 'ls -crtlh'
 OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/oce.nc'
+OCELONG_PLOT_TEST_FILE= ENV['HOME']+'/data/icon/oceLong.nc'
 OCELSM_PLOT_TEST_FILE = ENV['HOME']+'/data/icon/oce_lsm.nc'
 ATM_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/atm.nc'
 OCE_REGPLOT_TEST_FILE = ENV['HOME']+'/data/icon/regular_oce.nc' #remapnn,r180x90
@@ -100,6 +101,15 @@ task :test_oce_2d do
   varname        = 'ELEV'
   scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname)
   show(ofile)
+end
+desc "check for white means zero"
+task :test_zeroEQwhite do
+  ofile          = 'test_whiteEQzero'
+  del(ofile)
+  varname        = 'v'
+  show(scalarPlot(OCELONG_PLOT_TEST_FILE,ofile,varname,:levIndex => 1))
+  show(scalarPlot(OCELONG_PLOT_TEST_FILE,ofile,varname,:levIndex => 1, :mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0'))
+  show(scalarPlot(OCELONG_PLOT_TEST_FILE,ofile,varname,:levIndex => 1, :mapLLC => '-100.0,30.0' ,:mapURC => '35.0,65.0'))
 end
 desc "select regions"
 task :test_mapselect do

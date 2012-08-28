@@ -24,7 +24,9 @@
   ABORTMSG     = "Abort Script."
   NUMLEVS      = 10
   CDO          = "cdo"
-  DEFAULTCOLOR = "BlueDarkRed18"
+;  DEFAULTCOLOR = "BlWhRe"             ; ncolors = 103
+  DEFAULTCOLOR = "BlueDarkRed18"      ; ncolors = 256
+  DEFAULTCOLOR = "BlueWhiteOrangeRed" ; ncolors = 256
 ;-------------------------------------------------------------------------------
 procedure setCDO(path)
 begin
@@ -818,7 +820,7 @@ end
 ;---------------------------------------------------------------
 ; Create a default NCL resource
 undef("setDefaultResource")
-function setDefaultResource(verticallabelbar,withLines,withLineLabels,fillMode,userColors)
+function setDefaultResource(verticallabelbar,withLines,withLineLabels,fillMode)
 begin
   resource                          = True
 
@@ -828,10 +830,6 @@ begin
   resource@gsnFrame                 = False
   resource@gsnDraw                  = False;                don't draw yet
   resource@gsnSpreadColors          = True
-  if (.not. userColors) then
-    resource@gsnSpreadColorEnd = 120                  ; color number to end with
-    resource@gsnSpreadColorStart = 4                        ; color number to start with 
-  end if
   resource@cnFillOn                 = True;     writes labelbar, no contour labels
 
 ; lines/labels inside the plot ================================================
@@ -933,6 +931,7 @@ begin
   ;resource@gsnYAxisIrregular2Log        = True
   return resource
 end
+;---------------------------------------------------------------
 undef("setDefaultOverlayResource")
 procedure setDefaultOverlayResource(resource)
 begin
@@ -948,6 +947,30 @@ begin
   resource@lbLabelFontHeightF = 0.015
   resource@lbLeftMarginF      = 0.01
   resource@lbLabelBarOn       = False;  switch of the vector label bar, because the speed is show as vector lenghts
+end
+;---------------------------------------------------------------
+undef("setDefaultColors")
+procedure setDefaultColors(resource,minval,maxval,debug)
+begin
+; white is color 135
+  if ((minval*maxval) .LT. 0.0) then ; data goes fro positiv to negative or vs.
+    if (abs(maxval) .GT. abs(minval)) then
+      resource@gsnSpreadColorStart = 135  - toint(126*(abs(minval)/abs(maxval)))
+      resource@gsnSpreadColorEnd   = 255
+    else
+      resource@gsnSpreadColorStart = 2
+      resource@gsnSpreadColorEnd   = 135 + toint(126*(abs(maxval)/abs(minval)))
+    end if
+    resource@gsnContourZeroLineThicknessF = 3.0
+    if (debug) then
+      print("===================== COMPUTE the COLORS to make zero WHITE:")
+      print("minval: "+minval)
+      print("maxval: "+maxval)
+      print("100*(toint(abs(minval)/abs(maxval))): "+toint(100*(abs(minval)/abs(maxval))))
+      print("resource@gsnSpreadColorStart:" + resource@gsnSpreadColorStart)
+      print("resource@gsnSpreadColorEnd  :" + resource@gsnSpreadColorEnd)
+    end if
+  end if
 end
 ;---------------------------------------------------------------
 undef("shift4SecMap")
