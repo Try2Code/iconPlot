@@ -961,7 +961,7 @@ begin
       resource@gsnSpreadColorStart = 2
       resource@gsnSpreadColorEnd   = 135 + toint(126*(abs(maxval)/abs(minval)))
     end if
-    resource@gsnContourZeroLineThicknessF = 3.0
+    resource@gsnContourZeroLineThicknessF = 2.0
     if (debug) then
       print("===================== COMPUTE the COLORS to make zero WHITE:")
       print("minval: "+minval)
@@ -1255,8 +1255,8 @@ procedure setMaskColor(wks,resource)
 begin
   newcolor = NhlNewColor(wks,0.85,0.85,0.85)   ; add gray to colormap
   ;resource@gsnSpreadColorStart  = 1
-  resource@gsnSpreadColorEnd     = 19  ; last color number not known?
-  resource@cnMissingValFillColor = 20  ; last color is used for missing values
+  ;resource@gsnSpreadColorEnd     = 19  ; last color number not known?
+  resource@cnMissingValFillColor = newcolor
 end
 ;---------------------------------------------------------------
 ; set the coordinates for an ICON data field

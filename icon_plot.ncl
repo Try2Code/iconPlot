@@ -651,14 +651,22 @@
 
    if (showSecMap) then
      ; map with section polygon
-     mres                  = True
-     mres@gsnFrame         = False;                don't turn page yet
-     mres@gsnDraw          = False;                don't draw yet
-     mres@vpWidthF         = 0.8;          set width of plot
-     mres@vpHeightF        = 0.3;          set height of plot
-     mres@vpXF             = 0.1
-     mres@vpYF             = 0.4
-     plot(1)               = gsn_csm_map_ce(wks,mres)
+     mres              = True
+     mres@gsnFrame     = False;                don't turn page yet
+     mres@gsnDraw      = False;                don't draw yet
+     mres@vpWidthF     = 0.8;          set width of plot
+     mres@vpHeightF    = 0.3;          set height of plot
+     mres@vpXF         = 0.1
+     mres@vpYF         = 0.4
+
+     newcolor          = NhlNewColor(wks,0.85,0.85,0.85);    add gray to colormap
+     mres@mpOutlineOn  = True;  (turn off continental outlines)
+     mres@mpFillOn     = False;  (turn on map fill)
+     mres@mpFillColors = (/"background","transparent","LightGray","transparent"/);  (fill land in gray and ocean in transparent)
+     mres@mpGrid       = False
+
+ ;    plot(1)               = gsn_map(wks,"CylindricalEquidistant",mres)
+     plot(1)               = gsn_csm_map(wks,mres)
      pres                  = True;            polyline mods desired
      pres@gsnFrame         = False;                don't turn page yet
      pres@gsnDraw          = False;                don't draw yet
