@@ -11,10 +11,27 @@
 
 ;------- config ---------------------------------------------------------------
   ; default settings from user file
-  CONFIGFILE = getenv("HOME")+"/.icon_plot.rc"
-  if (isfilepresent(CONFIGFILE)) then
-    print("Found configfile:"+CONFIGFILE)
-    loadscript(CONFIGFILE)
+  ; --- Skip any user configuration through a file
+  if (isvar("noConfig")) then
+    if ( isvar("DEBUG") .and. DEBUG) print("Subpress user configuration") end if
+  else
+  ; --- Use the configuration file from the commandline option
+    if ( isvar("configFile") ) then
+      if (isfilepresent(configFile)) then
+        print("Found configfile:"+configFile)
+        loadscript(configFile)
+      else
+        print("Could NOT find configfile:"+configFile)
+        exit()
+      end if
+    else
+  ; --- Use the default config file
+      CONFIGFILE = getenv("HOME")+"/.icon_plot.rc"
+      if (isfilepresent(CONFIGFILE)) then
+        print("Found configfile:"+CONFIGFILE)
+        loadscript(CONFIGFILE)
+      end if
+    end if
   end if
 
   if ( .not. isvar("altLibDir") )  then
@@ -26,7 +43,7 @@
   end if
 ;--- end config ---------------------------------------------------------------
 ;==============================================================================
-  VERSION = "0.0.4"
+  VERSION = "0.0.5"
 ;----- MAIN PROGRAM -----------------------------------------------------------
   if (isvar("help")) then
     dq = str_get_dq()
@@ -129,6 +146,8 @@
     print("; atmLev        : chooses vertical plot levels for atmosphere input (h: height,p:pressure,m:modellevel,default:p)")
     print(";---------------------------------------------------------------")
     print("; altLibDir     : Alternative directory for loading icon_plot_lib.ncl")
+    print("; noConfig      : subpress reading of any config file, i.e. use commandline options only (default:False)")
+    print(";                 Use +noConfig or -noConfig=True")
     print("; cdo           : Path to an alternative cdo version")
     print(";---------------------------------------------------------------")
     print("; Authors       : Ralf Mueller (ralf.mueller@zmaw.de)")
