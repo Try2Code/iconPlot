@@ -17,6 +17,7 @@ OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/oce.nc'
 OCELONG_PLOT_TEST_FILE= ENV['HOME']+'/data/icon/oceLong.nc'
 OCELSM_PLOT_TEST_FILE = ENV['HOME']+'/data/icon/oce_lsm.nc'
 ATM_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/atm.nc'
+ICON_LONG_RUN         = ENV['HOME']+'/data/icon/icon-dailyOmip.nc'
 OCE_REGPLOT_TEST_FILE = ENV['HOME']+'/data/icon/regular_oce.nc' #remapnn,r180x90
 ATM_REGPLOT_TEST_FILE = ENV['HOME']+'/data/icon/regular_atm.nc' #remapnn,n63 (no sections), r180x90 (with sections)
 COMPARISON            = {:oce => OCE_PLOT_TEST_FILE, :atm => ATM_PLOT_TEST_FILE}
@@ -32,7 +33,8 @@ CLEAN.add(*Dir.glob(["test_*.png","remapnn_*nc","zonmean_*.nc"]))
 @lock = Mutex.new
 
 @plotter = IconPlot.new("contrib/nclsh","icon_plot.ncl",".",nil,nil,nil,true)
-
+#=============================================================================== 
+# put some plotter methods into main context
 def show(*args)
   @plotter.show(*args)
 end
@@ -57,6 +59,7 @@ end
 def del(*args)
   @plotter.del(*args)
 end
+#=============================================================================== 
 
 def grepTests(pattern)
   tests = Rake::Task.tasks.find_all {|t| t.name =~ pattern}
@@ -136,7 +139,7 @@ desc "x11 test"
 task :test_x11 do
   ofile          = 'test_x11'
   varname        = 'T'
-  scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:oType => 'x11')
+  scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:oType => 'x11',:noConfig => true)
 end
 desc "perform halflog plot"
 task :test_halflog do
@@ -149,10 +152,14 @@ task :test_halflog do
   show(image)
 
   varname='W'
-  ifile = "#{ENV['HOME']}/data/icon/issues/2352/TC33_iconR2B04-ocean_etopo40_planet_0001.nc"
-  image = scalarPlot(ifile,ofile,varname,:selMode =>'halflog',:minVar =>-0.5, :maxVar => 0.5, :scaleLimit => 3,:timeStep => 36)
+  ifile = ICON_LONG_RUN
+  image = scalarPlot(ifile,ofile,varname,:selMode =>'halflog',
+                     :minVar =>-1.0e-6, :maxVar => 1.0e-6, :mapLLC => '-10.0,-80.0' ,:mapURC =>'100.0,-10.0',
+                     :scaleLimit => 3,:timeStep => 11)
   show(image)
-  image = scalarPlot(ifile,ofile,varname,:selMode =>'halflog',:timeStep => 36)
+  image = scalarPlot(ifile,ofile,varname,:selMode =>'halflog',
+                     :mapLLC => '-10.0,-80.0' ,:mapURC =>'100.0,-10.0',
+                     :timeStep => 11)
   show(image)
 end
 desc "test isIcon switch"
@@ -314,12 +321,12 @@ end
 desc "plot vectors of ocean input"
 task :test_vector_oce do
   jq = JobQueue.new
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce','u-veloc v-veloc') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce','u-veloc v-veloc',:mapType     => 'ortho') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce','u-veloc v-veloc',:streamLine  => 'True') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce','u-veloc v-veloc',:streamLine  => 'True',:mapType => 'ortho') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce','u-veloc v-veloc',:vecColByLen => 'True') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce','u-veloc v-veloc',:streamLine  => 'True',:vecColByLen =>'True') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_0','u-veloc v-veloc') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_1','u-veloc v-veloc',:mapType     => 'ortho') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_2','u-veloc v-veloc',:streamLine  => 'True') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_3','u-veloc v-veloc',:streamLine  => 'True',:mapType => 'ortho') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_4','u-veloc v-veloc',:vecColByLen => 'True') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_5','u-veloc v-veloc',:streamLine  => 'True',:vecColByLen =>'True') }
   jq.run
 end
 desc "plot vectors of atm input"
@@ -327,13 +334,12 @@ task :test_vector_atm do
   ofile = 'test_vector_atm'
   images  =  []
 
-  images << vectorPlot(ATM_PLOT_TEST_FILE,ofile+'0','U V',        :vecRefLength => 0.01)
-  images << vectorPlot(ATM_PLOT_TEST_FILE,ofile+'1','U V',        :vecRefLength => 0.01,:mapType => 'NHps')
-  images << vectorPlot(ATM_PLOT_TEST_FILE,ofile+'_stream_0','U V',:streamLine   => "True")
-  images << vectorPlot(ATM_PLOT_TEST_FILE,ofile+'_stream_1','U V',:streamLine   => "True",:mapType => 'NHps')
-
-  pp images
-  show(images)
+  jq = JobQueue.new
+  jq.push { showVector(ATM_PLOT_TEST_FILE,ofile+'0','U V',        :vecRefLength => 0.01) }
+  jq.push {  showVector(ATM_PLOT_TEST_FILE,ofile+'1','U V',        :vecRefLength => 0.01,:mapType => 'NHps') }
+  jq.push { showVector(ATM_PLOT_TEST_FILE,ofile+'_stream_0','U V',:streamLine   => "True") }
+  jq.push { showVector(ATM_PLOT_TEST_FILE,ofile+'_stream_1','U V',:streamLine   => "True",:mapType => 'NHps') }
+  jq.run
 end
 
 # orthographic projections
@@ -421,7 +427,9 @@ COMPARISON_REG.each {|itype,ifile|
   itypeS = itype.to_s
   desc "orthographic plot (#{itypeS}) from regular grid"
   task "test_reg_ortho_#{itypeS}".to_sym do
+    @plotter.isIcon = false
     defaultPlot(ifile,"ortho_#{itypeS}",:mapType => "ortho")
+    @plotter.isIcon = true
   end
 }
 # overlay plots
@@ -430,12 +438,15 @@ COMPARISON_REG.each {|itype,ifile|
   itypeS = itype.to_s
   desc "overlay plot (#{itypeS}) from regular grid"
   task "test_reg_overlay_#{itypeS}".to_sym do
+    puts "RUN TEST: test_reg_overlay_#{itypeS}"
+    @plotter.isIcon = false
     defaultPlot(ifile,"overlay_#{itypeS}",
                 :vecVars => vecvars,
                 :mapType => "ortho",
-                :atmLev => "m",
+                :atmLev => "m",:varName => 'T',
                 :centerLon => 120,
                 :centerLat => -50)
+    @plotter.isIcon = true
   end
 }
 # vertical cross sections
@@ -505,7 +516,8 @@ if 'thingol' == `hostname`.chomp
   task :test_show_grid do
     require 'jobqueue'
     jq = JobQueue.new
-    jq.push(@plotter,:defaultPlot,OCE_PLOT_TEST_FILE   ,'test_show_grid_oce',:showGrid => "True")
+    jq.push(@plotter,:defaultPlot,OCE_PLOT_TEST_FILE   ,'test_show_grid_oce',:showGrid => "True",
+                     :mapLLC => '-10.0,-80.0' ,:mapURC =>'100.0,-10.0')
     jq.push(@plotter,:defaultPlot,OCE_PLOT_TEST_FILE   ,'test_show_grid_oce_ortho',:showGrid => "True",:mapType => "ortho")
     jq.push(@plotter,:defaultPlot,ATM_PLOT_TEST_FILE   ,'test_show_grid_atm',:showGrid => "True",:atmLev => "m")
     jq.push(@plotter,:defaultPlot,OCE_REGPLOT_TEST_FILE,'test_show_reg_grid',:showGrid => "True")

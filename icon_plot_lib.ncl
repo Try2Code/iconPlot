@@ -26,7 +26,7 @@
   CDO          = "cdo"
 ;  DEFAULTCOLOR = "BlWhRe"             ; ncolors = 103
   DEFAULTCOLOR = "BlueDarkRed18"      ; ncolors = 256
-  DEFAULTCOLOR = "BlueWhiteOrangeRed" ; ncolors = 256
+;  DEFAULTCOLOR = "BlueWhiteOrangeRed" ; ncolors = 256
 ;-------------------------------------------------------------------------------
 procedure setCDO(path)
 begin

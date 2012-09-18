@@ -61,7 +61,6 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
     plot(ifile,ofile,varname,'vector',opts)
   end
   def levelPlot(ifile,ofile,varname,opts={})
-    Cdo.setCdo('/home/ram/src/cdo/trunk/cdo/build/bin/cdo')
     operation = opts[:operation].nil? ? 'fldmin' : opts[:operation]
 
     data = createData(ifile,varname,operation)
@@ -109,7 +108,7 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
     files.flatten.each {|file| IO.popen("#{self.display} #{file} &") }
   end
   def defaultPlot(ifile,ofile,opts={})
-    show(scalarPlot(ifile,ofile,DEFAULT_VARNAME,opts))
+    show(scalarPlot(ifile,ofile,'T',opts))
   end
   def showVector(ifile,ofile,vars,opts={})
     show(vectorPlot(ifile,ofile,vars,opts))
