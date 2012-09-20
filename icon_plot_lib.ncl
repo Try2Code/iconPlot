@@ -26,7 +26,7 @@
   CDO          = "cdo"
 ;  DEFAULTCOLOR = "BlWhRe"             ; ncolors = 103
   DEFAULTCOLOR = "BlueDarkRed18"      ; ncolors = 256
-;  DEFAULTCOLOR = "BlueWhiteOrangeRed" ; ncolors = 256
+  DEFAULTCOLOR = "BlueWhiteOrangeRed" ; ncolors = 256
 ;-------------------------------------------------------------------------------
 procedure setCDO(path)
 begin
@@ -1253,10 +1253,9 @@ end
 undef("setMaskColor")
 procedure setMaskColor(wks,resource)
 begin
-  newcolor = NhlNewColor(wks,0.85,0.85,0.85)   ; add gray to colormap
-  ;resource@gsnSpreadColorStart  = 1
-  ;resource@gsnSpreadColorEnd     = 19  ; last color number not known?
-  resource@cnMissingValFillColor = newcolor
+  resource@cnMissingValFillColor       = "gray90"
+  resource@cnMissingValPerimOn         = True;          turn on missing value outlines
+  resource@cnMissingValPerimThicknessF = 2.5;   set the missing value outline thickness
 end
 ;---------------------------------------------------------------
 ; set the coordinates for an ICON data field
@@ -1688,8 +1687,8 @@ begin
 end
 ;---------------------------------------------------------------
 ; Create a resource for the grid plot
-undef("setupGridResource")
-function setupGridResource(var,levels,colors,boundslon,boundslat,wks,plot,debug)
+undef("performGridPlot")
+procedure performGridPlot(var,levels,colors,boundslon,boundslat,wks,plot,debug)
 begin
   pres             = True
   pres@gsEdgesOn   = True   ; Turn on edges
@@ -1734,18 +1733,16 @@ begin
 
   ; if no index vhig is found with values larger levels(max-1), vhig is missing value:
   if (.not. ismissing(vhig(0))) then
-  do j = 0, dimsizes(vhig) -1
-    pres@gsFillColor = colors(i+1)
-                     gsn_polygon( wks,plot,   boundslon(vhig(j),:),boundslat(vhig(j),:),pres)
-  end do
+    do j = 0, dimsizes(vhig) -1
+      pres@gsFillColor = colors(i+1)
+      gsn_polygon(wks,plot,boundslon(vhig(j),:),boundslat(vhig(j),:),pres)
+    end do
   end if
   if (debug) then
     print ("i=" + i + ", Values   larger than      "+levels(i) +": " \
            + dimsizes(vhig) + " triangles considered, color= " + colors(i+1))
   end if
   delete(vhig)
-
-  return pres
 end
 ;---------------------------------------------------------------
 ; Plot the ICON grid of a variable to the plot.
@@ -1769,7 +1766,7 @@ begin
 
   if (debug) printGridPlotInfo(colors,levels,flags) end if
 
-  pres = setupGridResource(variable,levels,colors,boundslon,boundslat,workstation,plot,debug)
+  performGridPlot(variable,levels,colors,boundslon,boundslat,workstation,plot,debug)
 end
 ;---------------------------------------------------------------
 ; read in mask variable

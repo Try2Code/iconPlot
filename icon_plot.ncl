@@ -641,6 +641,9 @@
         exit
       end if
       plotGrid(wks,plot,var,x,bounds,File,ResC,DEBUG)
+      ResC@cnFillMode = "rasterfill"
+      ResC@cnRasterSmoothingOn = True
+      ResC@gsnFrame = False
     end if
     draw(plot)
   end if

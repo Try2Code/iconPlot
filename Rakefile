@@ -409,18 +409,22 @@ COMPARISON.each {|itype,ifile|
 # PLOTTING FROM REGULAR GRID INPUT
 desc "Plot dat from a regular grid"
 task :test_reg_3d do
+  @plotter.isIcon = false
   ofile = 'test_oce_reg_3d'
   scalarPlot(OCE_REGPLOT_TEST_FILE,ofile,'T')
   show(ofile+'.'+OFMT)
   ofile = 'test_atm_reg_3d'
   scalarPlot(ATM_REGPLOT_TEST_FILE,ofile,'T')
   show(ofile+'.'+OFMT)
+  @plotter.isIcon = true
 end
 # vectors
 desc "Plot vector from regular grid"
 task :test_reg_vector do
+  @plotter.isIcon = false
   showVector(OCE_REGPLOT_TEST_FILE,'test_reg_vec_oce','u-veloc v-veloc')
   showVector(ATM_REGPLOT_TEST_FILE,'test_reg_vec_oce','U V')
+  @plotter.isIcon = true
 end
 # orthographic projections
 COMPARISON_REG.each {|itype,ifile|
