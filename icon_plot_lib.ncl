@@ -820,17 +820,14 @@ end
 ;---------------------------------------------------------------
 ; Create a default NCL resource
 undef("setDefaultResource")
-function setDefaultResource(verticallabelbar,withLines,withLineLabels,fillMode)
+function setDefaultResource(verticallabelbar,withLines,withLineLabels,fillmode)
 begin
   resource                          = True
-
   resource@gsnMaximize              = False
-;     resource@gsnPaperOrientation  = "landscape";   turns plot on paper
-;     resource@wkPaperSize          = "A4"
   resource@gsnFrame                 = False
-  resource@gsnDraw                  = False;                don't draw yet
+  resource@gsnDraw                  = True
   resource@gsnSpreadColors          = True
-  resource@cnFillOn                 = True;     writes labelbar, no contour labels
+  resource@cnFillOn                 = True
 
 ; lines/labels inside the plot ================================================
   resource@cnLinesOn                = False
@@ -878,7 +875,7 @@ begin
   resource@lbLabelAutoStride        = True
   resource@lbLabelFontHeightF       = FontHeight1     ;   color bar labels
 
-  resource@cnFillMode           = fillMode
+  resource@cnFillMode           = fillmode
   resource@cnRasterSmoothingOn  = True
   resource@mpGreatCircleLinesOn = True
   resource@stMinArrowSpacingF   = 0.001

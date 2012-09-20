@@ -549,7 +549,7 @@
     drawNDCGrid(wks)
   end if
 
-  ResC = setDefaultResource(True,withLines,withLineLabels,fillMode)
+  ResC = setDefaultResource(True,False,False,"rasterfill")
 
   if (.not. userColors) setDefaultColors(ResC,minVar,maxVar,DEBUG) end if
 
@@ -641,11 +641,7 @@
         exit
       end if
       plotGrid(wks,plot,var,x,bounds,File,ResC,DEBUG)
-      ResC@cnFillMode = "rasterfill"
-      ResC@cnRasterSmoothingOn = True
-      ResC@gsnFrame = False
     end if
-    draw(plot)
   end if
   if (plotMode.eq."scatter") then
     plot = gsn_csm_xy(wks,xvar,yvar,ResC)

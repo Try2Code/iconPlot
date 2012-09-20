@@ -118,8 +118,11 @@ desc "select regions"
 task :test_mapselect do
   ofile          = 'test_mapSelect'
   varname        = 'ELEV'
-  show(scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0'))
-  show(scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c'))
+  jq = JobQueue.new
+  jq.push {show(scalarPlot(OCE_PLOT_TEST_FILE,ofile+rand.to_s,varname,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0'))}
+  jq.push {show(scalarPlot(OCE_PLOT_TEST_FILE,ofile+rand.to_s,varname,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c'))}
+  jq.push {show(scalarPlot(OCE_PLOT_TEST_FILE,ofile+rand.to_s,varname,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c',:showGrid => true))}
+  jq.run
 end
 desc "masking with ocean's wet_c"
 task :test_mask do
