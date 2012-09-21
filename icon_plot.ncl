@@ -123,6 +123,7 @@
     print("; mapType       : projection type (default: lonlat), other: ortho (not compatible with showGrid), NHps")
     print(";                 and SHps (polar stereographic projections centered at the north and south pole respectively),")
     print(";                 sat (satelite view, use option centerLat, centerLon and satDist)")
+    print("; hov           : plot hovmoeller diagram, expects variable with two 'active' dimensions, i.e. var(:,:,0,0)")
     print("; mapLine       : (logical) draws continent lines on the plot (foreground/transparent)")
     print("; maskName      : variable to mask with. maskName is expected NOT to have time dimension")
     print(";                  'maskName=" + dq + "none" + dq + "' is same as default (no mask variable)")
