@@ -1735,7 +1735,7 @@ begin
     if (.not. ismissing(vind(0))) then
     do j = 0, dimsizes(vind)-1
       pres@gsFillColor = colors(i+1)
-                       gsn_polygon( wks,plot,   boundslon(vind(j),:),boundslat(vind(j),:),pres)
+      gsn_polygon( wks,plot,   boundslon(vind(j),:),boundslat(vind(j),:),pres)
     end do
     end if
     if (debug) then
