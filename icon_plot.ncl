@@ -43,7 +43,7 @@
   end if
 ;--- end config ---------------------------------------------------------------
 ;==============================================================================
-  VERSION = "0.0.5"
+  VERSION = "0.0.6"
 ;----- MAIN PROGRAM -----------------------------------------------------------
   if (isvar("help")) then
     dq = str_get_dq()
@@ -358,9 +358,9 @@
     exit
   end if
   if (isvar("secLC").and.isvar("secRC")) plotMode = "section" end if
-  if (isvar("hoff")) plotMode = "hoffmueller" end if
+  if (isvar("hov")) plotMode = "hovmoeller" end if
 
-  if (plotMode.eq."vector" .or. plotMode.eq."overlay" .or. plotMode.eq."section" .or. plotMode .eq. "hoffmueller") then
+  if (plotMode.eq."vector" .or. plotMode.eq."overlay" .or. plotMode.eq."section") then
     if (horizonalGridType .ne. "unstructured") then ; regular grid expected, i.e. remappgin is NOT required
       rFile = addfile(iFile+".nc","r")
     else
@@ -376,10 +376,10 @@
       end if
       rFile = addfile( remapFilename+".nc", "r" )
     end if
-    if (plotMode .eq. "hoffmueller") then ; perform zonmean
-      zonmeanFilename = setZonmeanFilename(remapFilename,ivarname,atmLev)
-      zonmean4HoffmuellerPlot(remapFilename,ivarname,zonmeanFilename)
-    end if
+   ;if (plotMode .eq. "hoffmueller") then ; perform zonmean
+   ;  zonmeanFilename = setZonmeanFilename(remapFilename,ivarname,atmLev)
+   ;  zonmean4HoffmuellerPlot(remapFilename,ivarname,zonmeanFilename)
+   ;end if
   end if
   File  = addfile( iFile+".nc", "r" )
 
@@ -417,7 +417,7 @@
     print("Graphics format is " +oType)
     print("plotMode    = "+plotMode)
 
-    if (plotMode.eq."scalar" .or. plotMode.eq."section") then
+    if (plotMode.eq."scalar" .or. plotMode.eq."section" .or. plotMode.eq."hovmoeller") then
       print("varName     = "+varName)
     else
       print("vecVars     = "+vecVars)
@@ -477,6 +477,11 @@
       ;var = mask ( var, slm, 0.5)
     end if
   end if
+  if (plotMode.eq."hovmoeller") then
+    var = selRegularVar(varName,File,-1)
+    if(.not. isvar("minVar")) minVar = min(var) end if
+    if(.not. isvar("maxVar")) maxVar = max(var) end if
+  end if
   if (plotMode.eq."vector" .or. plotMode.eq."overlay") then; vector mode =======
     uvarname = vecVars(0)
     vvarname = vecVars(1)
@@ -530,11 +535,6 @@
       var = mask(var,maskVar,1)
     end if
   end if ; Reading data variables =============================================
-  if (plotMode .eq. "hoffmueller") then ; create hoffmuelle diagram
-    ; select the whole time series
-    ; and plot it with
-    ; plot = gsn_csm_lat_time(wks, shov(0,{-80:80},:), res)
-  end if
   if (iType .eq. "atm" .and. ivarname .eq. "T" .and. k2c) var = var - 273.15 end if ;atmosphere used to write out Kelvin
 
   ;---------------------------------------------------------------
@@ -645,6 +645,12 @@
   end if
   if (plotMode.eq."scatter") then
     plot = gsn_csm_xy(wks,xvar,yvar,ResC)
+  end if
+  if (plotMode .eq. "hovmoeller") then ; create hoffmuelle diagram
+    ; select the whole time series
+    ; and plot it with
+    print(var)
+    plot = gsn_csm_hov(wks, var(:,:,0,0), ResC)
   end if
   if (plotMode.eq."section") then
 

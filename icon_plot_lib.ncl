@@ -16,6 +16,7 @@
 ;---------------------------------------------------------------
 ; Authors       : Ralf Mueller (ralf.mueller@zmaw.de)
 ;                 Stephan Lorenz (stephan.lorenz@zmaw.de)
+; VERSION = "0.0.6"
 ;-------------------------------------------------------------------------------
 ; some global defaults
   DEFAULTLON   = "clon"
@@ -236,11 +237,30 @@ end
 undef("selRegularVar")
 function selRegularVar(varname,filehandle,timestep)
 begin
-    dims      = getfilevardims(filehandle,varname)
-    noOfDims  = dimsizes(dims)
-    noOfDims  = noOfDims(0)
-    usableVar = False
-    if ( has_time(dims) ) then
+  dims      = getfilevardims(filehandle,varname)
+  noOfDims  = dimsizes(dims)
+  noOfDims  = noOfDims(0)
+  print(""+noOfDims)
+  usableVar = False
+  if ( has_time(dims) ) then
+    if (timestep.eq.-1) then
+      if (noOfDims .eq. 4) then        ; dims: (time,lev,x,y)
+        var = filehandle->$varname$
+        usableVar = True
+      end if
+      if (noOfDims .eq. 3) then        ; dims: (time,x,y)
+        var = filehandle->$varname$(:,:,:)
+        usableVar = True
+      end if
+      if (noOfDims .eq. 2) then        ; dims: (x,y)
+        var = filehandle->$varname$(:,:)
+        usableVar = True
+      end if
+      if (noOfDims .eq. 1) then        ; dims: (time)
+        var = filehandle->$varname$(:)
+        usableVar = False
+      end if
+    else
       if (noOfDims .eq. 4) then        ; dims: (time,lev,x,y)
         var = filehandle->$varname$(timestep,:,:,:)
         usableVar = True
@@ -257,25 +277,26 @@ begin
         var = filehandle->$varname$(:)
         usableVar = False
       end if
-    else
-      if (noOfDims .eq. 3) then        ; dims: (lev,x,y)
-        var = filehandle->$varname$(:,:,:)
-        usableVar = True
-      end if
-      if (noOfDims .eq. 2) then        ; dims: (x,y)
-        var = filehandle->$varname$(:,:)
-        usableVar = True
-      end if
-      if (noOfDims .eq. 1) then        ; dims: (x)
-        var = filehandle->$varname$(:)
-        usableVar = True
-      end if
     end if
-    if (.not. usableVar) then
-      print("Warning! Could not read " +  varname + " from input file")
-      exit
+  else
+    if (noOfDims .eq. 3) then        ; dims: (lev,x,y)
+      var = filehandle->$varname$(:,:,:)
+      usableVar = True
     end if
-    return var
+    if (noOfDims .eq. 2) then        ; dims: (x,y)
+      var = filehandle->$varname$(:,:)
+      usableVar = True
+    end if
+    if (noOfDims .eq. 1) then        ; dims: (x)
+      var = filehandle->$varname$(:)
+      usableVar = True
+    end if
+  end if
+  if (.not. usableVar) then
+    print("Warning! Could not read " +  varname + " from lonlat input file")
+    exit
+  end if
+  return var
 end
 ;-------------------------------------------------------------------------------
 ; abstract Field selection
@@ -1809,4 +1830,4 @@ begin
 end
 
 ;
-; vim:list
+; vim:ft=ncl
