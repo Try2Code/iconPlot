@@ -16,6 +16,7 @@ LS                    = 'ls -crtlh'
 OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/oce.nc'
 OCELONG_PLOT_TEST_FILE= ENV['HOME']+'/data/icon/oceLong.nc'
 OCELSM_PLOT_TEST_FILE = ENV['HOME']+'/data/icon/oce_lsm.nc'
+OCE_HOV_FILE          = ENV['HOME']+'/data/icon/oce4hovmoeller.nc'
 ATM_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/atm.nc'
 ICON_LONG_RUN         = ENV['HOME']+'/data/icon/icon-dailyOmip.nc'
 OCE_REGPLOT_TEST_FILE = ENV['HOME']+'/data/icon/regular_oce.nc' #remapnn,r180x90
@@ -550,6 +551,11 @@ task :test_line_labels do
   defaultPlot(OCE_PLOT_TEST_FILE ,'test_withLines',     :mapType => "ortho",:colormap => "test_cmap",:withLines => false)
   defaultPlot(OCE_PLOT_TEST_FILE ,'test_withoutLines',  :mapType => "ortho",:colormap => "test_cmap",:withLines => true)
   defaultPlot(OCE_PLOT_TEST_FILE ,'test_withLineLabels',:mapType => "ortho",:colormap => "test_cmap",:withLineLabels => true)
+end
+
+desc "test for hovmoeller diagramm"
+task :test_hov do
+  show(scalarPlot(OCE_HOV_FILE,'test_hov','T',:hov => true))
 end
 #==============================================================================
 # Test collections
