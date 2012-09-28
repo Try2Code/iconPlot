@@ -651,7 +651,8 @@
     ; select the whole time series
     ; and plot it with
     print(var)
-    plot = gsn_csm_hov(wks, var(:,:,0,0), ResC)
+    ResC@trYReverse    = True
+    plot = gsn_csm_hov(wks, var(depth|:,time|:,lat|0,lon|0), ResC)
   end if
   if (plotMode.eq."section") then
 
