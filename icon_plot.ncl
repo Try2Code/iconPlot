@@ -650,7 +650,6 @@
   if (plotMode .eq. "hovmoeller") then ; create hoffmuelle diagram
     ; select the whole time series
     ; and plot it with
-    print(var)
     ResC@trYReverse    = True
     plot = gsn_csm_hov(wks, var(depth|:,time|:,lat|0,lon|0), ResC)
   end if
