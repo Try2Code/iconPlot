@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'cdo'
+require 'cdp'
 require 'fileutils'
 require 'jobqueue'
 require 'socket'
@@ -17,51 +18,17 @@ files     = ( ARGV.size > 1 ) ? ARGV : Dir.glob(ARGV[0])
 files.each {|file|
   warn "Cannot read file '#{file}'" unless File.exist?(file)
 }
-
+gridFile = files.pop
 q         = JobQueue.new([JobQueue.maxnumber_of_processors,8].min)
 lock      = Mutex.new
 #maskFile  = "mask-L40.nc"
 maskFile  = "mask.nc"
 diff2init = true
 
-hostname = Socket.gethostname
-case hostname
-when /thingol/
-  Cdo.setCdo(ENV['HOME']+"/local/bin/cdo-dev")
-when /lizard/
-  Cdo.setCdo(ENV['HOME']+"/local/rhel55-x64/bin/cdo")
-when /blizzard/
-  Cdo.setCdo(ENV['HOME']+"/local/bin/cdo")
-else
-  puts "Use default Cdo:#{Cdo.getCdo} (version:#{Cdo.version})"
-end
-
-Cdo.checkCdo
-Cdo.debug = true unless ENV['DEBUG'].nil?
+Cdp.setCDO
 
 # compute the experiments from the data directories and link the corresponding files
-experiments = files.map {|f| File.basename(File.dirname(f))}.uniq.sort_by {|f| f.length}.reverse
-# take the larges part of the filenames as experiment name if the files are in
-# the current directory
-if experiments == ["."] then
-  n = files.map(&:size).min.times.map {|i| 
-    if files.map {|f| f[0,i-1]}.uniq.size == 1
-      1
-    else
-      nil
-    end 
-  }.find_all {|v| not v.nil?}.size-1
-  uniqName = files[0][0,n]
-  experiments = [uniqName]
-end
-experimentFiles, experimentAnalyzedData = {},{}
-experiments.each {|experiment|
-  experimentFiles[experiment] = files.grep(/#{experiment}/)
-  experimentFiles[experiment].each {|file| files.delete(file)}
-  experimentFiles[experiment].sort!
-
-  experimentAnalyzedData[experiment] = []
-}
+gridfile, experimentFiles, experimentAnalyzedData = Cdp.splitFilesIntoExperiments(files)
 
 # process the files
 #   start with selectiong the initial values from the first timestep
@@ -121,7 +88,7 @@ experimentAnalyzedData.each {|experiment,files|
   tag   = diff2init ? 'diff2init' : ''
   ofile = [experiment,'T-S-rhopot',tag].join('_') + '.nc'
   unless File.exist?(ofile)
-    Cdo.cat(:in => files.join(' '), :out => ofile, :options => '-r')
+    Cdo.cat(:in => files.sort.join(' '), :out => ofile, :options => '-r')
   end
   plotFile = 'thingol' == Socket.gethostname \
            ? '/home/ram/src/git/icon/scripts/postprocessing/tools/icon_plot.ncl' \
