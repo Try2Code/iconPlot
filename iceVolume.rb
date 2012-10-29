@@ -20,7 +20,7 @@ files.each {|file|
   warn "Cannot read file '#{file}'" unless File.exist?(file)
 }
 
-q         = JobQueue.new([JobQueue.maxnumber_of_processors,8].min)
+q         = JobQueue.new([JobQueue.maxnumber_of_processors,20].min)
 lock      = Mutex.new
 
 #=============================================================================== 
@@ -67,13 +67,13 @@ def splitFilesIntoExperiments(files)
     experimentAnalyzedData[experiment] = []
   }
 
-  [gridFile,experiments]
+  [gridFile,experimentFiles,experimentAnalyzedData]
 end
 #=============================================================================== 
 # MAIN
-gridfile, experiments = splitFilesIntoExperiments(files)
-iceHeight             = 'p_ice_hi'
-iceConcentration      = 'p_ice_concSum'
+gridfile, experimentFiles, experimentAnalyzedData = splitFilesIntoExperiments(files)
+iceHeight                                         = 'p_ice_hi'
+iceConcentration                                  = 'p_ice_concSum'
 #   process the experiments results
 experimentFiles.each {|experiment, files|
   files.each {|file|
@@ -83,7 +83,7 @@ experimentFiles.each {|experiment, files|
         Cdo.setname('ice_volume',:in => " -divc,1e9 -mul -mul -selname,#{iceHeight} #{file}  -selname,cell_area #{gridfile}  -selname,#{iceConcentration} #{file}",
                    :out => volumeFile)
       end
-      lock.synchronize {experimentAnalyzedData[experiment] << fldmeanFile }
+      lock.synchronize {experimentAnalyzedData[experiment] << volumeFile }
     }
   }
 }
@@ -95,7 +95,7 @@ experimentAnalyzedData.each {|experiment,files|
   tag   = ''
   ofile = [experiment,'iceVolume',tag].join('_') + '.nc'
   unless File.exist?(ofile)
-    Cdo.cat(:in => files.join(' '), :out => ofile, :options => '-r')
+    Cdo.cat(:in => files.sort.join(' '), :out => ofile, :options => '-r')
   end
 # plotFile = 'thingol' == Socket.gethostname \
 #          ? '/home/ram/src/git/icon/scripts/postprocessing/tools/icon_plot.ncl' \
