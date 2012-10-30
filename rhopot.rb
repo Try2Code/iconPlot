@@ -18,7 +18,7 @@ files     = ( ARGV.size > 1 ) ? ARGV : Dir.glob(ARGV[0])
 files.each {|file|
   warn "Cannot read file '#{file}'" unless File.exist?(file)
 }
-gridFile = files.pop
+
 q         = JobQueue.new([JobQueue.maxnumber_of_processors,8].min)
 lock      = Mutex.new
 #maskFile  = "mask-L40.nc"
@@ -29,6 +29,9 @@ Cdp.setCDO
 
 # compute the experiments from the data directories and link the corresponding files
 gridfile, experimentFiles, experimentAnalyzedData = Cdp.splitFilesIntoExperiments(files)
+
+# compute meaked weight
+maskedAreaWeights = Cdp.manualMaskedAreaWeights("cell_area",gridfile,"wet_c",maskFile)
 
 # process the files
 #   start with selectiong the initial values from the first timestep
@@ -73,7 +76,7 @@ experimentFiles.each {|experiment, files|
         Cdo.sub(:in => [mergedFile,initFile].join(' '),:out => diffFile)
       end
       unless File.exist?(fldmeanFile)
-        Cdo.fldmean(:in => diffFile, :out => fldmeanFile,:options => '-r -f nc')
+        Cdo.fldsum(:in => "-mul #{diffFile} #{maskedAreaWeights}", :out => fldmeanFile,:options => '-r -f nc')
       end
       lock.synchronize {experimentAnalyzedData[experiment] << fldmeanFile }
     }
@@ -83,8 +86,8 @@ q.run
 
 # merge all yearmean data (T,S,rhopot) into one file per experiment
 q.clear
+images = []
 experimentAnalyzedData.each {|experiment,files|
-  q.push {
   tag   = diff2init ? 'diff2init' : ''
   ofile = [experiment,'T-S-rhopot',tag].join('_') + '.nc'
   unless File.exist?(ofile)
@@ -96,11 +99,18 @@ experimentAnalyzedData.each {|experiment,files|
   plotter  = 'thingol' == Socket.gethostname \
            ? IconPlot.new(ENV['HOME']+'/local/bin/nclsh', plotFile, File.dirname(plotFile),'png','qiv',true,true) \
            : IconPlot.new('/sw/rhel55-x64/ncl-5.2.1/bin/ncl', plotFile, File.dirname(plotFile), 'ps','evince',true,true)
-  images = []
-  images << plotter.scalarPlot(ofile,'T_'+     File.basename(ofile,'.nc'),'T',     :tStrg => "#{experiment}", :bStrg => ' ',:hov => true,:minVar => -1.0,:maxVar => 5.0,:numLevs => 24,:rStrg => 'Temperature')
-  images << plotter.scalarPlot(ofile,'S_'+     File.basename(ofile,'.nc'),'S',     :tStrg => "#{experiment}", :bStrg => ' ',:hov => true,:minVar => -0.2,:maxVar => 0.2,:numLevs => 16,:rStrg => 'Salinity')
-  images << plotter.scalarPlot(ofile,'rhopot_'+File.basename(ofile,'.nc'),'rhopot',:tStrg => "#{experiment}", :bStrg => ' ',:hov => true,:minVar => -0.6,:maxVar => 0.6,:numLevs => 24,:rStrg => 'Pot.Density')
-  images.each {|im| plotter.show(im) }
+  q.push {
+    im = plotter.scalarPlot(ofile,'T_'+     File.basename(ofile,'.nc'),'T',     :tStrg => experiment, :bStrg => '" a"',:hov => true,:minVar => -1.0,:maxVar => 5.0,:numLevs => 24,:rStrg => 'Temperature')
+    lock.synchronize {images << im }
+  }
+  q.push {
+    im =  plotter.scalarPlot(ofile,'S_'+     File.basename(ofile,'.nc'),'S',     :tStrg => experiment, :bStrg => '"a "',:hov => true,:minVar => -0.2,:maxVar => 0.2,:numLevs => 16,:rStrg => 'Salinity')
+    lock.synchronize {images << im }
+  }
+  q.push {
+    im = plotter.scalarPlot(ofile,'rhopot_'+File.basename(ofile,'.nc'),'rhopot',:tStrg => experiment, :bStrg => '"  d"',:hov => true,:minVar => -0.6,:maxVar => 0.6,:numLevs => 24,:rStrg => 'Pot.Density')
+    lock.synchronize {images << im }
   }
 }
 q.run
+system("eog #{images.join(' ')}")
