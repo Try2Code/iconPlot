@@ -11,7 +11,7 @@ if ARGV[0].nil?
   warn "no input files given"
   exit(-1)
 else
-  puts 'Please remember, that the lat file in the list is expected to be an ICON grid file'
+  puts 'Please remember, that the last file in the list is expected to be an ICON grid file'
   sleep 1
 end
 files     = ( ARGV.size > 1 ) ? ARGV : Dir.glob(ARGV[0])
