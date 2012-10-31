@@ -31,7 +31,7 @@ Cdp.setCDO
 gridfile, experimentFiles, experimentAnalyzedData = Cdp.splitFilesIntoExperiments(files)
 
 # compute meaked weight
-maskedAreaWeights = Cdp.manualMaskedAreaWeights("cell_area",gridfile,"wet_c",maskFile)
+maskedAreaWeights = Cdp.manualMaskedAreaWeights("cell_area",gridfile,"wet_c",maskFile,"maskedAeraWeights.nc")
 
 # process the files
 #   start with selectiong the initial values from the first timestep
