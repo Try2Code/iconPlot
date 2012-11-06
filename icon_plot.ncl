@@ -550,7 +550,7 @@
     drawNDCGrid(wks)
   end if
 
-  ResC = setDefaultResource(True,False,False,"rasterfill")
+  ResC = setDefaultResource(True,withLines,withLineLabels,"rasterfill")
 
   if (.not. userColors) setDefaultColors(ResC,minVar,maxVar,DEBUG) end if
 

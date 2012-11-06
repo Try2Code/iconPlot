@@ -555,6 +555,7 @@ end
 
 desc "test for hovmoeller diagramm"
 task :test_hov do
+  show(scalarPlot(OCE_HOV_FILE,'test_hov','T',:hov => true,:withLineLabels => true))
   show(scalarPlot(OCE_HOV_FILE,'test_hov','T',:hov => true))
 end
 #==============================================================================

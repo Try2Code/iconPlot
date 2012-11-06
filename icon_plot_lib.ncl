@@ -851,7 +851,11 @@ begin
   resource@cnFillOn                 = True
 
 ; lines/labels inside the plot ================================================
-  resource@cnLinesOn                = False
+  if (withLines) then
+    resource@cnLinesOn              = True
+  else
+    resource@cnLinesOn              = False
+  end if
   resource@cnLineLabelsOn           = False
   if (withLineLabels ) then
     withLines                       = True
