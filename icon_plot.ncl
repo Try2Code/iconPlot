@@ -194,7 +194,13 @@
   if (.not. isvar("scaleLimit"))     scaleLimit     = 2               end if
   if (.not. isvar("selMode"))        selMode        = "auto"          end if
   if (.not. isvar("plotMode"))       plotMode       = "scalar"        end if
-  if (.not. isvar("timeStep"))       timeStep       = 0               end if
+  if (.not. isvar("timeStep")) then
+    timeStep       = 0
+  else
+    t = floattointeger(timeStep)
+    delete(timeStep)
+    timeStep = t
+  end if
   if (.not. isvar("levIndex"))       levIndex       = 0               end if
   if (.not. isvar("scaleFactor"))    scaleFactor    = 1               end if
   if (.not. isvar("fillMode"))       fillMode       = "RasterFill"    end if
