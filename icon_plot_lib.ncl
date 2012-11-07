@@ -1797,7 +1797,7 @@ begin
   lonmax=flt2dble(0.0)
   lonmin=flt2dble(0.0)
   setBoundsEnds(boundslon,boundslat,lonmin,lonmax,latmin,latmax)
-  ;checkLongitude(x,boundslon,lonmin,lonmax,debug)
+  checkLongitude(x,boundslon,lonmin,lonmax,debug)
 
   flags = getFlags(variable,boundslon,boundslat,resource)
 
