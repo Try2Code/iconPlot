@@ -140,6 +140,7 @@
     print("; withLines     : draw lines between each contour color (default:True)")
     print("; withLineLabels: label the countour lines with theri values (auto-enable withLines, default:False)")
     print("; showGrid      : display polygon lines with filled colors instead of contour plot")
+    print("; markCells     : mark cell centers with dots")
     print("; showNcd       : display NDC Grid to find Normalized Device Coordinates on the plot")
     print("; k2c           : if True, perform Kelvin2Celsius shift (default:True)")
     print(";")
@@ -187,6 +188,7 @@
 
   if (.not. isvar("DEBUG"))          DEBUG          = False           end if
   if (.not. isvar("showGrid"))       showGrid       = False           end if
+  if (.not. isvar("markCells"))      markCells      = False           end if
   if (.not. isvar("showNdc"))        showNdc        = False           end if
   if (.not. isvar("maxView"))        maxView        = False           end if
   if (.not. isvar("scaleLimit"))     scaleLimit     = 2               end if
@@ -642,6 +644,9 @@
         exit
       end if
       plotGrid(wks,plot,var,x,bounds,File,ResC,DEBUG)
+    end if
+    if ( markCells ) then
+      plotCellMarkers(x,y,wks,plot,True)
     end if
   end if
   if (plotMode.eq."scatter") then

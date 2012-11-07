@@ -519,16 +519,21 @@ task :test_misc_maptypes do
   }
 end
 
+desc "test cell markers"
+task :test_markers do
+  show(scalarPlot(OCE_PLOT_TEST_FILE,'test_markers','T',:markCells => true,:mapLLC => '-10.0,-80.0' ,:mapURC =>'100.0,-10.0'))
+end
+
 if 'thingol' == `hostname`.chomp
   desc "test show grid plot with ocean, atmosphere, regular grid and ortho. projection"
   task :test_show_grid do
     require 'jobqueue'
     jq = JobQueue.new
     jq.push(@plotter,:defaultPlot,OCE_PLOT_TEST_FILE   ,'test_show_grid_oce',:showGrid => "True",
-                     :mapLLC => '-10.0,-80.0' ,:mapURC =>'100.0,-10.0')
-    jq.push(@plotter,:defaultPlot,OCE_PLOT_TEST_FILE   ,'test_show_grid_oce_ortho',:showGrid => "True",:mapType => "ortho")
-    jq.push(@plotter,:defaultPlot,ATM_PLOT_TEST_FILE   ,'test_show_grid_atm',:showGrid => "True",:atmLev => "m")
-    jq.push(@plotter,:defaultPlot,OCE_REGPLOT_TEST_FILE,'test_show_reg_grid',:showGrid => "True")
+                     :mapLLC => '-10.0,-40.0' ,:mapURC =>'10.0,-10.0')
+   #jq.push(@plotter,:defaultPlot,OCE_PLOT_TEST_FILE   ,'test_show_grid_oce_ortho',:showGrid => "True",:mapType => "ortho")
+   #jq.push(@plotter,:defaultPlot,ATM_PLOT_TEST_FILE   ,'test_show_grid_atm',:showGrid => "True",:atmLev => "m")
+   #jq.push(@plotter,:defaultPlot,OCE_REGPLOT_TEST_FILE,'test_show_reg_grid',:showGrid => "True")
     jq.run
   end
 end
