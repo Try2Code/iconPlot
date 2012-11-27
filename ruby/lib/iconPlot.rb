@@ -52,7 +52,8 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
     out = IO.popen(cmd).read
     puts out if self.debug
 
-    return [FileUtils.pwd,"#{ofile}.#{self.otype}"].join(File::SEPARATOR)
+    #return [FileUtils.pwd,"#{ofile}.#{self.otype}"].join(File::SEPARATOR)
+    return "#{ofile}.#{self.otype}"
   end
   def scalarPlot(ifile,ofile,varname,opts={})
     plot(ifile,ofile,varname,'scalar',opts)
