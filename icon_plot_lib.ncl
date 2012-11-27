@@ -1121,6 +1121,7 @@ begin
   else
     resource@lbTitleString      = ""
   end if
+  resource@tiMainFontHeightF  = 0.02
   if (itype .eq. "atm" .and. varname .eq. "T" .and. k2c) resource@lbTitleString = "C" end if
 
   resource@lbTitlePosition    = "Bottom"
