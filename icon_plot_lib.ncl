@@ -1724,9 +1724,9 @@ begin
   if (.not. ismissing(vlow(0))) then
     do j = 0, dimsizes(vlow)-1
       pres@gsFillColor = colors(i)   ; first color
-      ;if ( flags(vlow(i))) then
+      if ( flags(vlow(i))) then
       gsn_polygon(wks,plot,boundslon(vlow(j),:),boundslat(vlow(j),:),pres)
-      ;end if
+      end if
     end do
   end if
   if (debug) then
@@ -1762,9 +1762,9 @@ begin
   if (.not. ismissing(vhig(0))) then
     do j = 0, dimsizes(vhig) -1
       pres@gsFillColor = colors(i+1)
-      ;if ( flags(vhig(i))) then
+      if ( flags(vhig(i))) then
       gsn_polygon(wks,plot,boundslon(vhig(j),:),boundslat(vhig(j),:),pres)
-      ;end if
+      end if
     end do
   end if
   if (debug) then
