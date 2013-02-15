@@ -14,9 +14,10 @@ DST                   = HOSTS.map {|v| v + ':' + DIR}
 CP                    = 'scp -p'
 LS                    = 'ls -crtlh'
 OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/oce.nc'
+OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/r2b05/test.nc'
 OCELONG_PLOT_TEST_FILE= ENV['HOME']+'/data/icon/oceLong.nc'
 OCELSM_PLOT_TEST_FILE = ENV['HOME']+'/data/icon/oce_lsm.nc'
-OCE_HOV_FILE          = ENV['HOME']+'/data/icon/oce4hovmoeller.nc'
+OCE_HOV_FILE          = ENV['HOME']+'/data/icon/test_hov.nc'
 ATM_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/atm.nc'
 ICON_LONG_RUN         = ENV['HOME']+'/data/icon/icon-dailyOmip.nc'
 OCE_REGPLOT_TEST_FILE = ENV['HOME']+'/data/icon/regular_oce.nc' #remapnn,r180x90
@@ -325,12 +326,12 @@ end
 desc "plot vectors of ocean input"
 task :test_vector_oce do
   jq = JobQueue.new
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_0','u-veloc v-veloc') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_1','u-veloc v-veloc',:mapType     => 'ortho') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_2','u-veloc v-veloc',:streamLine  => 'True') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_3','u-veloc v-veloc',:streamLine  => 'True',:mapType => 'ortho') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_4','u-veloc v-veloc',:vecColByLen => 'True') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_5','u-veloc v-veloc',:streamLine  => 'True',:vecColByLen =>'True') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_0','u v') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_1','u v',:mapType     => 'ortho') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_2','u v',:streamLine  => 'True') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_3','u v',:streamLine  => 'True',:mapType => 'ortho') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_4','u v',:vecColByLen => 'True') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_5','u v',:streamLine  => 'True',:vecColByLen =>'True') }
   jq.run
 end
 desc "plot vectors of atm input"
@@ -340,7 +341,7 @@ task :test_vector_atm do
 
   jq = JobQueue.new
   jq.push { showVector(ATM_PLOT_TEST_FILE,ofile+'0','U V',        :vecRefLength => 0.01) }
-  jq.push {  showVector(ATM_PLOT_TEST_FILE,ofile+'1','U V',        :vecRefLength => 0.01,:mapType => 'NHps') }
+  jq.push { showVector(ATM_PLOT_TEST_FILE,ofile+'1','U V',        :vecRefLength => 0.01,:mapType => 'NHps') }
   jq.push { showVector(ATM_PLOT_TEST_FILE,ofile+'_stream_0','U V',:streamLine   => "True") }
   jq.push { showVector(ATM_PLOT_TEST_FILE,ofile+'_stream_1','U V',:streamLine   => "True",:mapType => 'NHps') }
   jq.run
@@ -531,9 +532,8 @@ if 'thingol' == `hostname`.chomp
     jq = JobQueue.new
     jq.push(@plotter,:defaultPlot,OCE_PLOT_TEST_FILE   ,'test_show_grid_oce',:showGrid => "True",
                      :mapLLC => '-10.0,-40.0' ,:mapURC =>'10.0,-10.0')
-   #jq.push(@plotter,:defaultPlot,OCE_PLOT_TEST_FILE   ,'test_show_grid_oce_ortho',:showGrid => "True",:mapType => "ortho")
-   #jq.push(@plotter,:defaultPlot,ATM_PLOT_TEST_FILE   ,'test_show_grid_atm',:showGrid => "True",:atmLev => "m")
-   #jq.push(@plotter,:defaultPlot,OCE_REGPLOT_TEST_FILE,'test_show_reg_grid',:showGrid => "True")
+    jq.push(@plotter,:defaultPlot,OCE_PLOT_TEST_FILE   ,'test_show_grid_oce_ortho',:showGrid => "True",:mapType => "ortho")
+    jq.push(@plotter,:defaultPlot,ATM_PLOT_TEST_FILE   ,'test_show_grid_atm',:showGrid => "True",:atmLev => "m")
     jq.run
   end
 end
@@ -560,8 +560,8 @@ end
 
 desc "test for hovmoeller diagramm"
 task :test_hov do
-  show(scalarPlot(OCE_HOV_FILE,'test_hov','T',:hov => true,:withLineLabels => true))
-  show(scalarPlot(OCE_HOV_FILE,'test_hov','T',:hov => true))
+  show(scalarPlot(OCE_HOV_FILE,'test_hov','T',:hov => true,:withLineLabels => true,:DEBUG => true))
+  show(scalarPlot(OCE_HOV_FILE,'test_hov','T',:hov => true,:withLines => false))
 end
 #==============================================================================
 # Test collections
