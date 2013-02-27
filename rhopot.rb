@@ -18,12 +18,12 @@ def myPlotter
            : IconPlot.new("/home/zmaw/m300064/local/bin/nclsh", plotFile, File.dirname(plotFile), 'png','display',true,true)
   [plotter,plotFile]
 end
-#==============================================================================
+#------------------------------------------------------------------------------
 def initFilename(experiment)
   "initial_#{experiment}.nc"
 end
 initFileName = lambda {|exp| "initial_#{exp}.nc"}
-#==============================================================================
+#------------------------------------------------------------------------------
 def secPlot(ofile,experiment,secPlots,lock,plotDir=".")
   plotDir << '/' unless '/' == plotDir[-1]
 
@@ -50,7 +50,7 @@ def secPlot(ofile,experiment,secPlots,lock,plotDir=".")
                           :numLevs => 24,:rStrg => 'Pot.Density', :colormap => "BlWhRe")
   lock.synchronize {(secPlots[experiment] ||= []) << im }
 end
-#==============================================================================
+#------------------------------------------------------------------------------
 def horizPlot(ifile,experiment,plots,lock,plotDir=".")
   plotter, plotFile = myPlotter
   year = 2011
@@ -75,7 +75,7 @@ def horizPlot(ifile,experiment,plots,lock,plotDir=".")
                             :rStrg => 'Temperature')
     lock.synchronize {(plots[experiment] ||= []) << im }
 end
-#==============================================================================
+#------------------------------------------------------------------------------
 def cropSecPlots(secPlots,plotDir='.')
   plotDir << '/' unless '/' == plotDir[-1]
   q = JobQueue.new
@@ -97,7 +97,7 @@ def cropSecPlots(secPlots,plotDir='.')
   #system("convert +append #{(cropfiles.grep(/crop_T/) + cropfiles.grep(/crop_S/) + cropfiles.grep(/crop_rho/)).join(' ')} exp.png")
   #system("display #{cropfiles.join(' ')}") #if 'thingol' == Socket.gethostname
 end
-#==============================================================================
+#------------------------------------------------------------------------------
 def cropMapPlots(plots,plotDir='.')
   plotDir << '/' unless '/' == plotDir[-1]
   q = JobQueue.new
@@ -119,16 +119,22 @@ def cropMapPlots(plots,plotDir='.')
   #system("convert +append #{(cropfiles.grep(/crop_T/) + cropfiles.grep(/crop_S/) + cropfiles.grep(/crop_rho/)).join(' ')} exp.png")
   #system("display #{cropfiles.join(' ')}") #if 'thingol' == Socket.gethostname
 end
-#==============================================================================
+#------------------------------------------------------------------------------
 def computeRhopot(ifile,ofile=nil)
   if Cdo.version < "1.6.0"
     Cdo.rhopot(0,:input => ifile,:output => ofile)
   else
+    # remove all codes so that adisit can use names
+    system("ncatted -O -a code,,d,, #{ifile}")
     Cdo.rhopot(0,:input => "-adisit #{ifile}",:output => ofile)
   end
 end
 #==============================================================================
+######### M A I N   S C R I P T ###############################################
 #==============================================================================
+# USAGE:
+#   MASK=mask.nc GRID=grid.nc rhopot.rb <list-of-icon-ocean-result-files>
+#------------------------------------------------------------------------------
 # check input
 if ARGV[0].nil?
   warn "no input files given"
@@ -137,6 +143,7 @@ end
 
 files     = ( ARGV.size > 1 ) ? ARGV : Dir.glob(ARGV[0])
 maskFile  = ENV["MASK"].nil? ? "mask.nc" : ENV["MASK"]
+gridFile  = ENV["GRID"].nil? ? "grid.nc" : ENV["GRID"]
 # check files
 files.each {|file|
   warn "Cannot read file '#{file}'" unless File.exist?(file)
@@ -145,26 +152,29 @@ unless File.exist?(maskFile)
   warn "Cannot open maskfile '#{maskFile}'"
   exit -1
 end
-#==============================================================================
-q         = JobQueue.new([JobQueue.maxnumber_of_processors,16].min)
+pp files unless ENV['DEBUG'].nil?
+#------------------------------------------------------------------------------
+#q         = JobQueue.new([JobQueue.maxnumber_of_processors,16].min)
+q         = JobQueue.new
 lock      = Mutex.new
 
 Cdp.setCDO
 Cdp.setDebug
-Cdo.forceOutput = false
+Cdo.forceOutput = !ENV['FORCE'].nil?
 Cdo.debug       = true
 diff2init       = true
 def plot?
   not /(thingol|thunder)/.match(Socket.gethostname).nil?
 end
-#==============================================================================
-
-# compute the experiments from the data directories and link the corresponding files
-gridfile, experimentFiles, experimentAnalyzedData = Cdp.splitFilesIntoExperiments(files)
+#------------------------------------------------------------------------------
+# compute the experiments from the data directories and link the corresponding
+# files
+experimentFiles, experimentAnalyzedData = Cdp.splitFilesIntoExperiments(files)
 
 # process the files
 #   start with selectiong the initial values from the first timestep
 experimentFiles.each {|experiment, files|
+  pp files unless ENV['DEBUG'].nil?
   q.push {
     initFile    = initFileName.call(experiment)
     puts "Computing initial value file: #{initFile}"
@@ -180,11 +190,10 @@ experimentFiles.each {|experiment, files|
 q.run
 # compute meaked weight
 maskedAreaWeights = Cdp.maskedAreaWeights("cell_area",
-                                          gridfile,
+                                          gridFile,
                                           "wet_c",
                                           maskFile,
                                           "maskedAeraWeightsFrom#{File.basename(maskFile)}")
-
 #   process the experiments results
 experimentFiles.each {|experiment, files|
   files.each {|file|
