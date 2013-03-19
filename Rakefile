@@ -563,6 +563,12 @@ task :test_hov do
   show(scalarPlot(OCE_HOV_FILE,'test_hov','T',:hov => true,:withLineLabels => true,:DEBUG => true))
   show(scalarPlot(OCE_HOV_FILE,'test_hov','T',:hov => true,:withLines => false))
 end
+
+desc "test with data on a non-global grid"
+task :test_non_global do
+  ifile = 'topo_2x2_00001.nc'
+  system("qiv #{(scalarPlot(ifile,'test_non_global','topo',:DEBUG => true,:isIcon => false))}")
+end
 #==============================================================================
 # Test collections
 desc "Run all tests"
