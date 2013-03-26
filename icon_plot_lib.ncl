@@ -932,8 +932,8 @@ begin
   resource@gsnSpreadColors              = True;          use full range of colormap
   resource@cnLinesOn                    = False;         turn off countour lines
  ; if (useContourLines)
-  resource@cnLinesOn             = True
-  resource@cnLineLabelsOn        = True
+  resource@cnLinesOn             = False
+  resource@cnLineLabelsOn        = False
   resource@lbOrientation                = "vertical";    vertical label bar
   resource@pmLabelBarOrthogonalPosF     = -0.05;         move label bar closer to plot
   resource@lbTitlePosition              = "Bottom"
@@ -951,6 +951,8 @@ begin
   resource@cnMissingValPerimDashPattern = 1;           set the dash pattern of the missing value perimeter to 1
   resource@cnMissingValPerimThicknessF  = 3.0;         increase the thickness of the missing value perimeter 3X
   ;resource@gsnYAxisIrregular2Log        = True
+  resource@cnFillMode           = "RasterFill"
+  resource@cnRasterSmoothingOn  = False
   return resource
 end
 ;---------------------------------------------------------------
@@ -1437,30 +1439,30 @@ end
 ;---------------------------------------------------------------
 ; compute the path of the cross-section
 undef("getSectionPath")
-function getSectionPath(secLC,secRC,npoints,secMode)
+function getSectionPath(seclc,secrc,secpoints,secmode)
 begin
-  if (secMode .eq. "straight") then
-    pathRes = getStraightPath(secLC,secRC,secPoints)
+  if (secmode .eq. "straight") then
+    pathRes = getStraightPath(seclc,secrc,secpoints)
   else
-    pathRes = getCirclePath(secLC,secRC,secPoints)
+    pathRes = getCirclePath(seclc,secrc,secpoints)
   end if
   return pathRes
 end
 ;---------------------------------------------------------------
 ; compute the path of the cross-section but suitable for plotting in a separate Map
 undef("getSectionPathForMap")
-function getSectionPathForMap(secLC,secRC,npoints,secMode)
+function getSectionPathForMap(seclc,secrc,secpoints,secmode)
 begin
-  pathRes     = getSectionPath(secLC,secRC,secPoints,secMode)
+  pathRes     = getSectionPath(seclc,secrc,secpoints,secmode)
   pathRes@lon = where(pathRes@lon.lt.pathRes@lon(0),pathRes@lon + 360.0,pathRes@lon)
   return pathRes
 end
 ;---------------------------------------------------------------
 ; setting for vertical cross sections based on remapped icon data
 undef("setSection")
-function setSection(secLC,secRC,npoints,var,secMode)
+function setSection(seclc,secrc,secpoints,var,secmode)
 begin
-  pathRes = getSectionPath(secLC,secRC,npoints,secMode)
+  pathRes = getSectionPath(seclc,secrc,secpoints,secmode)
 
   trans   = linint2_points(var&lon,var&lat,var,True,pathRes@lon,pathRes@lat,2)
 
@@ -1469,13 +1471,13 @@ end
 ;---------------------------------------------------------------
 ; setting for vertical cross sections based on remapped icon data
 undef("setSectionFromHybridPress")
-function setSectionFromHybridPress(secLC,secRC,npoints,var,filehandle,timestep)
+function setSectionFromHybridPress(seclc,secrc,npoints,var,filehandle,timestep)
 begin
-  leftlat  = secLC(1)
-  rightlat = secRC(1)
+  leftlat  = seclc(1)
+  rightlat = secrc(1)
 
-  leftlon  = secLC(0)
-  rightlon = secRC(0)
+  leftlon  = seclc(0)
+  rightlon = secrc(0)
 
   ;config
   pressName  = "PS"

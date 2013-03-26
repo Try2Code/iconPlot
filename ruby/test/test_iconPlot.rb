@@ -20,15 +20,17 @@ class TestIconPlot < Test::Unit::TestCase
   if 'thingol' == `hostname`.chomp
     def test_simple
       ip = IconPlot.new(CALLER,PLOTTER,PLOTLIB,OFMT,PLOT_CMD,CDO,true)
+      ip.debug = true
       ofile          = 'test_icon_plot'
-      ip.show(ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile,"T",:levIndex => 0))
-      ip.show(ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile,"T",:levIndex => 2))
-      ip.show(ip.vectorPlot(OCE_PLOT_TEST_FILE,   ofile,"u-veloc v-veloc",:levIndex => 2))
-      ip.show(ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile,"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:mapType => "ortho"))
-      ip.show(ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile,"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:secLC => "-20,-60", :secRC => "-20,60"))
-      ip.show(ip.scalarPlot(OCELSM_PLOT_TEST_FILE,ofile,"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:secLC => "-20,-60", :secRC => "-20,60",:maskName => 'wet_c'))
-      ip.show(ip.scalarPlot(OCELSM_PLOT_TEST_FILE,ofile,"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:maskName => 'wet_c'))
-      ip.show(ip.scalarPlot(OCELSM_PLOT_TEST_FILE,ofile,"T",:levIndex => 2,:maskName => 'wet_c'))
+      ip.show(ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile+'_00',"T",:levIndex => 0))
+      ip.show(ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile+'_01',"T",:levIndex => 2))
+      ip.show(ip.vectorPlot(OCE_PLOT_TEST_FILE,   ofile+'_02',"u-veloc v-veloc",:levIndex => 2))
+      ip.show(ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile+'_03',"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:mapType => "ortho"))
+      ip.show(ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile+'_04',"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:secLC => "-20,-60", :secRC => "-20,60"))
+      ip.show(ip.scalarPlot(OCELSM_PLOT_TEST_FILE,ofile+'_05',"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:secLC => "-20,-60", :secRC => "-20,60",:maskName => 'wet_c'))
+      ip.show(ip.scalarPlot(OCELSM_PLOT_TEST_FILE,ofile+'_05',"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:secLC => "-50,-60", :secRC => "0,60",:maskName => 'wet_c',:secMode => 'circle'))
+      ip.show(ip.scalarPlot(OCELSM_PLOT_TEST_FILE,ofile+'_06',"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:maskName => 'wet_c'))
+      ip.show(ip.scalarPlot(OCELSM_PLOT_TEST_FILE,ofile+'_07',"T",:levIndex => 2,:maskName => 'wet_c'))
       ip.isIcon = false
       ip.show(ip.scalarPlot("remapnn_r90x45_oce.nc","reg_"+ofile,"T",:levIndex => 2,:mapType => "ortho"))
       ip.show(ip.scalarPlot("remapnn_r90x45_oce.nc","reg_"+ofile,"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:mapType => "ortho"))

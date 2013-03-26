@@ -16,14 +16,18 @@
 ;---------------------------------------------------------------
 ; Authors       : Ralf Mueller (ralf.mueller@zmaw.de)
 ;                 Stephan Lorenz (stephan.lorenz@zmaw.de)
+; VERSION = "0.0.6"
 ;-------------------------------------------------------------------------------
 ; some global defaults
-  DEFAULTLON = "clon"
-  DEFAULTLAT = "clat"
-  RAD2DEG    = 45./atan(1.)
-  ABORTMSG   = "Abort Script."
-  NUMLEVS    = 10
-  CDO        = "cdo"
+  DEFAULTLON   = "clon"
+  DEFAULTLAT   = "clat"
+  RAD2DEG      = 45./atan(1.)
+  ABORTMSG     = "Abort Script."
+  NUMLEVS      = 10
+  CDO          = "cdo"
+;  DEFAULTCOLOR = "BlWhRe"             ; ncolors = 103
+  DEFAULTCOLOR = "BlueDarkRed18"      ; ncolors = 256
+  DEFAULTCOLOR = "BlueWhiteOrangeRed" ; ncolors = 256
 ;-------------------------------------------------------------------------------
 procedure setCDO(path)
 begin
@@ -233,11 +237,30 @@ end
 undef("selRegularVar")
 function selRegularVar(varname,filehandle,timestep)
 begin
-    dims      = getfilevardims(filehandle,varname)
-    noOfDims  = dimsizes(dims)
-    noOfDims  = noOfDims(0)
-    usableVar = False
-    if ( has_time(dims) ) then
+  dims      = getfilevardims(filehandle,varname)
+  noOfDims  = dimsizes(dims)
+  noOfDims  = noOfDims(0)
+  print(""+noOfDims)
+  usableVar = False
+  if ( has_time(dims) ) then
+    if (timestep.eq.-1) then
+      if (noOfDims .eq. 4) then        ; dims: (time,lev,x,y)
+        var = filehandle->$varname$
+        usableVar = True
+      end if
+      if (noOfDims .eq. 3) then        ; dims: (time,x,y)
+        var = filehandle->$varname$(:,:,:)
+        usableVar = True
+      end if
+      if (noOfDims .eq. 2) then        ; dims: (x,y)
+        var = filehandle->$varname$(:,:)
+        usableVar = True
+      end if
+      if (noOfDims .eq. 1) then        ; dims: (time)
+        var = filehandle->$varname$(:)
+        usableVar = False
+      end if
+    else
       if (noOfDims .eq. 4) then        ; dims: (time,lev,x,y)
         var = filehandle->$varname$(timestep,:,:,:)
         usableVar = True
@@ -254,25 +277,26 @@ begin
         var = filehandle->$varname$(:)
         usableVar = False
       end if
-    else
-      if (noOfDims .eq. 3) then        ; dims: (lev,x,y)
-        var = filehandle->$varname$(:,:,:)
-        usableVar = True
-      end if
-      if (noOfDims .eq. 2) then        ; dims: (x,y)
-        var = filehandle->$varname$(:,:)
-        usableVar = True
-      end if
-      if (noOfDims .eq. 1) then        ; dims: (x)
-        var = filehandle->$varname$(:)
-        usableVar = True
-      end if
     end if
-    if (.not. usableVar) then
-      print("Warning! Could not read " +  varname + " from input file")
-      exit
+  else
+    if (noOfDims .eq. 3) then        ; dims: (lev,x,y)
+      var = filehandle->$varname$(:,:,:)
+      usableVar = True
     end if
-    return var
+    if (noOfDims .eq. 2) then        ; dims: (x,y)
+      var = filehandle->$varname$(:,:)
+      usableVar = True
+    end if
+    if (noOfDims .eq. 1) then        ; dims: (x)
+      var = filehandle->$varname$(:)
+      usableVar = True
+    end if
+  end if
+  if (.not. usableVar) then
+    print("Warning! Could not read " +  varname + " from lonlat input file")
+    exit
+  end if
+  return var
 end
 ;-------------------------------------------------------------------------------
 ; abstract Field selection
@@ -566,9 +590,9 @@ end
 ;---------------------------------------------------------------
 ; set filename for the automatically remapped file
 undef("setRemapFilename")
-function setRemapFilename(filename,itype,atmlev)
+function setRemapFilename(filename,itype,resolution,atmlev)
 begin
-  return setNewFilename(filename,"remapnn",itype,atmlev)
+  return setNewFilename(filename,"remapnn_"+resolution,itype,atmlev)
 end
 undef("setZonmeanFilename")
 function setZonmeanFilename(filename,itype,atmlev)
@@ -778,17 +802,24 @@ undef("setLevels")
 procedure setLevels(selmode,resource,minvar,maxvar,scalelimit,numlevs,debug)
 begin
   if (selmode .eq. "manual") then
-    resource@cnLevelSelectionMode = "ManualLevels"
-    resource@cnMinLevelValF       = minvar
-    resource@cnMaxLevelValF       = maxvar
-;    diffLog10                 = log10(abs(maxVar-minVar))
-;;   if (diffLog10 .lt. 0) then
-;      resource@cnLevelSpacingF    = 10^(floor(diffLog10))/numLevs
-;;   else
-;;     resource@cnLevelSpacingF    = 10^(floor(diffLog10))/numLevs
-;;   end if
-    diffspacing               = abs(maxvar-minvar)/(int2flt(numlevs))
-    resource@cnLevelSpacingF      = diffspacing
+    if ( .not. isvar("plotLevs") ) then
+      resource@cnLevelSelectionMode = "ManualLevels"
+      resource@cnMinLevelValF       = minvar
+      resource@cnMaxLevelValF       = maxvar
+  ;    diffLog10                 = log10(abs(maxVar-minVar))
+  ;;   if (diffLog10 .lt. 0) then
+  ;      resource@cnLevelSpacingF    = 10^(floor(diffLog10))/numLevs
+  ;;   else
+  ;;     resource@cnLevelSpacingF    = 10^(floor(diffLog10))/numLevs
+  ;;   end if
+      diffspacing               = abs(maxvar-minvar)/(int2flt(numlevs))
+      resource@cnLevelSpacingF      = diffspacing
+    else
+      resource@cnLevelSelectionMode = "ExplicitLevels"
+      plotLevels = plotLevs
+      if (debug) print("plotlevels = "+plotLevels) end if
+      resource@cnLevels             = plotLevels
+    end if
   end if
 
   if (selmode .eq. "halflog") then
@@ -810,17 +841,39 @@ end
 ;---------------------------------------------------------------
 ; Create a default NCL resource
 undef("setDefaultResource")
-procedure setDefaultResource(resource,verticallabelbar)
+function setDefaultResource(verticallabelbar,withLines,withLineLabels,fillmode)
 begin
-  resource@gsnMaximize          = False
-; resource@gsnPaperOrientation  = "landscape"  ; turns plot on paper
-; resource@wkPaperSize          = "A4"
-  resource@gsnFrame             = False
-  resource@gsnSpreadColors      = True
+  resource                          = True
+  resource@gsnMaximize              = False
+  resource@gsnFrame                 = False
+  resource@gsnDraw                  = True
+  resource@gsnSpreadColors          = True
+  resource@cnFillOn                 = True
 
-  resource@cnFillOn             = True   ;  writes labelbar, no contour labels
-  resource@cnLinesOn            = False
-  resource@cnInfoLabelOn        = False
+; lines/labels inside the plot ================================================
+  if (withLines) then
+    resource@cnLinesOn              = True
+  else
+    resource@cnLinesOn              = False
+  end if
+  resource@cnLineLabelsOn           = False
+  if (withLineLabels ) then
+    withLines                       = True
+    resource@cnLineLabelsOn         = True
+    resource@cnLineLabelFontHeightF = 0.008
+    resource@cnLineLabelFontThicknessF = 0.006
+  end if
+  if (withLines) resource@cnLinesOn = True end if
+
+  ; representation of missing values ===========================================
+  delete(resource@cnMissingValFillPattern);     no longer filling missing value areas
+  delete(resource@cnMissingValFillColor);       no longer filling missing value areas
+  resource@cnMissingValPerimOn          = True
+  resource@cnMissingValFillPattern      = -1;                set the missing value fill pattern to 5
+  resource@cnMissingValFillScaleF       = 0.9;              increase the density of the fill pattern (default   = 1.0)
+  resource@cnMissingValPerimColor       = "black";          change the missing value perimeter to black
+  resource@cnMissingValPerimDashPattern = 1;           set the dash pattern of the missing value perimeter to 1
+  resource@cnMissingValPerimThicknessF  = 1.0;         increase the thickness of the missing value perimeter 3X
 
   FontHeight0               = 0.012
   FontHeight1               = 0.015
@@ -835,8 +888,7 @@ begin
   resource@gsnStringFontHeightF = FontHeight0
 
   resource@mpFillOn               = True
-  resource@cnFillOn               = True
-
+; label settings ==============================================================
   resource@lbLabelBarOn             = True
   if (verticallabelbar .eq. True) then
     resource@lbOrientation            = "vertical"
@@ -848,11 +900,12 @@ begin
   resource@lbLabelAutoStride        = True
   resource@lbLabelFontHeightF       = FontHeight1     ;   color bar labels
 
-  resource@cnFillMode           = "RasterFill"
-  ;resource@cnFillMode           = "CellFill"
+  resource@cnFillMode           = fillmode
   resource@cnRasterSmoothingOn  = True
   resource@mpGreatCircleLinesOn = True
   resource@stMinArrowSpacingF   = 0.001
+
+  return resource
 end
 ;---------------------------------------------------------------
 undef("setDefaultSectionResource")
@@ -862,20 +915,32 @@ begin
   resource@gsnFrame                     = False;                don't turn page yet
   resource@gsnDraw                      = False;                don't draw yet
   resource@tmXBMode                     = "Explicit";     explicitly label x-axis
+  latDiff = stringtodouble(secrc(1)) - stringtodouble(seclc(1))
+  tic = latDiff/(stringtodouble(secpoints)-1)
+  p = (points * tic) + stringtodouble(seclc(1))
+ ; resource@tmXBValues                   = points
   resource@tmXBValues                   = (/points(0),points(secpoints-1)/);  points to label values
+  labels = new(dimsizes(p),string)
+  labels = p
+;print(""+labels)
+ ;resource@tmXBLabels                   = labels
   resource@tmXBLabels                   = (/ seclc(1) +"N, "+ seclc(0)+"E" , secrc(1)+"N, "+secrc(0)+"E" /)
 
+  resource@tmXBLabelFontHeightF  = 0.01
   resource@cnFillOn                     = True;          turn on color
   resource@lbLabelAutoStride            = True;          nice label bar label stride
   resource@gsnSpreadColors              = True;          use full range of colormap
   resource@cnLinesOn                    = False;         turn off countour lines
+ ; if (useContourLines)
+  resource@cnLinesOn             = False
+  resource@cnLineLabelsOn        = False
   resource@lbOrientation                = "vertical";    vertical label bar
   resource@pmLabelBarOrthogonalPosF     = -0.05;         move label bar closer to plot
   resource@lbTitlePosition              = "Bottom"
 ;   resource@gsnYAxisIrregular2Log      = True
 
-  delete(resource@cnMissingValFillPattern);     no longer filling missing value areas
-  delete(resource@cnMissingValFillColor);       no longer filling missing value areas
+;  delete(resource@cnMissingValFillPattern);     no longer filling missing value areas
+;  delete(resource@cnMissingValFillColor);       no longer filling missing value areas
   resource@cnMissingValFillColor        = "gray30"
   resource@cnMissingValPerimOn          = True
 
@@ -886,8 +951,11 @@ begin
   resource@cnMissingValPerimDashPattern = 1;           set the dash pattern of the missing value perimeter to 1
   resource@cnMissingValPerimThicknessF  = 3.0;         increase the thickness of the missing value perimeter 3X
   ;resource@gsnYAxisIrregular2Log        = True
+  resource@cnFillMode           = "RasterFill"
+  resource@cnRasterSmoothingOn  = False
   return resource
 end
+;---------------------------------------------------------------
 undef("setDefaultOverlayResource")
 procedure setDefaultOverlayResource(resource)
 begin
@@ -903,6 +971,30 @@ begin
   resource@lbLabelFontHeightF = 0.015
   resource@lbLeftMarginF      = 0.01
   resource@lbLabelBarOn       = False;  switch of the vector label bar, because the speed is show as vector lenghts
+end
+;---------------------------------------------------------------
+undef("setDefaultColors")
+procedure setDefaultColors(resource,minval,maxval,debug)
+begin
+; white is color 135
+  if ((minval*maxval) .LT. 0.0) then ; data goes fro positiv to negative or vs.
+    if (abs(maxval) .GT. abs(minval)) then
+      resource@gsnSpreadColorStart = 135  - toint(126*(abs(minval)/abs(maxval)))
+      resource@gsnSpreadColorEnd   = 255
+    else
+      resource@gsnSpreadColorStart = 2
+      resource@gsnSpreadColorEnd   = 135 + toint(126*(abs(maxval)/abs(minval)))
+    end if
+    resource@gsnContourZeroLineThicknessF = 2.0
+    if (debug) then
+      print("===================== COMPUTE the COLORS to make zero WHITE:")
+      print("minval: "+minval)
+      print("maxval: "+maxval)
+      print("100*(toint(abs(minval)/abs(maxval))): "+toint(100*(abs(minval)/abs(maxval))))
+      print("resource@gsnSpreadColorStart:" + resource@gsnSpreadColorStart)
+      print("resource@gsnSpreadColorEnd  :" + resource@gsnSpreadColorEnd)
+    end if
+  end if
 end
 ;---------------------------------------------------------------
 undef("shift4SecMap")
@@ -1031,6 +1123,7 @@ begin
   else
     resource@lbTitleString      = ""
   end if
+  resource@tiMainFontHeightF  = 0.02
   if (itype .eq. "atm" .and. varname .eq. "T" .and. k2c) resource@lbTitleString = "C" end if
 
   resource@lbTitlePosition    = "Bottom"
@@ -1038,6 +1131,8 @@ begin
   resource@lbTitleFontHeightF = 0.02
   resource@lbLabelFontHeightF = 0.015
   resource@lbLeftMarginF      = 0.01
+  resource@cnLabelMasking   = True
+  resource@cnLabelMasking   = True
 end
 ;---------------------------------------------------------------
 ; vertical axes label for section plot
@@ -1183,10 +1278,9 @@ end
 undef("setMaskColor")
 procedure setMaskColor(wks,resource)
 begin
-  newcolor = NhlNewColor(wks,0.85,0.85,0.85)   ; add gray to colormap
-  ;resource@gsnSpreadColorStart  = 1
-  resource@gsnSpreadColorEnd     = 19  ; last color number not known?
-  resource@cnMissingValFillColor = 20  ; last color is used for missing values
+  resource@cnMissingValFillColor       = "gray90"
+  resource@cnMissingValPerimOn         = True;          turn on missing value outlines
+  resource@cnMissingValPerimThicknessF = 2.5;   set the missing value outline thickness
 end
 ;---------------------------------------------------------------
 ; set the coordinates for an ICON data field
@@ -1298,31 +1392,92 @@ begin
   return gridtype
 end
 ;---------------------------------------------------------------
+; compute the straight line between two corners
+undef("getStraightPath")
+function getStraightPath(startCorner,endCorner,npoints)
+begin
+  startLat = tofloat(startCorner(1))
+  endLat   = tofloat(endCorner(1))
+  startLon = tofloat(startCorner(0))
+  endLon   = tofloat(endCorner(0))
+
+  if (startLon .lt. 0.0) then
+    startLon = startLon + 360.0
+    endLon   = endLon   + 360.0
+  end if
+
+  lats = fspan(startLat,endLat,npoints)
+  lons = fspan(startLon,endLon,npoints)
+  ; dont let the lons be greater than 360, because theses values will not be in
+  ; the data. Otherwise an interpolation error will occur
+  lons = where(lons.gt.360, lons-360.0, lons)
+
+  distRes     = True
+  distRes@lat = lats
+  distRes@lon = lons
+
+  return distRes
+end
+;---------------------------------------------------------------
+; compute the distance between two points of great circle
+undef("getCirclePath")
+function getCirclePath(startCorner,endCorner,npoints)
+begin
+  startLat = startCorner(1)
+  endLat   = endCorner(1)
+
+  startLon = startCorner(0)
+  endLon   = endCorner(0)
+
+  distRes     = True
+  dist        = gc_latlon(startLat,startLon,endLat,endLon,npoints,2)
+  distRes@lat = dist@gclat
+  distRes@lon = dist@gclon
+
+  return distRes
+end
+;---------------------------------------------------------------
+; compute the path of the cross-section
+undef("getSectionPath")
+function getSectionPath(seclc,secrc,secpoints,secmode)
+begin
+  if (secmode .eq. "straight") then
+    pathRes = getStraightPath(seclc,secrc,secpoints)
+  else
+    pathRes = getCirclePath(seclc,secrc,secpoints)
+  end if
+  return pathRes
+end
+;---------------------------------------------------------------
+; compute the path of the cross-section but suitable for plotting in a separate Map
+undef("getSectionPathForMap")
+function getSectionPathForMap(seclc,secrc,secpoints,secmode)
+begin
+  pathRes     = getSectionPath(seclc,secrc,secpoints,secmode)
+  pathRes@lon = where(pathRes@lon.lt.pathRes@lon(0),pathRes@lon + 360.0,pathRes@lon)
+  return pathRes
+end
+;---------------------------------------------------------------
 ; setting for vertical cross sections based on remapped icon data
 undef("setSection")
-function setSection(secLC,secRC,npoints,var)
+function setSection(seclc,secrc,secpoints,var,secmode)
 begin
-  leftlat  = secLC(1)
-  rightlat = secRC(1)
+  pathRes = getSectionPath(seclc,secrc,secpoints,secmode)
 
-  leftlon  = secLC(0)
-  rightlon = secRC(0)
-
-  dist     = gc_latlon(leftlat,leftlon,rightlat,rightlon,npoints,2)
-  trans    = linint2_points(var&lon,var&lat,var,True,dist@gclon,dist@gclat,2)
+  trans   = linint2_points(var&lon,var&lat,var,True,pathRes@lon,pathRes@lat,2)
 
   return trans
 end
 ;---------------------------------------------------------------
 ; setting for vertical cross sections based on remapped icon data
 undef("setSectionFromHybridPress")
-function setSectionFromHybridPress(secLC,secRC,npoints,var,filehandle,timestep)
+function setSectionFromHybridPress(seclc,secrc,npoints,var,filehandle,timestep)
 begin
-  leftlat  = secLC(1)
-  rightlat = secRC(1)
+  leftlat  = seclc(1)
+  rightlat = secrc(1)
 
-  leftlon  = secLC(0)
-  rightlon = secRC(0)
+  leftlon  = seclc(0)
+  rightlon = secrc(0)
 
   ;config
   pressName  = "PS"
@@ -1557,8 +1712,8 @@ begin
 end
 ;---------------------------------------------------------------
 ; Create a resource for the grid plot
-undef("setupGridResource")
-function setupGridResource(var,levels,colors,boundslon,boundslat,wks,plot,debug)
+undef("performGridPlot")
+procedure performGridPlot(var,levels,colors,boundslon,boundslat,wks,plot,flags,debug)
 begin
   pres             = True
   pres@gsEdgesOn   = True   ; Turn on edges
@@ -1571,7 +1726,9 @@ begin
   if (.not. ismissing(vlow(0))) then
     do j = 0, dimsizes(vlow)-1
       pres@gsFillColor = colors(i)   ; first color
+      if ( flags(vlow(i))) then
       gsn_polygon(wks,plot,boundslon(vlow(j),:),boundslat(vlow(j),:),pres)
+      end if
     end do
   end if
   if (debug) then
@@ -1587,7 +1744,9 @@ begin
     if (.not. ismissing(vind(0))) then
     do j = 0, dimsizes(vind)-1
       pres@gsFillColor = colors(i+1)
-                       gsn_polygon( wks,plot,   boundslon(vind(j),:),boundslat(vind(j),:),pres)
+      ;if ( flags(vind(i))) then
+      gsn_polygon( wks,plot,   boundslon(vind(j),:),boundslat(vind(j),:),pres)
+      ;end if
     end do
     end if
     if (debug) then
@@ -1603,18 +1762,30 @@ begin
 
   ; if no index vhig is found with values larger levels(max-1), vhig is missing value:
   if (.not. ismissing(vhig(0))) then
-  do j = 0, dimsizes(vhig) -1
-    pres@gsFillColor = colors(i+1)
-                     gsn_polygon( wks,plot,   boundslon(vhig(j),:),boundslat(vhig(j),:),pres)
-  end do
+    do j = 0, dimsizes(vhig) -1
+      pres@gsFillColor = colors(i+1)
+      if ( flags(vhig(i))) then
+      gsn_polygon(wks,plot,boundslon(vhig(j),:),boundslat(vhig(j),:),pres)
+      end if
+    end do
   end if
   if (debug) then
     print ("i=" + i + ", Values   larger than      "+levels(i) +": " \
            + dimsizes(vhig) + " triangles considered, color= " + colors(i+1))
   end if
   delete(vhig)
-
-  return pres
+end
+;---------------------------------------------------------------
+; mark the cell location
+undef("plotCellMarkers")
+procedure plotCellMarkers(cell_lons,cell_lats,wks,plot,debug)
+begin
+  pres             = True
+  pres@gsMarkerIndex = 1
+  pres@gsMarkerSizeF = 0.003
+  do i = 0,dimsizes(cell_lons)-1
+    gsn_polymarker(wks,plot,cell_lons(i),cell_lats(i),pres)
+  end do
 end
 ;---------------------------------------------------------------
 ; Plot the ICON grid of a variable to the plot.
@@ -1637,8 +1808,7 @@ begin
   levels = getLevelsFromPlot(plot)
 
   if (debug) printGridPlotInfo(colors,levels,flags) end if
-
-  pres = setupGridResource(variable,levels,colors,boundslon,boundslat,workstation,plot,debug)
+  performGridPlot(variable,levels,colors,boundslon,boundslat,workstation,plot,flags,debug)
 end
 ;---------------------------------------------------------------
 ; read in mask variable
@@ -1651,6 +1821,11 @@ end
 undef("plotVecOrStream")
 function plotVecOrStream(useScalar,useStreamlines,uvar,vvar,scalarvar,resource,workstation,showMap)
 begin
+  ; streamline setup
+  resource@stArrowStride    = 3;           arrows start every third
+  resource@stArrowLengthF   = 0.002;       default is dynamic
+  resource@stMinDistanceF   = 0.025;       streamline dist
+  resource@stLineThicknessF = 2.0;         streamline thickness
   if (useScalar) then
     if (useStreamlines) then
       if (showMap)
@@ -1684,4 +1859,4 @@ begin
 end
 
 ;
-; vim:list
+; vim:ft=ncl

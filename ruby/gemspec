@@ -3,9 +3,10 @@ $:.unshift File.join(File.dirname(__FILE__),"..","lib")
 
 spec = Gem::Specification.new do |s|
   s.name              = "iconPlot"
-  s.version           = '0.0.7'
+  s.version           = '0.0.8'
   s.platform          = Gem::Platform::RUBY
-  s.files             = ["lib/iconPlot.rb"] + ["gemspec"] + ["contrib/nclsh"] + Dir.glob("lib/*ncl")
+  s.files             = ["lib/iconPlot.rb"] + ["gemspec"] + ["bin/nclsh"] + Dir.glob("lib/*ncl")
+  s.executables       << 'nclsh'
   s.test_file         = "test/test_iconPlot.rb"
   s.description       = "Plot with ncl via Ruby: requires NCL 6.* and CDO 1.5.*"
   s.summary           = "Plot ICON output with ncl via Ruby"

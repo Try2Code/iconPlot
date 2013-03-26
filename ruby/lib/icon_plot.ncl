@@ -9,23 +9,53 @@
  load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"
  load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/shea_util.ncl"
 
+;------- lib location from the command line ------------------------------------------------------------------
+ libLoaded = False
+ if ( isvar("altLibDir") ) then
+   print("Load library: "+altLibDir+"/icon_plot_lib.ncl")
+   loadscript(altLibDir +"/icon_plot_lib.ncl")
+   libLoaded = True
+ end if
+;------------------------------------------------------------------------------
 ;------- config ---------------------------------------------------------------
   ; default settings from user file
-  CONFIGFILE = getenv("HOME")+"/.icon_plot.rc"
-  if (isfilepresent(CONFIGFILE)) then
-    print("Found configfile:"+CONFIGFILE)
-    loadscript(CONFIGFILE)
+  ; --- Skip any user configuration through a file
+  if (isvar("noConfig")) then
+    if ( isvar("DEBUG") .and. DEBUG) print("Subpress user configuration") end if
+  else
+  ; --- Use the configuration file from the commandline option
+    if ( isvar("configFile") ) then
+      if (isfilepresent(configFile)) then
+        print("Found configfile:"+configFile)
+        loadscript(configFile)
+      else
+        print("Could NOT find configfile:"+configFile)
+        exit()
+      end if
+    else
+  ; --- Use the default config file
+      CONFIGFILE = getenv("HOME")+"/.icon_plot.rc"
+      if (isfilepresent(CONFIGFILE)) then
+        print("Found configfile:"+CONFIGFILE)
+        loadscript(CONFIGFILE)
+      end if
+    end if
   end if
-
+;--- end config ---------------------------------------------------------------
+;--- default lib location  ----------------------------------------------------
   if ( .not. isvar("altLibDir") )  then
     print("load default library from /pool/data/ICON/tools")
     loadscript("/pool/data/ICON/tools/icon_plot_lib.ncl")
   else
-    print("Load library: "+altLibDir+"/icon_plot_lib.ncl")
-    loadscript(altLibDir +"/icon_plot_lib.ncl")
+    if ( .not. libLoaded ) then
+;--- lib location from the config file ----------------------------------------
+      print("Load library: "+altLibDir+"/icon_plot_lib.ncl")
+      loadscript(altLibDir +"/icon_plot_lib.ncl")
+    end if
   end if
-;--- end config ---------------------------------------------------------------
+;------------------------------------------------------------------------------
 ;==============================================================================
+  VERSION = "0.0.6"
 ;----- MAIN PROGRAM -----------------------------------------------------------
   if (isvar("help")) then
     dq = str_get_dq()
@@ -84,23 +114,28 @@
     print(";                  use -180 to 180 for longitude !")
     print("; secLC, secRC  : start and and point of a vertical section (no default value)")
     print(";                 section is plotted it secLC and secRC are present")
+    print("; secMode       : perform transection along a great crice or on a straight line")
+    print(";                 possible values: circle, straight (default)")
+    print(";               : ATTENTION: using 'circle' for sections with a small angle wrt the equator is NOT RECOMMENDED")
     print("; showSecMap    : display the location of the vertical section in an additional map (default:true)")
     print("; centerLon     : center longitute for satelite view (default:30.)")
     print("; centerLat     : center latitude for satelite view (default:20.)")
     print("; satDist       : satelite distance (default:20.0)")
     print("; scaleFactor   : optional scale factor")
+    print("; fillMode      : how to color contour plots,i.e. sets cnFillMode: CellFill or RasterFill (default:RasterFill)")
     print("; selMode       : mode for level spacing of the plot:")
     print(";                 halflog (uses half logarythmic levels,i.e. 1,2,5 per decade), ")
     print(";                 manual (automatic linear spacing with usage of minVar and maxVar)")
     print(";                 auto (default: let do ncl the spacing)")
     print("; scaleLimit    : Limits the number of decades for levels in selMode-halflog")
-    print("; minVar/maxVar : min/maximal Value to plot for selMode=manual or halflog")
+    print("; minVar/maxVar : min/maximal Value to plot for selMode = 'manual' or 'halflog'")
     print("; numLevs       : set a number of labels for manual selMode only. NumCol=numLevs+2")
     print(";                 (Not set directly, but used for computing the contour level spacing. default=10)")
-    print("; contLevs      : set individual contour levels (not yet)")
+    print("; plotLevs      : set individual contour levels, selMode is set to 'manual' automatically")
     print("; mapType       : projection type (default: lonlat), other: ortho (not compatible with showGrid), NHps")
     print(";                 and SHps (polar stereographic projections centered at the north and south pole respectively),")
     print(";                 sat (satelite view, use option centerLat, centerLon and satDist)")
+    print("; hov           : plot hovmoeller diagram, expects variable with two 'active' dimensions, i.e. var(:,:,0,0)")
     print("; mapLine       : (logical) draws continent lines on the plot (foreground/transparent)")
     print("; maskName      : variable to mask with. maskName is expected NOT to have time dimension")
     print(";                  'maskName=" + dq + "none" + dq + "' is same as default (no mask variable)")
@@ -114,7 +149,10 @@
     print("; bStrg         : base string - default is prgr name and time stamp only")
     print("; maxView       : (logical) maximize plot area on paper (not for buildbot -> convert to png)")
     print("; colormap      : string for predefined colormaps of the plot (e.g. 'colormap=" + dq + "BlAqGrYeOrReVi200" + dq + "')")
+    print("; withLines     : draw lines between each contour color (default:True)")
+    print("; withLineLabels: label the countour lines with theri values (auto-enable withLines, default:False)")
     print("; showGrid      : display polygon lines with filled colors instead of contour plot")
+    print("; markCells     : mark cell centers with dots")
     print("; showNcd       : display NDC Grid to find Normalized Device Coordinates on the plot")
     print("; k2c           : if True, perform Kelvin2Celsius shift (default:True)")
     print(";")
@@ -122,11 +160,14 @@
     print("; atmLev        : chooses vertical plot levels for atmosphere input (h: height,p:pressure,m:modellevel,default:p)")
     print(";---------------------------------------------------------------")
     print("; altLibDir     : Alternative directory for loading icon_plot_lib.ncl")
+    print("; noConfig      : subpress reading of any config file, i.e. use commandline options only (default:False)")
+    print(";                 Use +noConfig or -noConfig=True")
     print("; cdo           : Path to an alternative cdo version")
     print(";---------------------------------------------------------------")
     print("; Authors       : Ralf Mueller (ralf.mueller@zmaw.de)")
     print(";                 Stephan Lorenz (stephan.lorenz@zmaw.de)")
-    print("; VERSION       : r8012 (2012-01-26)")
+    print(";                 Einar Olason (einar.olason@zmaw.de)")
+    print("; VERSION       : " + VERSION +" (2012-08-13)")
     print(";---------------------------------------------------------------")
     exit()
   end if
@@ -157,29 +198,34 @@
   end if
   print("Outputfile '"+str_concat((/oFile,".",oType/))+"' will be created in "+systemfunc("dirname "+iFile))
 
-  if(.not. isvar("numLevs")) then
-    numLevs  = NUMLEVS
+  if (.not. isvar("DEBUG"))          DEBUG          = False           end if
+  if (.not. isvar("showGrid"))       showGrid       = False           end if
+  if (.not. isvar("markCells"))      markCells      = False           end if
+  if (.not. isvar("showNdc"))        showNdc        = False           end if
+  if (.not. isvar("maxView"))        maxView        = False           end if
+  if (.not. isvar("scaleLimit"))     scaleLimit     = 2               end if
+  if (.not. isvar("selMode"))        selMode        = "auto"          end if
+  if (.not. isvar("plotMode"))       plotMode       = "scalar"        end if
+  if (.not. isvar("timeStep")) then
+    timeStep       = 0
   else
-    if (numLevs .lt. 1) then
-      print("WARNING: numLevs must be >= 1")
-      print(ABORTMSG)
-      exit
-    end if
+    t = floattointeger(timeStep)
+    delete(timeStep)
+    timeStep = t
   end if
-
-  if (.not. isvar("DEBUG"))       DEBUG       = False           end if
-  if (.not. isvar("showGrid"))    showGrid    = False           end if
-  if (.not. isvar("showNdc"))     showNdc     = False           end if
-  if (.not. isvar("maxView"))     maxView     = False           end if
-  if (.not. isvar("scaleLimit"))  scaleLimit  = 2               end if
-  if (.not. isvar("selMode"))     selMode     = "auto"          end if
-  if (.not. isvar("plotMode"))    plotMode   = "scalar"         end if
-  if (.not. isvar("timeStep"))    timeStep    = 0               end if
-  if (.not. isvar("levIndex"))    levIndex    = 0               end if
-  if (.not. isvar("scaleFactor")) scaleFactor = 1               end if
-  if (.not. isvar("colormap"))    colormap    = "BlueDarkRed18" end if
-  if (.not. isvar("k2c"))         k2c         = True            end if
-  if (.not. isvar("isIcon"))      isIcon      = False           end if
+  if (.not. isvar("levIndex"))       levIndex       = 0               end if
+  if (.not. isvar("scaleFactor"))    scaleFactor    = 1               end if
+  if (.not. isvar("fillMode"))       fillMode       = "RasterFill"    end if
+  if (.not. isvar("colormap")) then
+    colormap   = DEFAULTCOLOR
+    userColors = False
+  else
+    userColors = True
+  end if
+  if (.not. isvar("withLines"))      withLines      = True            end if
+  if (.not. isvar("withLineLabels")) withLineLabels = False           end if
+  if (.not. isvar("k2c"))            k2c            = True            end if
+  if (.not. isvar("isIcon"))         isIcon         = False           end if
 
   if (.not.isvar("mapType"))      mapType      = "lonlat"        end if
   if ( mapType .eq. "NHps" .and. .not.isvar("mapLLC")) mapLLC = (/-45., 45./)  end if
@@ -198,14 +244,15 @@
   if (.not.isvar("vecColByLen"))  vecColByLen  = False           end if
   if (.not.isvar("vecMinDist"))   vecMinDist   = 0.017           end if
   if (.not.isvar("streamLine"))   streamLine   = False           end if
-  if (.not.isvar("secPoints"))    secPoints    = 20              end if
-  ; default + optional coordinates
-  if (.not.isvar("lonCo"))         lonCo       =  DEFAULTLON     end if
-  if (.not.isvar("latCo"))         latCo       =  DEFAULTLAT     end if
+  if (.not.isvar("secPoints"))    secPoints    = 161             end if
+;   default + optional coordinates
+  if (.not.isvar("lonCo"))         lonCo       = DEFAULTLON     end if
+  if (.not.isvar("latCo"))         latCo       = DEFAULTLAT     end if
 
-  if (.not.isvar("showSecMap")) showSecMap     =  True           end if
-  ; ATMOSPEHRE SETUP ----------------------------------------------------------
-  if (.not.isvar("atmLev"))     atmLev         =  "p"           end if
+  if (.not.isvar("secMode"))    secMode        = "straight"     end if
+  if (.not.isvar("showSecMap")) showSecMap     = True           end if
+;   ATMOSPEHRE SETUP ----------------------------------------------------------
+  if (.not.isvar("atmLev"))     atmLev         = "p"           end if
   if (.not.isvar("atmPLevs")) then
     atmPLevSetup = (/10000,100000,2500/); unit: Pa
     atmPLevs     = ispan(atmPLevSetup(0),atmPLevSetup(1),atmPLevSetup(2))*1.0
@@ -280,6 +327,28 @@
   horizonalGridType = getHorizGridType(iFile,ivarname,isIcon)
   ;----------------------------------------------------------------------------
 
+  ; DETERMINE selMode automatically -------------------------------------------
+  if (isvar("minVar") .and. isvar("maxVar"))  then
+    if (selMode .eq. "auto") then
+      selMode = "manual"
+    end if
+  end if
+  if (isvar("plotLevs") )  then
+    if (selMode .eq. "auto") then
+      selMode = "manual"
+    end if
+  end if
+  if(.not. isvar("numLevs")) then
+    numLevs  = NUMLEVS
+  else
+    if (numLevs .lt. 1) then
+      print("WARNING: numLevs must be >= 1")
+      print(ABORTMSG)
+      exit
+    end if
+  end if
+  ;----------------------------------------------------------------------------
+
   ; DETERMINE THE PLOTMODE ----------------------------------------------------
   if (isvar("vecVars")) then
     ; expectes is a string or an array of size 2: "u-veloc v-veloc" or (/"u-veloc","v-veloc"/)
@@ -310,16 +379,16 @@
     exit
   end if
   if (isvar("secLC").and.isvar("secRC")) plotMode = "section" end if
-  if (isvar("hoff")) plotMode = "hoffmueller" end if
+  if (isvar("hov")) plotMode = "hovmoeller" end if
 
-  if (plotMode.eq."vector" .or. plotMode.eq."overlay" .or. plotMode.eq."section" .or. plotMode .eq. "hoffmueller") then
+  if (plotMode.eq."vector" .or. plotMode.eq."overlay" .or. plotMode.eq."section") then
     if (horizonalGridType .ne. "unstructured") then ; regular grid expected, i.e. remappgin is NOT required
       rFile = addfile(iFile+".nc","r")
     else
       ; performe some remapping to a regular grid because ncl cannot draw vector
       ; from unstructured grids
       ; TODO addVars=(/ "PS","PHIS"/)
-      remapFilename = setRemapFilename(iFile,iType,atmLev)
+      remapFilename = setRemapFilename(iFile,iType,resolution,atmLev)
       print("remapFilename:"+remapFilename)
       if (.not. checkRemappedFile(iFile,remapFilename,ivarname,iType,atmLev,atmPLevs,atmHLevs) ) then
         addVars=(/""/)
@@ -328,10 +397,10 @@
       end if
       rFile = addfile( remapFilename+".nc", "r" )
     end if
-    if (plotMode .eq. "hoffmueller") then ; perform zonmean
-      zonmeanFilename = setZonmeanFilename(remapFilename,ivarname,atmLev)
-      zonmean4HoffmuellerPlot(remapFilename,ivarname,zonmeanFilename)
-    end if
+   ;if (plotMode .eq. "hoffmueller") then ; perform zonmean
+   ;  zonmeanFilename = setZonmeanFilename(remapFilename,ivarname,atmLev)
+   ;  zonmean4HoffmuellerPlot(remapFilename,ivarname,zonmeanFilename)
+   ;end if
   end if
   File  = addfile( iFile+".nc", "r" )
 
@@ -369,7 +438,7 @@
     print("Graphics format is " +oType)
     print("plotMode    = "+plotMode)
 
-    if (plotMode.eq."scalar" .or. plotMode.eq."section") then
+    if (plotMode.eq."scalar" .or. plotMode.eq."section" .or. plotMode.eq."hovmoeller") then
       print("varName     = "+varName)
     else
       print("vecVars     = "+vecVars)
@@ -416,12 +485,6 @@
 
     scaleVar(var,scaleFactor)
 
-    ; set selMode automatically
-    if (isvar("minVar") .and. isvar("maxVar"))  then
-      if (selMode .eq. "auto") then
-        selMode = "manual"
-      end if
-    end if
     ; set minVar_maxVar for plotting
     if(.not. isvar("minVar")) minVar = min(var) end if
     if(.not. isvar("maxVar")) maxVar = max(var) end if
@@ -434,6 +497,11 @@
       ;slm = maskVar - 0.5
       ;var = mask ( var, slm, 0.5)
     end if
+  end if
+  if (plotMode.eq."hovmoeller") then
+    var = selRegularVar(varName,File,-1)
+    if(.not. isvar("minVar")) minVar = min(var) end if
+    if(.not. isvar("maxVar")) maxVar = max(var) end if
   end if
   if (plotMode.eq."vector" .or. plotMode.eq."overlay") then; vector mode =======
     uvarname = vecVars(0)
@@ -488,11 +556,6 @@
       var = mask(var,maskVar,1)
     end if
   end if ; Reading data variables =============================================
-  if (plotMode .eq. "hoffmueller") then ; create hoffmuelle diagram
-    ; select the whole time series
-    ; and plot it with
-    ; plot = gsn_csm_lat_time(wks, shov(0,{-80:80},:), res)
-  end if
   if (iType .eq. "atm" .and. ivarname .eq. "T" .and. k2c) var = var - 273.15 end if ;atmosphere used to write out Kelvin
 
   ;---------------------------------------------------------------
@@ -507,20 +570,18 @@
     drawNDCGrid(wks)
   end if
 
-  ResC = True
+  ResC = setDefaultResource(True,withLines,withLineLabels,fillMode)
 
-  setDefaultResource(ResC,True)
+  if (.not. userColors) setDefaultColors(ResC,minVar,maxVar,DEBUG) end if
 
   if (maxView) ResC@gsnMaximize = True end if
 
   if (useMask) setMaskColor(wks,ResC) end if
 
 
-
   if (getHorizGridType(iFile,ivarname,isIcon) .eq. "unstructured") then
     if (plotMode.eq."scalar" .or. plotMode.eq."overlay")
       setCoordinates(ResC,x,y)
-      ;setBounds(ResC,File,x,y,DEBUG)
     end if
   end if
 
@@ -535,7 +596,7 @@
       print("Cannot plot vertical section of a 2D variable: "+varName)
       exit
     end if
-    trans           = setSection(secLC,secRC,secPoints,var)
+    trans           = setSection(secLC,secRC,secPoints,var,secMode)
     vertdim         = getVertDim(File,var)
     trans!0         = vertdim
     trans&$vertdim$ = var&$vertdim$
@@ -564,7 +625,11 @@
     else
       setDefaultVectorPlot(ResC,5.0,vecRefLength,"CurlyVector",vecMinDist)
 
-      vc = plotVecOrStream(vecColByLen,streamLine,uvar,vvar,velocity,ResC,wks,True)
+      vc = plotVecOrStream(vecColByLen,streamLine,\
+                          uvar,vvar, \
+                          sqrt(uvar*uvar + vvar*vvar), \
+                          ResC,wks,True)
+      draw(vc)
     end if
   end if
   if (plotMode.eq."overlay") then
@@ -577,7 +642,7 @@
 
     ResC@gsnDraw             = False
     ResC@gsnFrame            = False
-    vc   = plotVecOrStream(vecColByLen,streamLine,uvar,vvar,velocity,ResC2,wks,False)
+    vc   = plotVecOrStream(vecColByLen,streamLine,uvar,vvar,var,ResC2,wks,False)
 
     plot = gsn_csm_contour_map(wks,var,ResC)
     if (showGrid) then
@@ -600,9 +665,18 @@
       end if
       plotGrid(wks,plot,var,x,bounds,File,ResC,DEBUG)
     end if
+    if ( markCells ) then
+      plotCellMarkers(x,y,wks,plot,True)
+    end if
   end if
   if (plotMode.eq."scatter") then
     plot = gsn_csm_xy(wks,xvar,yvar,ResC)
+  end if
+  if (plotMode .eq. "hovmoeller") then ; create hoffmuelle diagram
+    ; select the whole time series
+    ; and plot it with
+    ResC@trYReverse    = True
+    plot = gsn_csm_hov(wks, var(depth|:,time|:,lat|0,lon|0), ResC)
   end if
   if (plotMode.eq."section") then
 
@@ -627,20 +701,33 @@
 
    if (showSecMap) then
      ; map with section polygon
-     mres                  = True
-     mres@gsnFrame         = False;                don't turn page yet
-     mres@gsnDraw          = False;                don't draw yet
-     mres@vpWidthF         = 0.8;          set width of plot
-     mres@vpHeightF        = 0.3;          set height of plot
-     mres@vpXF             = 0.1
-     mres@vpYF             = 0.4
-     plot(1)               = gsn_csm_map_ce(wks,mres)
+     mres              = True
+     mres@gsnFrame     = False;                don't turn page yet
+     mres@gsnDraw      = False;                don't draw yet
+     mres@vpWidthF     = 0.8;          set width of plot
+     mres@vpHeightF    = 0.3;          set height of plot
+     mres@vpXF         = 0.1
+     mres@vpYF         = 0.4
+
+     newcolor          = NhlNewColor(wks,0.85,0.85,0.85);    add gray to colormap
+     mres@mpOutlineOn  = True;  (turn off continental outlines)
+     mres@mpFillOn     = False;  (turn on map fill)
+     mres@mpFillColors = (/"background","transparent","LightGray","transparent"/);  (fill land in gray and ocean in transparent)
+     mres@mpGrid       = False
+
+ ;    plot(1)               = gsn_map(wks,"CylindricalEquidistant",mres)
+     plot(1)               = gsn_csm_map(wks,mres)
      pres                  = True;            polyline mods desired
      pres@gsnFrame         = False;                don't turn page yet
      pres@gsnDraw          = False;                don't draw yet
      pres@gsLineColor      = "black";           color of lines
      pres@gsLineThicknessF = 2.0;             line thickness
-     dummy = gsn_add_polyline(wks,plot(1),(/ secLC(0),secRC(0) /),(/ secLC(1),secRC(1) /),pres)
+     pathRes               = getSectionPathForMap(secLC,secRC,secPoints,secMode)
+     if (DEBUG) then
+       print("PATHRES lon - lat")
+       print(pathRes@lon + "      " + pathRes@lat)
+     end if
+     pathLine              = gsn_add_polyline(wks,plot(1),pathRes@lon, pathRes@lat,pres)
 
      draw(plot(1))
    end if

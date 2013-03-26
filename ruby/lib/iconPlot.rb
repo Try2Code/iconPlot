@@ -6,19 +6,13 @@ require 'shellwords'
 class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug,:isIcon)
   VERSION = '0.0.4'
 
-  def IconPlot.gemPath
-    gemSearcher = Gem::GemPathSearcher.new
-    gemspec     = gemSearcher.find('iconPlot')
-    gemspec.gem_dir
-  end
   def initialize(*args)
     super(*args)
-
-    gempath = IconPlot.gemPath
+    
     defaults = {
-      :caller  => [gempath,'contrib','nclsh'].join(File::SEPARATOR),
-      :plotter => [gempath,'lib','icon_plot.ncl'].join(File::SEPARATOR),
-      :libdir  => [gempath,'lib'].join(File::SEPARATOR),
+      :caller  => Gem.bin_path('iconPlot','nclsh'),
+      :plotter => Gem.find_files("icon_plot.ncl")[0],
+      :libdir  => File.dirname(Gem.find_files("icon_plot.ncl")[0]),
       :otype   => 'png',
       :display => 'sxiv',
       :cdo     => ENV['CDO'].nil? ? 'cdo' : ENV['CDO'],
