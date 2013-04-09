@@ -98,6 +98,8 @@
     print(";")
     print("; Optional Parameter:")
     print("; oType         : output graphics format (ps, eps, png, default: eps)")
+    print("; xsize         : width of plot (PNG only)")
+    print("; ysize         : height of plot (PNG only)")
     print("; resolution    : resolution string whish is used for remapping the icon data")
     print(";                 to regular grid (default: r90x45)")
     print("; vecRefLength  : reference vector length (default: 8.0)")
@@ -562,6 +564,10 @@
   ; make the plot
   ;---------------------------------------------------------------
   ; preparations
+  if (oType .eq. "png") then
+  if(isvar("xsize")) oType@wkWidth  = xsize end if
+  if(isvar("ysize")) oType@wkHeight = ysize end if
+  end if
   wks = gsn_open_wks(oType,oFile)
 
   gsn_define_colormap(wks,colormap)
