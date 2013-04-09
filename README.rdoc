@@ -82,7 +82,7 @@ iconPlot uses the GPLv2 License
 = Other stuff
 
 Author::   Ralf Mueller <stark.dreamdetective@gmail.com>
-Requires:: NCL 6.0, CDO 1.5.x
-License::  Copyright 2011-2012 by Ralf Mueller
+Requires:: NCL >= 6.x, CDO 1.5.x
+License::  Copyright 2011-2013 by Ralf Mueller
            Released under GPLv2 license.  See the LICENSE
            file included in the distribution.
