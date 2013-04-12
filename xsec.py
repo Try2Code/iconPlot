@@ -23,8 +23,8 @@ debug = 'DEBUG' in os.environ
 #=============================================================================== 
 def makeJob(args):
   t,var,shape = args
-  ofile = 'xsect_'+rjust(str(t),4,'0')+'.png'
-  v=var[t,0:shape[1],0,:]
+  ofile       = 'xsect_'+rjust(str(t),4,'0')+'.png'
+  v           = var[t,0:shape[1],0,:]
   pyl.subplots_adjust(left=.05,right=.95,bottom=.1,top=.85)
   pyl.imshow(v,interpolation="nearest")
   pyl.savefig(ofile,bbox_inches='tight',dpi=200)
@@ -36,7 +36,12 @@ cdo.debug = debug
 q = mpJobQueue(8,True)
 
 _ifile = cdo.sellonlatbox('%i,%i,%i,%i'%(lat[0],lat[1],lon[0],lon[1]),
-                          input=' -remapnn,r360x180 -selname,%s %s'%(varname,ifile),
+                          input=' -remapnn,r360x180  -sellonlatbox,%i,%i,%i,%i  -selname,%s %s'%(
+                            lat[0]-1,
+                            lat[1]+1,
+                            lon[0]-1,
+                            lon[1]+1,
+                            varname,ifile),
                           options='-P 8')
 
 var = cdo.readCdf(_ifile).variables["T"]
@@ -50,4 +55,4 @@ for t in range(0,shape[0]):
 
 q.run()
 
-os.system("convert xsect_[0-9][0-9][0-9][0-9].png xsect.gif")
+#os.system("convert xsect_[0-9][0-9][0-9][0-9].png xsect.gif")
