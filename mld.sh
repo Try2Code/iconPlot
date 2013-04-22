@@ -52,7 +52,7 @@ EOF
 
 # select T and S, set code to -1 to be ignored by rhopot/adisit
 # ONLY USE MARCH FOR NORTHERN HEMISPHERE
-cdo -f nc4 -z zip -rhopot,0 -adisit -setcode,-1 -selname,T,S -div -selmon,3 $ifile -selname,wet_c $ifile $RHOPOT
+cdo -f nc4 -z zip -rhopot,0 -adisit -setcode,-1 -div -selname,T,S -selmon,3 $ifile -selname,wet_c $ifile $RHOPOT
 
 # substracto the surface value
 cdo sub $RHOPOT -sellevidx,1 $RHOPOT $RHOPOT_DELTA
