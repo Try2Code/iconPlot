@@ -1,16 +1,16 @@
 ;---------------------------------------------------------------
 ; ICON PLOT LIB
 ; This library aimes to provide an abstract way to access and plot ICON data
-; fields from NetCDF files. It should obay some general requirements:
-; * Don-Repeat-Yourself-principle: Every method has one responsebility, which no
+; fields from NetCDF files. It should obey some general requirements:
+; * Dont-Repeat-Yourself-Principle: Every method has one responsibility, which no
 ;   other method has. Or in other words: Don't just CopyAndPaste.
 ; * Use as much information from the input files as possible. If something is
-;   missing, create a better file or let the user input this peace of
-;   information. Examples are coordinates of data variabels and bounds of them.
+;   missing, create a better file or let the user input this piece of
+;   information. Examples are coordinates of data variables and bounds of them.
 ;   There are attributes for this.
 ; * naming conventions:
 ;   # check* methods are procedure which can exit the whole program
-;   # get* methods are functions with return, what they descibe with their
+;   # get* methods are functions with return, what they describe with their
 ;     name. This is similar to NCL itself, e.g. getfilevardims()
 ;   # set* methods are procedures
 ;---------------------------------------------------------------
@@ -74,7 +74,7 @@ function has_var(filehandle,varname)
 begin
   vNames = getfilevarnames(filehandle)
   n      = dimsizes (vNames)
-  do i=0,n-1              ; loop thru each variable
+  do i=0,n-1              ; loop through each variable
     if (vNames(i).eq.varname) return True end if
   end do
   return False
@@ -103,7 +103,7 @@ begin
 end
 ;-------------------------------------------------------------------------------
 ; Read a horizontal field of the variable 'varname' from the given filehandle.
-; If it is time dependend or has a vertival axis, use the given values for
+; If it is time dependant or has a vertical axis, use the given values for
 ; timstep and levelindex for selecting the field.
 ;
 ; Currently this limited to 3 dimensions, so that 4D tracer variables are ignored
@@ -401,7 +401,7 @@ end
 ; Examples:
 ;   (/1,2,5,10,20,50,100,200,500/) or
 ;   (/-1,-5e-1,-2e-1,-1e-1,-5e-2,-2e-2,-1e-2,0,1e-2,2e-2,5e-2,1e-1,2e-1,5e-1,1/)
-; scaleLimit determines the numer of decades on the positive or negtive axis of the output array
+; scaleLimit determines the number of decades on the positive or negative axis of the output array
 undef("createLevels")
 function createLevels(minVar, maxVar, scaleLimit)
 begin
@@ -600,7 +600,7 @@ begin
   return setNewFilename(filename,"zonmean",itype,atmlev)
 end
 ;---------------------------------------------------------------
-; Check, if two files have the same number of timestemps. Exit otherwise
+; Check, if two files have the same number of time steps. Exit otherwise
 undef("checkRemappedFile")
 function checkRemappedFile(infilename,remapfilename,varname,itype,atmlev,atmplevs,atmhlevs)
 begin
@@ -682,7 +682,7 @@ begin
   print("#=====================================================================================")
   print("Looking for remapped file: "+remapFilename)
   print("Use CDO to perform remapping: Create intermediate file: "+remapFilename)
-  print("Remove this intermediate file, if it was NOT automatically created from your inpur file "+iFile+"!")
+  print("Remove this intermediate file, if it was NOT automatically created from your input file "+iFile+"!")
   variables = str_join(vecVars,",")
   if ( addvars(0) .ne. "")
     variables = str_concat((/variables,",",str_join(addvars,",")/))
@@ -712,7 +712,7 @@ begin
   system(cmd)
 end
 ;---------------------------------------------------------------
-; Return the bounds of the coordinates of agiven variable
+; Return the bounds of the coordinates of a given variable
 undef("getBoundsOfCoordinates")
 function getBoundsOfCoordinates(variable,filehandle)
 begin
@@ -729,7 +729,7 @@ begin
     return (/boundslon, boundslat/)
 end
 ;---------------------------------------------------------------
-; Return the bounds of the coordinates of agiven variable
+; Return the bounds of the coordinates of a given variable
 undef("getBoundsFromFile")
 function getBoundsFromFile(lonname,latname,filename)
 begin
@@ -1385,7 +1385,7 @@ begin
     gridtype = "unstructured"
   else
     print("CDO:"+CDO)
-    print("Call cdo griddes for determine the horizontal gridtype")
+    print("Call cdo griddes to determine the horizontal gridtype")
     gridtype = systemfunc(CDO+" -griddes -selname,"+varname+" -seltimestep,1 "+filename+" | grep gridtype | cut -d ' ' -f 4")
   end if
   print("Found horizontal grid of type: "+gridtype)
@@ -1408,7 +1408,7 @@ begin
 
   lats = fspan(startLat,endLat,npoints)
   lons = fspan(startLon,endLon,npoints)
-  ; dont let the lons be greater than 360, because theses values will not be in
+  ; don't let the lons be greater than 360, because these values will not be in
   ; the data. Otherwise an interpolation error will occur
   lons = where(lons.gt.360, lons-360.0, lons)
 
@@ -1531,7 +1531,7 @@ begin
   var_at_p@units     = var@units
   var_at_p@long_name = var@long_name
 
-  extrapolate = True ; switch for doing extrapolation below the ground:
+  extrapolate = True ; switch to do extrapolation below the ground:
   intmethod   = 1 ; 1: method for temperature, -1: method for geopotential, 0: other vars
   tlow =  var(nlevels-1,:,:)  ; temperature at lowest model level
                                        ; (use ground temperature if available)
@@ -1641,7 +1641,7 @@ begin
   var_at_p@units     = theta3d@units
   var_at_p@long_name = theta3d@long_name
 
-  extrapolate = True ; switch for doing extrapolation below the ground:
+  extrapolate = True ; switch to do extrapolation below the ground:
   intmethod   = 1 ; 1: method for temperature, -1: method for geopotential, 0: other vars
   tlow =  theta3dll(nlevels-1,:,:)  ; temperature at lowest model level
                                        ; (use ground temperature if available)
@@ -1823,7 +1823,7 @@ function plotVecOrStream(useScalar,useStreamlines,uvar,vvar,scalarvar,resource,w
 begin
   ; streamline setup
   resource@stArrowStride    = 4;           arrows start every third
-  resource@stArrowLengthF   = 0.0015;       default is dynamic
+  resource@stArrowLengthF   = 0.0015;      default is dynamic
   resource@stMinDistanceF   = 0.008;       streamline dist
   resource@stLineThicknessF = 1.0;         streamline thickness
  ; resource@stCrossoverCheckCount = 100;
