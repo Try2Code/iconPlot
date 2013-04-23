@@ -63,7 +63,7 @@
     print("; Basic Usage:")
     print(";   ncl icon_plot.ncl 'iFile=" + dq + "path/file.nc" + dq + "' 'varName=" + dq + "ELEV" + dq + "' 'oFile=" + dq + "test" + dq + "' timeStep=1 levIndex=1")
     print(";")
-    print("; Select an special area of the globe with mapLLC (LowerLeftCorner) and mapURC (UpperRightCorner)   ")
+    print("; Select a special area of the globe with mapLLC (LowerLeftCorner) and mapURC (UpperRightCorner)   ")
     print(";   ncl icon_plot.ncl 'iFile=" + dq + "path/file.nc" + dq + "' 'varName=" + dq + "W" + dq + "'    'mapLLC=(/35.0, -8/)' 'mapURC=(/55, 8/)'")
     print(";")
     print("; Masking:")
@@ -100,7 +100,7 @@
     print("; oType         : output graphics format (ps, eps, png, default: eps)")
     print("; xsize         : width of plot (PNG only)")
     print("; ysize         : height of plot (PNG only)")
-    print("; resolution    : resolution string whish is used for remapping the icon data")
+    print("; resolution    : resolution string which is used for remapping the icon data")
     print(";                 to regular grid (default: r90x45)")
     print("; vecRefLength  : reference vector length (default: 8.0)")
     print("; vecColByLen   : should vectors get coloured according to their lengths (default:False)")
@@ -114,15 +114,15 @@
     print("; mapLLC        : (lon,lat) value array of the Lower Left Corner of the map")
     print("; mapURC        : (lon,lat) ------- || ------- Upper Right Corner of the map")
     print(";                  use -180 to 180 for longitude !")
-    print("; secLC, secRC  : start and and point of a vertical section (no default value)")
-    print(";                 section is plotted it secLC and secRC are present")
-    print("; secMode       : perform transection along a great crice or on a straight line")
+    print("; secLC, secRC  : start and end point of a vertical section (no default value)")
+    print(";                 section is plotted if secLC and secRC are present")
+    print("; secMode       : perform transection along a great cricle or on a straight line")
     print(";                 possible values: circle, straight (default)")
     print(";               : ATTENTION: using 'circle' for sections with a small angle wrt the equator is NOT RECOMMENDED")
     print("; showSecMap    : display the location of the vertical section in an additional map (default:true)")
     print("; centerLon     : center longitute for satelite view (default:30.)")
     print("; centerLat     : center latitude for satelite view (default:20.)")
-    print("; satDist       : satelite distance (default:20.0)")
+    print("; satDist       : satellite distance (default:20.0)")
     print("; scaleFactor   : optional scale factor")
     print("; fillMode      : how to color contour plots,i.e. sets cnFillMode: CellFill or RasterFill (default:RasterFill)")
     print("; selMode       : mode for level spacing of the plot:")
@@ -130,7 +130,7 @@
     print(";                 manual (automatic linear spacing with usage of minVar and maxVar)")
     print(";                 auto (default: let do ncl the spacing)")
     print("; scaleLimit    : Limits the number of decades for levels in selMode-halflog")
-    print("; minVar/maxVar : min/maximal Value to plot for selMode = 'manual' or 'halflog'")
+    print("; minVar/maxVar : min/maximal value to plot for selMode = 'manual' or 'halflog'")
     print("; numLevs       : set a number of labels for manual selMode only. NumCol=numLevs+2")
     print(";                 (Not set directly, but used for computing the contour level spacing. default=10)")
     print("; plotLevs      : set individual contour levels, selMode is set to 'manual' automatically")
@@ -148,17 +148,17 @@
     print("; lStrg         : left string")
     print("; rStrg         : right string")
     print("; tStrg         : title string")
-    print("; bStrg         : base string - default is prgr name and time stamp only")
+    print("; bStrg         : base string - default is program name and time stamp only")
     print("; maxView       : (logical) maximize plot area on paper (not for buildbot -> convert to png)")
     print("; colormap      : string for predefined colormaps of the plot (e.g. 'colormap=" + dq + "BlAqGrYeOrReVi200" + dq + "')")
     print("; withLines     : draw lines between each contour color (default:True)")
-    print("; withLineLabels: label the countour lines with theri values (auto-enable withLines, default:False)")
+    print("; withLineLabels: label the countour lines with their values (auto-enable withLines, default:False)")
     print("; showGrid      : display polygon lines with filled colors instead of contour plot")
     print("; markCells     : mark cell centers with dots")
     print("; showNcd       : display NDC Grid to find Normalized Device Coordinates on the plot")
     print("; k2c           : if True, perform Kelvin2Celsius shift (default:True)")
     print(";")
-    print("; ATMOSPEHRE STUFF:")
+    print("; ATMOSPHERE STUFF:")
     print("; atmLev        : chooses vertical plot levels for atmosphere input (h: height,p:pressure,m:modellevel,default:p)")
     print(";---------------------------------------------------------------")
     print("; altLibDir     : Alternative directory for loading icon_plot_lib.ncl")
@@ -377,7 +377,7 @@
   end if
 
   if ( (isvar("secLC").or.isvar("secRC")).ne.(isvar("secLC").and.isvar("secRC"))) then
-    print("Please provide secLC AND secRC for generatin a section plot!")
+    print("Please provide secLC AND secRC for generating a section plot!")
     exit
   end if
   if (isvar("secLC").and.isvar("secRC")) plotMode = "section" end if
@@ -387,7 +387,7 @@
     if (horizonalGridType .ne. "unstructured") then ; regular grid expected, i.e. remappgin is NOT required
       rFile = addfile(iFile+".nc","r")
     else
-      ; performe some remapping to a regular grid because ncl cannot draw vector
+      ; perform some remapping to a regular grid because ncl cannot draw vector
       ; from unstructured grids
       ; TODO addVars=(/ "PS","PHIS"/)
       remapFilename = setRemapFilename(iFile,iType,resolution,atmLev)
