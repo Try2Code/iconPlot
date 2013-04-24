@@ -566,8 +566,22 @@ end
 
 desc "test with data on a non-global grid"
 task :test_non_global do
+  q  = JobQueue.new(2)
   ifile = 'topo_2x2_00001.nc'
-  system("qiv #{(scalarPlot(ifile,'test_non_global','topo',:DEBUG => true,:isIcon => false))}")
+  q.push { system("qiv #{(scalarPlot(ifile,'test_non_global','topo',:DEBUG => true,:isIcon => false))}") }
+  q.push { system("ncview #{ifile}") }
+  q.run
+end
+
+desc "test netcdf4 input (compressed, non compresses"
+task :test_nc4 do
+  nc4  = Cdo.topo(:options => '-f nc4',:output => 'topo_nc4.nc')
+  nc4z = Cdo.topo(:options => '-f nc4 -z zip',:output => 'topo_nc4z.nc')
+  oceanNC4Z = Cdo.copy(:options => '-f nc4 -z zip',:input => OCELSM_PLOT_TEST_FILE, :output => 'oceanNC4Z.nc')
+  show(scalarPlot(nc4,'test_nc4_TOPO',  'topo',:isIcon => false))
+  show(scalarPlot(nc4z,'test_nc4z_TOPO','topo',:isIcon => false))
+  show(scalarPlot(oceanNC4Z,'test_nc4z_OCEAN','T',:isIcon => true))
+#  system("ncview #{nc4z}")
 end
 #==============================================================================
 # Test collections
