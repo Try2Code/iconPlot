@@ -56,6 +56,7 @@
 ;------------------------------------------------------------------------------
 ;==============================================================================
   VERSION = "0.0.6"
+;  setfileoption("nc", "filestructure", "advanced")
 ;----- MAIN PROGRAM -----------------------------------------------------------
   if (isvar("help")) then
     dq = str_get_dq()
@@ -386,6 +387,9 @@
   if (plotMode.eq."vector" .or. plotMode.eq."overlay" .or. plotMode.eq."section") then
     if (horizonalGridType .ne. "unstructured") then ; regular grid expected, i.e. remappgin is NOT required
       rFile = addfile(iFile+".nc","r")
+      if ((get_file_version(rFile) .eq. "NETCDF4") .and. versionIsGE((/6,1,1/))) then
+        rFile = rFile=>/
+      end if
     else
       ; perform some remapping to a regular grid because ncl cannot draw vector
       ; from unstructured grids
@@ -398,13 +402,16 @@
         remapForVecPlot(iFile,remapFilename,resolution,useMask,plotMode,DEBUG,addVars)
       end if
       rFile = addfile( remapFilename+".nc", "r" )
+      if ((get_file_version(rFile) .eq. "NETCDF4") .and. versionIsGE((/6,1,1/))) then
+        rFile = rFile=>/
+      end if
     end if
    ;if (plotMode .eq. "hoffmueller") then ; perform zonmean
    ;  zonmeanFilename = setZonmeanFilename(remapFilename,ivarname,atmLev)
    ;  zonmean4HoffmuellerPlot(remapFilename,ivarname,zonmeanFilename)
    ;end if
   end if
-  File  = addfile( iFile+".nc", "r" )
+  File = nc4Aware_addfile(iFile,DEBUG)
 
   if (DEBUG) printVarNames(File) end if
 
@@ -439,6 +446,7 @@
     print("oFile       = "+oFile)
     print("Graphics format is " +oType)
     print("plotMode    = "+plotMode)
+    print("showGrid    = "+showGrid)
 
     if (plotMode.eq."scalar" .or. plotMode.eq."section" .or. plotMode.eq."hovmoeller") then
       print("varName     = "+varName)
