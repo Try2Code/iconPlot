@@ -44,7 +44,7 @@ _ifile = cdo.sellonlatbox('%i,%i,%i,%i'%(lat[0],lat[1],lon[0],lon[1]),
                             varname,ifile),
                           options='-P 8')
 
-var = cdo.readCdf(_ifile).variables["T"]
+var = cdo.readCdf(_ifile).variables[varname]
 
 shape = var.shape
 
