@@ -44,6 +44,56 @@ begin
     return(val/abs(val))
   end if
 end
+;---------------------------------------------------------------
+; return ncl version string
+undef("getNclVersion")
+function getNclVersion()
+begin
+  version_string = systemfunc("ncl -V")
+  version_array  = str_split(version_string, ".")
+  ; use integers instead
+  return stringtointeger(version_array)
+end
+;---------------------------------------------------------------
+; return true if ncl uses groups for netcdf4 input (release 6.1.1 with netcdf4 input)
+undef("versionWithNC4GroupNotationSupport")
+function versionWithNC4GroupNotationSupport()
+begin
+  return (/6,1,1/)
+end
+undef("versionIsGE")
+function versionIsGE(otherVersion)
+begin
+  return True
+  diff = otherVersion .gt. getNclVersion()
+  print(""+diff)
+  do i=0,dimsizes(diff)
+    if (.not. diff(i)) then
+      return False
+    end if
+  end do
+  return True
+end
+;-------------------------------------------------------------------------------
+; return a filehandle that can access variables names without leading '/' even
+; if the input it nc4 and ncl has version 6.1.1 or above
+undef("nc4Aware_addfile")
+function nc4Aware_addfile(filename,debug)
+begin
+  filehandle = addfile( filename, "r" )
+  filetype   = get_file_version(filehandle)
+  if debug then
+    print("[nc4Aware_addfile]Read in file:'" + filename +"'")
+    print("[nc4Aware_addfile]    Filetype:'" + filetype +"'")
+    print("[nc4Aware_addfile]NCL  version:'" + str_join(getNclVersion(),".") +"'")
+    print("[nc4Aware_addfile]version > 611'" + versionIsGE((/6,1,1/)) )
+  end if
+  if ((get_file_version(filehandle) .eq. "NETCDF4") .and. versionIsGE((/6,1,1/))) then
+    print("[nc4Aware_addfile]switch to root group '/'")
+    filehandle = filehandle=>/
+  end if
+  return filehandle
+end
 ;-------------------------------------------------------------------------------
 ; Is the 'time' variable a dimesions in the input dimensions array?
 undef("has_time")
@@ -75,7 +125,9 @@ begin
   vNames = getfilevarnames(filehandle)
   n      = dimsizes (vNames)
   do i=0,n-1              ; loop through each variable
-    if (vNames(i).eq.varname) return True end if
+    _v = str_split(varname,"/")
+    v = _v(0)
+    if ((vNames(i).eq.varname) .or. ( v .eq. varname)) return True end if
   end do
   return False
 end
@@ -384,6 +436,9 @@ undef("getVarFromFile")
 function getVarFromFile(varname,filename)
 begin 
   f = addfile(filename+".nc","r")
+  if ((get_file_version(f) .eq. "NETCDF4") .and. versionIsGE((/6,1,1/))) then
+    f = f=>/
+  end if
   var = f->$varname$
   return var
 end
@@ -517,7 +572,7 @@ procedure checkVarname(varname, filehandle)
 begin
   filevarnames = getfilevarnames(filehandle)
   if (.not. any(filevarnames.eq.varname)) then
-    print("Could not find variable "+varname+"!")
+    print("[checkVarname]Could not find variable "+varname+"!")
     exit
   end if
   return True
@@ -571,6 +626,9 @@ function getMaskDim(maskvarname,filehandle,hasOtherMaskfile)
 begin
   if (hasOtherMaskfile) then
     filehandle   = addfile( maskFile+".nc","r" )
+    if ((get_file_version(filehandle) .eq. "NETCDF4") .and. versionIsGE((/6,1,1/))) then
+      filehandle = filehandle=>/
+    end if
   end if
   checkVarname(maskvarname, filehandle)
   maskdims = getfilevardims(filehandle,maskvarname)
@@ -612,7 +670,10 @@ begin
   orgTime             = getfilevardimsizes(orgFile,"time")
 
   if (.not. has_var(orgFile,varname)) then
-    print("Cannot find varname:"+varname)
+    print("Cannot find varname :"+varname)
+    allVars = getfilevarnames(orgFile)
+    print("Available varnames are: "+allVars)
+    print("Available varnames are: "+allVars(5))
     exit
   end if
 
@@ -626,6 +687,7 @@ begin
   ; test if the given variable can be found
   if (.not. has_var(remapFile,varname)) then
     print("Cannot find "+varname+" in remapped files:"+remapfilename)
+    print("Available varnames are"+getfilevarnames(remapFile))
     retval = False
     return retval
   else
@@ -720,9 +782,10 @@ begin
     lon    = lonlat(0)
     lat    = lonlat(1)
 
-
     boundslonName = filehandle->$lon$@bounds
     boundslatName = filehandle->$lat$@bounds
+        print("sdf:"+boundslonName)
+        print(getfilevarnames(filehandle))
     boundslon     = filehandle->$boundslonName$ * RAD2DEG
     boundslat     = filehandle->$boundslatName$ * RAD2DEG
 
@@ -734,6 +797,9 @@ undef("getBoundsFromFile")
 function getBoundsFromFile(lonname,latname,filename)
 begin
   f             = addfile(filename+".nc","r")
+    if ((get_file_version(filehandle) .eq. "NETCDF4") .and. versionIsGE((/6,1,1/))) then
+      filehandle = filehandle=>/
+    end if
   boundslonName = f->$lonname$@bounds
   boundslatName = f->$latname$@bounds
   boundslon     = f->$boundslonName$ * RAD2DEG
@@ -1362,6 +1428,9 @@ undef("getVarLevelType")
 function getVarLevelType(filename,varname)
 begin
   f       = addfile(filename+".nc","r")
+    if ((get_file_version(f) .eq. "NETCDF4") .and. versionIsGE((/6,1,1/))) then
+      f= f=>/
+    end if
   vertdim = getVertDim(f,f->$varname$)
   if (ismissing(vertdim)) then
     delete(f)
@@ -1858,6 +1927,5 @@ begin
   end if
   return vc
 end
-
 ;
 ; vim:ft=ncl

@@ -14,7 +14,7 @@ DST                   = HOSTS.map {|v| v + ':' + DIR}
 CP                    = 'scp -p'
 LS                    = 'ls -crtlh'
 OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/oce.nc'
-OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/r2b05/test.nc'
+#OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/r2b05/test.nc'
 OCELONG_PLOT_TEST_FILE= ENV['HOME']+'/data/icon/oceLong.nc'
 OCELSM_PLOT_TEST_FILE = ENV['HOME']+'/data/icon/oce_lsm.nc'
 OCE_HOV_FILE          = ENV['HOME']+'/data/icon/test_hov.nc'
@@ -118,7 +118,7 @@ task :test_zeroEQwhite do
 end
 desc "select regions"
 task :test_mapselect do
-  ofile          = 'test_mapSelect'
+  ofile          = 'test_mapSelect_'
   varname        = 'ELEV'
   jq = JobQueue.new
   jq.push {show(scalarPlot(OCE_PLOT_TEST_FILE,ofile+rand.to_s,varname,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0'))}
@@ -566,8 +566,27 @@ end
 
 desc "test with data on a non-global grid"
 task :test_non_global do
+  q  = JobQueue.new(2)
   ifile = 'topo_2x2_00001.nc'
-  system("qiv #{(scalarPlot(ifile,'test_non_global','topo',:DEBUG => true,:isIcon => false))}")
+  q.push { system("qiv #{(scalarPlot(ifile,'test_non_global','topo',:DEBUG => true,:isIcon => false))}") }
+  q.push { system("ncview #{ifile}") }
+  q.run
+end
+
+desc "test netcdf4 input (compressed, non compresses"
+task :test_nc4 do
+  nc   = Cdo.topo(:options => '-f nc',:output => 'topo_nc.nc')
+  nc4  = Cdo.topo(:options => '-f nc4',:output => 'topo_nc4.nc')
+  nc4z = Cdo.topo(:options => '-f nc4 -z zip',:output => 'topo_nc4z.nc')
+  oceanNC4Z = Cdo.copy(:options => '-f nc4 -z zip',:input => OCELSM_PLOT_TEST_FILE, :output => 'oceanNC4Z.nc')
+
+#  show(scalarPlot(nc ,'test_nc_TOPO',   'topo',:isIcon => false))
+#  show(scalarPlot(nc4,'test_nc4_TOPO',  'topo',:isIcon => false))
+# show(scalarPlot(nc4z,'test_nc4z_TOPO','topo',:isIcon => false))
+# show(scalarPlot(oceanNC4Z,'test_nc4z_OCEAN','T',:isIcon => true))
+  defaultPlot(oceanNC4Z ,'test_nc4_withLines', :mapType => "ortho",
+              :colormap => "test_cmap",:withLines => false,:showGrid => false,:maskName => 'wet_c')
+#  system("ncview #{nc4z}")
 end
 #==============================================================================
 # Test collections
