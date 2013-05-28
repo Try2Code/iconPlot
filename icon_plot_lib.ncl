@@ -1426,8 +1426,9 @@ end
 ; else is oce
 undef("getVarLevelType")
 function getVarLevelType(filename,varname)
+local f
 begin
-  f       = addfile(filename+".nc","r")
+  f = addfile(filename+".nc","r")
     if ((get_file_version(f) .eq. "NETCDF4") .and. versionIsGE((/6,1,1/))) then
       f= f=>/
     end if

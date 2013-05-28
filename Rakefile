@@ -15,6 +15,7 @@ CP                    = 'scp -p'
 LS                    = 'ls -crtlh'
 OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/oce.nc'
 #OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/r2b05/test.nc'
+MPIOM_FILE            = ENV['HOME']+'/data/mpiom/depto.nc'
 OCELONG_PLOT_TEST_FILE= ENV['HOME']+'/data/icon/oceLong.nc'
 OCELSM_PLOT_TEST_FILE = ENV['HOME']+'/data/icon/oce_lsm.nc'
 OCE_HOV_FILE          = ENV['HOME']+'/data/icon/test_hov.nc'
@@ -587,6 +588,11 @@ task :test_nc4 do
   defaultPlot(oceanNC4Z ,'test_nc4_withLines', :mapType => "ortho",
               :colormap => "test_cmap",:withLines => false,:showGrid => false,:maskName => 'wet_c')
 #  system("ncview #{nc4z}")
+end
+
+desc "check plot with mpiom input"
+task :test_mpiom do
+  show(scalarPlot(MPIOM_FILE,'test_mpiom','depto',:DEBUG => true))
 end
 #==============================================================================
 # Test collections
