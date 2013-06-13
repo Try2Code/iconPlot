@@ -151,6 +151,7 @@ end
 files     = ( ARGV.size > 1 ) ? ARGV : Dir.glob(ARGV[0])
 maskFile  = ENV["MASK"].nil? ? "mask.nc" : ENV["MASK"]
 gridFile  = ENV["GRID"].nil? ? "grid.nc" : ENV["GRID"]
+expName   = ENV["EXP"]
 # check files
 files.each {|file|
   warn "Cannot read file '#{file}'" unless File.exist?(file)
@@ -176,8 +177,7 @@ end
 #------------------------------------------------------------------------------
 # compute the experiments from the data directories and link the corresponding
 # files
-experimentFiles, experimentAnalyzedData = Cdp.splitFilesIntoExperiments(files)
-
+experimentFiles, experimentAnalyzedData = Cdp.splitFilesIntoExperiments(files,expName)
 # process the files
 #   start with selectiong the initial values from the first timestep
 experimentFiles.each {|experiment, files|
