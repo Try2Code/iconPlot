@@ -43,8 +43,9 @@ begin
   wks      = gsn_open_wks("ps","cells")
 
   varname  = "t"
-;  cellList = (/18481,18495, 18483, 18493, 18642, 18649, 18651, 18643, 19186, 19191 /) ; drake
-  cellList = (/4543,4485/) ; gibraltar
+  cellList = (/18481,18495, 18483, 18493, 18642, 18649, 18651, 18643, 19186, 19191 /) ; drake
+; cellList = (/4543,4485/) ; gibraltar
+; cellList = (/4690,4695/) ; denmark st.
   var      = selField(varname,File,0,0,"unstructured")
   x        = getCoordinates(var,File)
   y        = getCoordinates(var,File)
@@ -70,8 +71,9 @@ begin
   wks      = gsn_open_wks("ps","verts")
 
   varname  = "vort"
-;  vertList = (/9285,9319,9321,9412,9414,9655/)  ; drake
-  vertList = (/2371,2374/) ; gibraltar
+  vertList = (/9285,9319,9321,9412,9414,9655/)  ; drake
+; vertList = (/2371,2374/) ; gibraltar
+; vertList = (/2436,2471/) ; denmark st.
   var      = selField(varname,File,0,0,"unstructured")
   x        = getCoordinates(var,File)
   y        = getCoordinates(var,File)
@@ -97,8 +99,9 @@ begin
   wks      = gsn_open_wks("ps","edges")
 
   varname  = "vn"
-;  edgeList = (/27799,27803,28057,28058,28844/) ; rake
-  edgeList = (/6861/)
+  edgeList = (/27799,27803,28057,28058,28844/) ; drake
+; edgeList = (/6861/); gibraltar
+; edgeList = (/7168/)
   var      = selField(varname,File,0,0,"unstructured")
   x        = getCoordinates(var,File)
   y        = getCoordinates(var,File)
