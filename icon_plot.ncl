@@ -56,7 +56,7 @@
 ;------------------------------------------------------------------------------
 ;==============================================================================
   VERSION = "0.0.6"
-  setfileoption("nc", "filestructure", "advanced")
+;  setfileoption("nc", "filestructure", "advanced")
 ;----- MAIN PROGRAM -----------------------------------------------------------
   if (isvar("help")) then
     dq = str_get_dq()
@@ -138,7 +138,10 @@
     print("; mapType       : projection type (default: lonlat), other: ortho (not compatible with showGrid), NHps")
     print(";                 and SHps (polar stereographic projections centered at the north and south pole respectively),")
     print(";                 sat (satelite view, use option centerLat, centerLon and satDist)")
-    print("; hov           : plot hovmoeller diagram, expects variable with two 'active' dimensions, i.e. var(:,:,0,0)")
+    print("; hov[Depth]    : plot hovmoeller diagram, expects variable with only two 'active' dimensions, i.e. time/depth")
+    print("; hovCut        : plot hovmoeller diagram, input is 'levIndex' and 'hovLC' 'hovRC'")
+    print("; hovLC, hovRC  : start and end point of a section for hovCut - currently same longitude allowed only,")
+    print(";                 the Northern and Southern values are used as plotting boundaries; switches to hovCut")
     print("; mapLine       : (logical) draws continent lines on the plot (foreground/transparent)")
     print("; maskName      : variable to mask with. maskName is expected NOT to have time dimension")
     print(";                  'maskName=" + dq + "none" + dq + "' is same as default (no mask variable)")
@@ -377,19 +380,22 @@
     end if
   end if
 
-  if ( (isvar("secLC").or.isvar("secRC")).ne.(isvar("secLC").and.isvar("secRC"))) then
+  if ((isvar("secLC").or.isvar("secRC")).ne.(isvar("secLC").and.isvar("secRC"))) then
     print("Please provide secLC AND secRC for generating a section plot!")
     exit
   end if
   if (isvar("secLC").and.isvar("secRC")) plotMode = "section" end if
-  if (isvar("hov")) plotMode = "hovmoeller" end if
+
+  if ((isvar("hovLC").or.isvar("hovRC")).ne.(isvar("hovLC").and.isvar("hovRC"))) then
+    print("Please provide hovLC AND hovRC for generating a Hovmoeller plot!")
+    exit
+  end if
+  if (isvar("hovLC").and.isvar("hovRC")) plotMode = "hovmoeller" end if
+  if (isvar("hovDepth").or.isvar("hovCut").or.(isvar("hov"))) plotMode = "hovmoeller" end if
 
   if (plotMode.eq."vector" .or. plotMode.eq."overlay" .or. plotMode.eq."section") then
     if (horizonalGridType .ne. "unstructured") then ; regular grid expected, i.e. remappgin is NOT required
       rFile = addfile(iFile+".nc","r")
-      if ((get_file_version(rFile) .eq. "NETCDF4") .and. versionIsGE((/6,1,1/))) then
-        rFile = rFile=>/
-      end if
     else
       ; perform some remapping to a regular grid because ncl cannot draw vector
       ; from unstructured grids
@@ -402,16 +408,13 @@
         remapForVecPlot(iFile,remapFilename,resolution,useMask,plotMode,DEBUG,addVars)
       end if
       rFile = addfile( remapFilename+".nc", "r" )
-      if ((get_file_version(rFile) .eq. "NETCDF4") .and. versionIsGE((/6,1,1/))) then
-        rFile = rFile=>/
-      end if
     end if
-   ;if (plotMode .eq. "hoffmueller") then ; perform zonmean
+   ;if (plotMode .eq. "hovmoeller") then ; perform zonmean
    ;  zonmeanFilename = setZonmeanFilename(remapFilename,ivarname,atmLev)
    ;  zonmean4HoffmuellerPlot(remapFilename,ivarname,zonmeanFilename)
    ;end if
   end if
-  File = nc4Aware_addfile(iFile,DEBUG)
+  File  = addfile( iFile+".nc", "r" )
 
   if (DEBUG) printVarNames(File) end if
 
@@ -687,10 +690,26 @@
     plot = gsn_csm_xy(wks,xvar,yvar,ResC)
   end if
   if (plotMode .eq. "hovmoeller") then ; create hoffmuelle diagram
-    ; select the whole time series
-    ; and plot it with
-    ResC@trYReverse    = True
-    plot = gsn_csm_hov(wks, var(depth|:,time|:,lat|0,lon|0), ResC)
+    if (isvar("hovDepth").or.(isvar("hov"))) then
+      ; select the whole time series
+      ; and plot it with
+      ResC@trYReverse    = True
+      plot = gsn_csm_hov(wks, var(depth|:,time|:,lat|0,lon|0), ResC)
+    end if
+    if (isvar("hovRC")) then
+      startLon = hovRC(0)
+      northLat = hovRC(1)
+      endLon   = hovLC(0)
+      southLat = hovLC(1)
+      hovCut = True
+    end if
+    if (isvar("hovCut")) then
+      ;plot = gsn_csm_hov(wks, var(depth|0,time|:,lat|:,lon|0), ResC)
+      ;plot = gsn_csm_lat_time(wks, var(depth|0,time|:,lat|:,lon|0), ResC)
+      ;plot = gsn_csm_lat_time(wks, var(depth|0,lat|:,lon|165,time|:), ResC)
+      ;plot = gsn_csm_hov(wks, var({depth|150},{lat|70:-80},{lon|330},time|:), ResC)
+      plot = gsn_csm_hov(wks, var(depth|levIndex,{lat|northLat:southLat},{lon|startLon},time|:), ResC)
+    end if
   end if
   if (plotMode.eq."section") then
 
