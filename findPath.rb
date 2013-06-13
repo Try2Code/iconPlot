@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-require 'pp'
 require 'facets/array/nonuniq'
 require 'numru/netcdf'
 include NumRu
