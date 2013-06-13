@@ -43,7 +43,8 @@ begin
   wks      = gsn_open_wks("ps","cells")
 
   varname  = "t"
-  cellList = (/18481,18495, 18483, 18493, 18642, 18649, 18651, 18643, 19186, 19191 /)
+;  cellList = (/18481,18495, 18483, 18493, 18642, 18649, 18651, 18643, 19186, 19191 /) ; drake
+  cellList = (/4543,4485/) ; gibraltar
   var      = selField(varname,File,0,0,"unstructured")
   x        = getCoordinates(var,File)
   y        = getCoordinates(var,File)
@@ -69,7 +70,8 @@ begin
   wks      = gsn_open_wks("ps","verts")
 
   varname  = "vort"
-  vertList = (/9321,9318,9296,9413,9415,9414,9657/)
+;  vertList = (/9285,9319,9321,9412,9414,9655/)  ; drake
+  vertList = (/2371,2374/) ; gibraltar
   var      = selField(varname,File,0,0,"unstructured")
   x        = getCoordinates(var,File)
   y        = getCoordinates(var,File)
@@ -80,7 +82,7 @@ begin
 
   print(dimsizes(boundslon))
   do i=0,dimsizes(vertList)-1
-    vert = vertList(i)
+    vert = vertList(i)-1
     print(boundslon(vert,:))
     print(boundslat(vert,:))
     gsn_polygon(wks,plot,boundslon(vert,:),boundslat(vert,:),ResC)
@@ -95,7 +97,8 @@ begin
   wks      = gsn_open_wks("ps","edges")
 
   varname  = "vn"
-  edgeList = (/27799,27803,28057,28058,28844/)
+;  edgeList = (/27799,27803,28057,28058,28844/) ; rake
+  edgeList = (/6861/)
   var      = selField(varname,File,0,0,"unstructured")
   x        = getCoordinates(var,File)
   y        = getCoordinates(var,File)
@@ -106,7 +109,7 @@ begin
 
   print(dimsizes(boundslon))
   do i=0,dimsizes(edgeList)-1
-    edge = edgeList(i)
+    edge = edgeList(i)-1
     print(boundslon(edge,:))
     print(boundslat(edge,:))
     gsn_polygon(wks,plot,boundslon(edge,:),boundslat(edge,:),ResC)
