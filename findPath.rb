@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+require 'pp'
 require 'facets/array/nonuniq'
 require 'numru/netcdf'
 include NumRu
@@ -26,6 +27,13 @@ cellPairsLists= {
     [18642,18649],
     [18651,18643],
     [19186,19191]],
+  :indonesianThroughflow => [
+    [6864,6866],
+    [6868,6869],
+    [6872,6875],
+    [12064,12067],
+    [12072,12073],
+    [12152,12154]],
 }
 
 puts '#==========================================================================='
