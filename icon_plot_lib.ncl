@@ -99,7 +99,7 @@ end
 undef("has_time")
 function has_time(dims)
 begin
-  if (any(dims.eq."time")) then
+  if (.not.ismissing(any(dims.eq."time"))) then
     return(True)
   else
     return(False)
