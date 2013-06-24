@@ -36,16 +36,14 @@ end
 ;
 ; plot cells
 undef("plotCells")
-procedure plotCells()
+procedure plotCells(cellList)
 begin
   File     = addfile( iFile+".nc", "r" )
+  print(File)
   ResC     = setDefaultResource(True,True,False,"RasterFill")
   wks      = gsn_open_wks("ps","cells")
 
   varname  = "t"
-  cellList = (/18481,18495, 18483, 18493, 18642, 18649, 18651, 18643, 19186, 19191 /) ; drake
-; cellList = (/4543,4485/) ; gibraltar
-; cellList = (/4690,4695/) ; denmark st.
   var      = selField(varname,File,0,0,"unstructured")
   x        = getCoordinates(var,File)
   y        = getCoordinates(var,File)
@@ -62,18 +60,19 @@ begin
     gsn_polygon(wks,plot,boundslon(cell,:),boundslat(cell,:),ResC)
   end do
 end
-plotCells()
+; cellList = (/4543,4485/) ; gibralta
+; cellList = (/4690,4695/) ; denmark st.
+plotCells((/18481,18495, 18483, 18493, 18642, 18649, 18651, 18643, 19186, 19191 /)) ; drake
+;---------------------------------------------------------------------------------
+;---------------------------------------------------------------------------------
 undef("plotVerts")
-procedure plotVerts()
+procedure plotVerts(vertList)
 begin
   File     = addfile( iFile+".nc", "r" )
   ResC     = setDefaultResource(True,True,False,"RasterFill")
   wks      = gsn_open_wks("ps","verts")
 
   varname  = "vort"
-  vertList = (/9285,9319,9321,9412,9414,9655/)  ; drake
-; vertList = (/2371,2374/) ; gibraltar
-; vertList = (/2436,2471/) ; denmark st.
   var      = selField(varname,File,0,0,"unstructured")
   x        = getCoordinates(var,File)
   y        = getCoordinates(var,File)
@@ -90,18 +89,20 @@ begin
     gsn_polygon(wks,plot,boundslon(vert,:),boundslat(vert,:),ResC)
   end do
 end
-plotVerts()
+; vertList = (/2371,2374/) ; gibraltar
+; vertList = (/2436,2471/) ; denmark st.
+;plotVerts((/9285,9319,9321,9412,9414,9655/))  ; drake
+plotVerts((/3563,3564,3557,3567,6179,6180,6184/))  ; drake
+;---------------------------------------------------------------------------------
+;---------------------------------------------------------------------------------
 undef("plotEdges")
-procedure plotEdges()
+procedure plotEdges(edgeList)
 begin
   File     = addfile( iFile+".nc", "r" )
   ResC     = setDefaultResource(True,True,False,"RasterFill")
   wks      = gsn_open_wks("ps","edges")
 
   varname  = "vn"
-  edgeList = (/27799,27803,28057,28058,28844/) ; drake
-; edgeList = (/6861/); gibraltar
-; edgeList = (/7168/)
   var      = selField(varname,File,0,0,"unstructured")
   x        = getCoordinates(var,File)
   y        = getCoordinates(var,File)
@@ -118,5 +119,7 @@ begin
     gsn_polygon(wks,plot,boundslon(edge,:),boundslat(edge,:),ResC)
   end do
 end
-plotEdges()
+; edgeList = (/6861/); gibraltar
+; edgeList = (/7168/)
+plotEdges((/27799,27803,28057,28058,28844/)) ; drake
 ; vim:list
