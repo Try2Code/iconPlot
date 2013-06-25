@@ -29,9 +29,10 @@
   DEFAULTCOLOR = "BlueDarkRed18"      ; ncolors = 256
   DEFAULTCOLOR = "BlueWhiteOrangeRed" ; ncolors = 256
 ;-------------------------------------------------------------------------------
-procedure setCDO(path)
+undef("setCDO")
+procedure setCDO(path2Cdo)
 begin
-  CDO=path
+  CDO=path2Cdo
 end
 ;-------------------------------------------------------------------------------
 ; signum function
@@ -536,6 +537,7 @@ begin
 end
 ;---------------------------------------------------------------
 ; Print information about dimensions and attributes of a given varaiable
+undef("printVar")
 procedure printVar(varname, filehandle)
 begin
   dims  = getfilevardims(filehandle,varname)
@@ -1076,7 +1078,8 @@ end
 undef("setBaseString")
 procedure setBaseString(workstation,plot,resource,basestring)
 begin
-  resource@txFontHeightF = 0.01 ; if this is changed, please adjust the implementation of getLshiftForNDCString()
+  resource@txFontHeightF = 0.01 ; if this is changed, please adjust 
+                                ; the implementation of getLshiftForNDCString()
   gsn_text_ndc(workstation,basestring,getLshiftForNDCString(basestring),.01,resource)
 end
 ;---------------------------------------------------------------

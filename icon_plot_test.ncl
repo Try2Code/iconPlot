@@ -4,13 +4,8 @@
 ; contour lines. Both modes are capable of masking the input files before
 ; plotting, see the command line options below for details.
 
- load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
- load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
- load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"
- load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/shea_util.ncl"
-
 ;------- lib location from the command line ------------------------------------------------------------------
-   loadscript("icon_plot_lib.ncl")
+loadscript("icon_plot_lib.ncl")
 ;------------------------------------------------------------------------------
 undef("assert")
 function assert(tag,givenResult,expectedResult,errorMessage)
@@ -62,7 +57,7 @@ begin
 end
 ; cellList = (/4543,4485/) ; gibralta
 ; cellList = (/4690,4695/) ; denmark st.
-plotCells((/18481,18495, 18483, 18493, 18642, 18649, 18651, 18643, 19186, 19191 /)) ; drake
+;plotCells((/18481,18495, 18483, 18493, 18642, 18649, 18651, 18643, 19186, 19191 /)) ; drake
 ;---------------------------------------------------------------------------------
 ;---------------------------------------------------------------------------------
 undef("plotVerts")
@@ -92,7 +87,7 @@ end
 ; vertList = (/2371,2374/) ; gibraltar
 ; vertList = (/2436,2471/) ; denmark st.
 ;plotVerts((/9285,9319,9321,9412,9414,9655/))  ; drake
-plotVerts((/3563,3564,3557,3567,6179,6180,6184/))  ; drake
+;plotVerts((/3563,3564,3557,3567,6179,6180,6184/))  ; drake
 ;---------------------------------------------------------------------------------
 ;---------------------------------------------------------------------------------
 undef("plotEdges")
@@ -121,5 +116,5 @@ begin
 end
 ; edgeList = (/6861/); gibraltar
 ; edgeList = (/7168/)
-plotEdges((/27799,27803,28057,28058,28844/)) ; drake
+;plotEdges((/27799,27803,28057,28058,28844/)) ; drake
 ; vim:list
