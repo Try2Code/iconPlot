@@ -4,6 +4,7 @@ require 'pp'
 require 'cdo'
 require 'iconPlot'
 require 'jobqueue'
+require 'tempfile'
 require 'test/unit/assertions'
 include Test::Unit::Assertions
 
@@ -63,7 +64,6 @@ def del(*args)
   @plotter.del(*args)
 end
 #=============================================================================== 
-
 def grepTests(pattern)
   tests = Rake::Task.tasks.find_all {|t| t.name =~ pattern}
 end
@@ -74,6 +74,27 @@ def runTests(tests)
     puts "Running test #{t.name}:"
     t.execute
   }
+end
+def runNclTest(routine,args=nil)
+  iconLibFile = 'icon_plot_lib.ncl'
+  iconTestFile = 'icon_plot_test.ncl'
+  nclScript = Tempfile.new("runNclTest")
+  nclScript.write(<<-EOF
+
+    load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
+    load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
+    load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"
+    load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/shea_util.ncl"
+
+    loadscript("icon_plot_lib.ncl")
+    loadscript("icon_plot_test.ncl")
+
+   EOF
+  )
+  nclScript.close
+
+  puts IO.popen("cat #{nclScript.path}").read
+  #puts IO.popen("nclsh #{nclScript.path}").read
 end
 # Checking/installing the script files
 desc "check files on pool"
@@ -593,6 +614,11 @@ end
 desc "check plot with mpiom input"
 task :test_mpiom do
   show(scalarPlot(MPIOM_FILE,'test_mpiom','depto',:DEBUG => true))
+end
+
+desc "check icon_plot_test.ncl"
+task :test_unit do
+  runNclTest('lala')
 end
 #==============================================================================
 # Test collections
