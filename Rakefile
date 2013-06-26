@@ -634,7 +634,6 @@ task :test_paths do
   paths = IconPathsAlongCells.getEdgesAndVerts(ICON_GRID)
   ofiles, allPathsFile = [], 'test_paths.pdf'
   paths.each {|location,_paths|
-#    next unless location == :drakePassage
     _paths.each {|pathType,locList|
       q.push {
         ofile = ["test_#{location.to_s}_at_#{pathType.to_s}",".pdf"]
