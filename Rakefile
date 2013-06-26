@@ -16,7 +16,7 @@ CP                    = 'scp -p'
 LS                    = 'ls -crtlh'
 OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/oce.nc'
 ICON_GRID             = ENV['HOME']+'/data/icon/iconGridR2b4.nc'
-#OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/r2b05/test.nc'
+OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/r2b05/test.nc'
 MPIOM_FILE            = ENV['HOME']+'/data/mpiom/depto.nc'
 OCELONG_PLOT_TEST_FILE= ENV['HOME']+'/data/icon/oceLong.nc'
 OCELSM_PLOT_TEST_FILE = ENV['HOME']+'/data/icon/oce_lsm.nc'
@@ -627,13 +627,16 @@ task :test_mpiom do
 end
 
 desc "check icon_plot_test.ncl"
-task :test_paths do
+task :test_paths ,:loc do |t,args|
   q    = JobQueue.new
   lock = Mutex.new
   require './findPath'
-  paths = IconPathsAlongCells.getEdgesAndVerts(ICON_GRID)
+  paths                = IconPathsAlongCells.getEdgesAndVerts(ICON_GRID)
   ofiles, allPathsFile = [], 'test_paths.pdf'
   paths.each {|location,_paths|
+    if args[:loc] then
+      next unless location.to_s == args[:loc]
+    end
     _paths.each {|pathType,locList|
       q.push {
         ofile = ["test_#{location.to_s}_at_#{pathType.to_s}",".pdf"]
