@@ -30,7 +30,7 @@ module IconPathsAlongCells
     cellVertices = ifileHandle.var('vertex_of_cell').get
     edgeVertices = ifileHandle.var('edge_vertices').get
 
-    edgesByLocation, vertsByLocation = {},{}
+    paths = {}
 
     puts '#==========================================================================='
     CellPairsLists.each {|location,cellPairs|
@@ -38,26 +38,24 @@ module IconPathsAlongCells
       puts location
       puts ["cells: ", cellPairs.join(' ')].join
 
-      verts = []
+      verts, edges = [], []
       cellPairs.each {|cellpair|
-        cellpair.each {|cell| verts << cellVertices[cell,0..-1].to_a }
+        cellpair.each {|cell|
+          edges << cellEdges[cell,0..-1].to_a
+          verts << cellVertices[cell,0..-1].to_a
+        }
       }
       verts = verts.flatten.nonuniq
-      puts ["common verts: ", verts.join(',')].join
-      vertsByLocation[location] = verts
-
-      # get the corresponding edges
-      edges = []
-      cellPairs .each {|cellpair|
-        cellpair.each {|cell| edges << cellEdges[cell,0..-1].to_a }
-      }
       edges = edges.flatten.nonuniq
+
+      paths[location] = {verts: verts, edges: edges}
+
+      puts ["common verts: ", verts.join(',')].join
       puts ["common edges: ", edges.join(',')].join
-      edgesByLocation[location] = edges
     }
     puts '============================================================================='
 
-    return {edges: edgesByLocation, verts: vertsByLocation}
+    return paths
   end
 end
 
