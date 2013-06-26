@@ -29,6 +29,9 @@ module IconPathsAlongCells
     cellEdges    = ifileHandle.var('edge_of_cell').get
     cellVertices = ifileHandle.var('vertex_of_cell').get
     edgeVertices = ifileHandle.var('edge_vertices').get
+
+    edgesByLocation, vertsByLocation = {},{}
+
     puts '#==========================================================================='
     CellPairsLists.each {|location,cellPairs|
       puts '============================================================================='
@@ -39,16 +42,22 @@ module IconPathsAlongCells
       cellPairs.each {|cellpair|
         cellpair.each {|cell| verts << cellVertices[cell,0..-1].to_a }
       }
-      puts ["common verts: ", verts.flatten.nonuniq.join(',')].join
+      verts = verts.flatten.nonuniq
+      puts ["common verts: ", verts.join(',')].join
+      vertsByLocation[location] = verts
 
       # get the corresponding edges
       edges = []
       cellPairs .each {|cellpair|
         cellpair.each {|cell| edges << cellEdges[cell,0..-1].to_a }
       }
-      puts ["common edges: ", edges.flatten.nonuniq.join(',')].join
+      edges = edges.flatten.nonuniq
+      puts ["common edges: ", edges.join(',')].join
+      edgesByLocation[location] = edges
     }
     puts '============================================================================='
+
+    return {edges: edgesByLocation, verts: vertsByLocation}
   end
 end
 
@@ -62,10 +71,5 @@ if $0 == __FILE__ then
     exit(1)
   end
 
-  IconPathsAlongCells.getEdgesAndVerts(ifile)
-ifileHandle  = NetCDF.open(ifile,"r")
-cellEdges    = ifileHandle.var('edge_of_cell').get
-cellVertices = ifileHandle.var('vertex_of_cell').get
-edgeVertices = ifileHandle.var('edge_vertices').get
+  a = IconPathsAlongCells.getEdgesAndVerts(ifile)
 end
-
