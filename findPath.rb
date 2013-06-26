@@ -15,7 +15,7 @@ module IconPathsAlongCells
       [18642,18649],
       [18651,18643],
       [19186,19191]],
-      :indonesianThroughflow => [
+    :indonesianThroughflow => [
         [6864,6866],
         [6868,6869],
         [6872,6875],
