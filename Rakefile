@@ -15,6 +15,7 @@ DST                   = HOSTS.map {|v| v + ':' + DIR}
 CP                    = 'scp -p'
 LS                    = 'ls -crtlh'
 OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/oce.nc'
+ICON_GRID             = ENV['HOME']+'/data/icon/iconGridR2b4.nc'
 #OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/r2b05/test.nc'
 MPIOM_FILE            = ENV['HOME']+'/data/mpiom/depto.nc'
 OCELONG_PLOT_TEST_FILE= ENV['HOME']+'/data/icon/oceLong.nc'
@@ -75,10 +76,17 @@ def runTests(tests)
     t.execute
   }
 end
-def runNclTest(routine,args=nil)
-  iconLibFile = 'icon_plot_lib.ncl'
+def runNclTest(routine,parameters: [],arguments: '')
+  argList = []
+  argList = parameters.map {|parameter|
+    parameter.respond_to?(:join) ? '(/'+parameter.join(',')+'/)' : ['"',parameter.to_s,'"'].join
+  }.join(',')
+  cmdlargList  = arguments.to_s
+
+  iconLibFile  = 'icon_plot_lib.ncl'
   iconTestFile = 'icon_plot_test.ncl'
-  nclScript = Tempfile.new("runNclTest")
+  nclScript    = Tempfile.new("runNclTest")
+#  nclScript    = File.open("runNclTest_#{routine}.ncl","w")
   nclScript.write(<<-EOF
 
     load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
@@ -89,12 +97,14 @@ def runNclTest(routine,args=nil)
     loadscript("icon_plot_lib.ncl")
     loadscript("icon_plot_test.ncl")
 
+    #{routine}(#{argList})
    EOF
   )
   nclScript.close
 
   puts IO.popen("cat #{nclScript.path}").read
-  #puts IO.popen("nclsh #{nclScript.path}").read
+  puts "nclsh #{nclScript.path} #{cmdlargList}"
+  puts IO.popen("nclsh #{nclScript.path} #{cmdlargList}").read
 end
 # Checking/installing the script files
 desc "check files on pool"
@@ -602,8 +612,8 @@ task :test_nc4 do
   nc4z = Cdo.topo(:options => '-f nc4 -z zip',:output => 'topo_nc4z.nc')
   oceanNC4Z = Cdo.copy(:options => '-f nc4 -z zip',:input => OCELSM_PLOT_TEST_FILE, :output => 'oceanNC4Z.nc')
 
-#  show(scalarPlot(nc ,'test_nc_TOPO',   'topo',:isIcon => false))
-#  show(scalarPlot(nc4,'test_nc4_TOPO',  'topo',:isIcon => false))
+# show(scalarPlot(nc ,'test_nc_TOPO',   'topo',:isIcon => false))
+# show(scalarPlot(nc4,'test_nc4_TOPO',  'topo',:isIcon => false))
 # show(scalarPlot(nc4z,'test_nc4z_TOPO','topo',:isIcon => false))
 # show(scalarPlot(oceanNC4Z,'test_nc4z_OCEAN','T',:isIcon => true))
   defaultPlot(oceanNC4Z ,'test_nc4_withLines', :mapType => "ortho",
@@ -617,8 +627,25 @@ task :test_mpiom do
 end
 
 desc "check icon_plot_test.ncl"
-task :test_unit do
-  runNclTest('lala')
+task :test_paths do
+  q    = JobQueue.new
+  lock = Mutex.new
+  require './findPath'
+  paths = IconPathsAlongCells.getEdgesAndVerts(ICON_GRID)
+  ofiles, allPathsFile = [], 'test_paths.pdf'
+  paths.each {|location,_paths|
+#    next unless location == :drakePassage
+    _paths.each {|pathType,locList|
+      q.push {
+        ofile = ["test_#{location.to_s}_at_#{pathType.to_s}",".pdf"]
+        runNclTest('plot_'+pathType.to_s, parameters: [locList, ofile[0], '$HOME/data/icon/oceNmlOutput.nc'],)
+        ofiles << ofile.join
+      }
+    }
+  }
+  q.run
+  IO.popen("pdftk #{ofiles.sort.join(' ')} cat output #{allPathsFile}").read
+  IO.popen("evince #{allPathsFile}").read
 end
 #==============================================================================
 # Test collections

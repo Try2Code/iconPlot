@@ -26,95 +26,90 @@ begin
   return retval
 end
 ;------------------------------------------------------------------------------
+undef("setSimpleResourceAndWks")
+function setSimpleWks(ofile)
+begin
+  otype               = "pdf"
+  otype@wkOrientation = "portrait"
+  wks                 = gsn_open_wks(otype,ofile)
+
+  return wks
+end
+;------------------------------------------------------------------------------
 ; check version
 ;;ret = assert("NCL version",getNclVersion(),(/6,1,1/),"wrong version found")
 ;
 ; plot cells
-undef("plotCells")
-procedure plotCells(cellList)
+undef("plot_cells")
+procedure plot_cells(cellList,oFile,iFile)
 begin
-  File     = addfile( iFile+".nc", "r" )
-  print(File)
-  ResC     = setDefaultResource(True,True,False,"RasterFill")
-  wks      = gsn_open_wks("ps","cells")
+  File                  = addfile( iFile+".nc", "r" )
 
-  varname  = "t"
-  var      = selField(varname,File,0,0,"unstructured")
-  x        = getCoordinates(var,File)
-  y        = getCoordinates(var,File)
-  bounds   = getBoundsOfCoordinates(var,File)
+  resource              = setDefaultResource(True,True,False,"RasterFill")
+  resource@tiMainString = oFile
+  wks                   = setSimpleWks(oFile)
+
+  varname               = "t"
+  var                   = selField(varname,File,0,0,"unstructured")
+  coords                = getCoordinates(var,File)
+  setCoordinates(resource,coords(0,:),coords(1,:))
+  bounds    = getBoundsOfCoordinates(var,File)
   boundslon = bounds(0,:,:)
   boundslat = bounds(1,:,:)
-  plot = gsn_csm_contour_map(wks,var,ResC)
-  print(File)
+  plot = gsn_csm_contour_map(wks,var,resource)
 
   do i=0,dimsizes(cellList)-1
     cell = cellList(i)
-    print(boundslon(cell,:))
-    print(boundslat(cell,:))
-    gsn_polygon(wks,plot,boundslon(cell,:),boundslat(cell,:),ResC)
+    gsn_polygon(wks,plot,boundslon(cell,:),boundslat(cell,:),resource)
   end do
 end
-; cellList = (/4543,4485/) ; gibralta
-; cellList = (/4690,4695/) ; denmark st.
-;plotCells((/18481,18495, 18483, 18493, 18642, 18649, 18651, 18643, 19186, 19191 /)) ; drake
 ;---------------------------------------------------------------------------------
 ;---------------------------------------------------------------------------------
-undef("plotVerts")
-procedure plotVerts(vertList)
+undef("plot_verts")
+procedure plot_verts(vertList,oFile,iFile)
 begin
-  File     = addfile( iFile+".nc", "r" )
-  ResC     = setDefaultResource(True,True,False,"RasterFill")
-  wks      = gsn_open_wks("ps","verts")
+  File                  = addfile( iFile+".nc", "r" )
+  resource              = setDefaultResource(True,True,False,"RasterFill")
+  resource@tiMainString = oFile
+  wks                   = setSimpleWks(oFile)
 
-  varname  = "vort"
-  var      = selField(varname,File,0,0,"unstructured")
-  x        = getCoordinates(var,File)
-  y        = getCoordinates(var,File)
-  bounds   = getBoundsOfCoordinates(var,File)
-  boundslon = bounds(0,:,:)
-  boundslat = bounds(1,:,:)
-  plot = gsn_csm_contour_map(wks,var,ResC)
+  varname               = "vort"
+  var                   = selField(varname,File,0,0,"unstructured")
+  coords                = getCoordinates(var,File)
+  setCoordinates(resource,coords(0,:),coords(1,:))
+  bounds                = getBoundsOfCoordinates(var,File)
+  boundslon             = bounds(0,:,:)
+  boundslat             = bounds(1,:,:)
+  plot                  = gsn_csm_contour_map(wks,var,resource)
 
-  print(dimsizes(boundslon))
   do i=0,dimsizes(vertList)-1
     vert = vertList(i)-1
-    print(boundslon(vert,:))
-    print(boundslat(vert,:))
-    gsn_polygon(wks,plot,boundslon(vert,:),boundslat(vert,:),ResC)
+    gsn_polygon(wks,plot,boundslon(vert,:),boundslat(vert,:),resource)
   end do
 end
-; vertList = (/2371,2374/) ; gibraltar
-; vertList = (/2436,2471/) ; denmark st.
-;plotVerts((/9285,9319,9321,9412,9414,9655/))  ; drake
-;plotVerts((/3563,3564,3557,3567,6179,6180,6184/))  ; drake
 ;---------------------------------------------------------------------------------
 ;---------------------------------------------------------------------------------
-undef("plotEdges")
-procedure plotEdges(edgeList)
+undef("plot_edges")
+procedure plot_edges(edgeList,oFile,iFile)
 begin
-  File     = addfile( iFile+".nc", "r" )
-  ResC     = setDefaultResource(True,True,False,"RasterFill")
-  wks      = gsn_open_wks("ps","edges")
+  File                  = addfile( iFile+".nc", "r" )
+  resource              = setDefaultResource(True,True,False,"RasterFill")
+  resource@tiMainString = oFile
+  wks                   = setSimpleWks(oFile)
 
-  varname  = "vn"
-  var      = selField(varname,File,0,0,"unstructured")
-  x        = getCoordinates(var,File)
-  y        = getCoordinates(var,File)
-  bounds   = getBoundsOfCoordinates(var,File)
-  boundslon = bounds(0,:,:)
-  boundslat = bounds(1,:,:)
-  plot = gsn_csm_contour_map(wks,var,ResC)
+  varname               = "vn"
+  var                   = selField(varname,File,0,0,"unstructured")
+  coords                = getCoordinates(var,File)
+  setCoordinates(resource,coords(0,:),coords(1,:))
+  bounds                = getBoundsOfCoordinates(var,File)
+  boundslon             = bounds(0,:,:)
+  boundslat             = bounds(1,:,:)
+  plot                  = gsn_csm_contour_map(wks,var,resource)
 
-  print(dimsizes(boundslon))
   do i=0,dimsizes(edgeList)-1
     edge = edgeList(i)-1
-    print(boundslon(edge,:))
-    print(boundslat(edge,:))
-    gsn_polygon(wks,plot,boundslon(edge,:),boundslat(edge,:),ResC)
+    gsn_polygon(wks,plot,boundslon(edge,:),boundslat(edge,:),resource)
   end do
 end
-; edgeList = (/6861/); gibraltar
-; edgeList = (/7168/)
-;plotEdges((/27799,27803,28057,28058,28844/)) ; drake
+
 ; vim:list
