@@ -628,9 +628,9 @@ end
 
 desc "check icon_plot_test.ncl"
 task :test_paths ,:loc do |t,args|
-  q    = JobQueue.new
-  lock = Mutex.new
   require './findPath'
+  q                    = JobQueue.new
+  lock                 = Mutex.new
   paths                = IconPathsAlongCells.getEdgesAndVerts(ICON_GRID)
   ofiles, allPathsFile = [], 'test_paths.pdf'
   paths.each {|location,_paths|
