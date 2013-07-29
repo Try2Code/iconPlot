@@ -15,26 +15,34 @@ module IconPathsAlongCells
       [18642,18649],
       [18651,18643],
       [19186,19191]],
-      :indonesianThroughflow_00 => [
-        [6864,6866],
-        [6868,6869],
-        [6872,6875],
-        [12064,12067],
-        [12072,12073],
-        [12152,12154]],
-      :indonesianThroughflow_01 => [
-        [6855,6857],
-        [6858,6869],
-        [6878,6879],
-        [11265,11269],
-        [11461,11462],
-        [11470,11471],
-        [11509,11510],
-        [11518,11519],
-        [12106,12107],
-        [12109,12110],
-        [12133,12134],
-        [12142,12143]],
+
+    :indonesianThroughflow_00 => [
+      [6864,6866],
+      [6868,6869],
+      [6872,6875],
+      [12064,12067],
+      [12072,12073],
+      [12152,12154]],
+
+    :indonesianThroughflow_01 => [
+      [6855,6857],
+      [6858,6869],
+      [6878,6879],
+      [11265,11269],
+      [11461,11462],
+      [11470,11471],
+      [11509,11510],
+      [11518,11519],
+      [12106,12107],
+      [12109,12110],
+      [12133,12134],
+      [12142,12143]],
+
+    :scotlandIceland => [
+      [4682,4702],
+      [4238,4270],
+      [4268,4271],
+      [4256,4259]],
   }
 
   def IconPathsAlongCells.getEdgesAndVerts(ifile)
@@ -53,10 +61,13 @@ module IconPathsAlongCells
 
       verts, edges = [], []
       cellPairs.each {|cellpair|
+        verts, edges = [], []
         cellpair.each {|cell|
           edges << cellEdges[cell,0..-1].to_a
           verts << cellVertices[cell,0..-1].to_a
         }
+        pp verts
+        puts
       }
       verts = verts.flatten.nonuniq
       edges = edges.flatten.nonuniq
