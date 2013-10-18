@@ -121,15 +121,22 @@ def cropMapPlots(plots,plotDir='.')
   #system("display #{cropfiles.join(' ')}") #if 'thingol' == Socket.gethostname
 end
 #------------------------------------------------------------------------------
-def computeRhopot(ifile,ofile=nil)
+def computeRhopot(ifile,ofile,tempName,salName)
+  changeNames = ''
+  changeNames << '-chname' if 't' != tempName.downcase or 's' != salName.downcase
+  changeNames << ',' << [tempName,'t'].join(',') unless tempName.downcase == 't'
+  changeNames << ',' << [salName,'s'].join(',')  unless salName.downcase  == 's'
+
+  ifileName = ifile
+  ifile     = "#{changeNames} #{ifile}" unless changeNames.empty?
   if Cdo.version < "1.6.0"
     Cdo.rhopot(0,:input => ifile,:output => ofile)
   else
     # remove all codes so that adisit can use names
     #  use ncatted (fast in-place edit) + mv (new filename to mark, that code
     #  attribute is removed)
-    if Cdo.showcode(:input => ifile)[0].split.map(&:to_i).reduce(0,:+) >= 0
-      cmd = "ncatted -O -a code,,d,, #{ifile}"
+    if Cdo.showcode(:input => " -seltimestep,1 #{ifile}")[0].split.map(&:to_i).reduce(0,:+) >= 0
+      cmd = "ncatted -O -a code,,d,, #{ifileName}"
       dbg(cmd)
       puts IO.popen(cmd).read
     end
@@ -148,10 +155,11 @@ if ARGV[0].nil?
   exit(-1)
 end
 
-files     = ( ARGV.size > 1 ) ? ARGV : Dir.glob(ARGV[0])
-maskFile  = ENV["MASK"].nil? ? "mask.nc" : ENV["MASK"]
-gridFile  = ENV["GRID"].nil? ? "grid.nc" : ENV["GRID"]
-expName   = ENV["EXP"]
+files            = ( ARGV.size > 1 ) ? ARGV : Dir.glob(ARGV[0])
+maskFile         = ENV["MASK"].nil? ? "mask.nc" : ENV["MASK"]
+gridFile         = ENV["GRID"].nil? ? "grid.nc" : ENV["GRID"]
+expName          = ENV["EXP"]
+tempName,salName = 't_acc','s_acc'
 # check files
 files.each {|file|
   warn "Cannot read file '#{file}'" unless File.exist?(file)
@@ -178,6 +186,7 @@ end
 # compute the experiments from the data directories and link the corresponding
 # files
 experimentFiles, experimentAnalyzedData = Cdp.splitFilesIntoExperiments(files,expName)
+pp experimentFiles if Cdo.debug
 # process the files
 #   start with selectiong the initial values from the first timestep
 experimentFiles.each {|experiment, files|
@@ -187,8 +196,11 @@ experimentFiles.each {|experiment, files|
     puts "Computing initial value file: #{initFile}"
     # create a separate File with the initial values
     if not File.exist?(initFile) or not Cdo.showname(:input => initFile).flatten.first.split(' ').include?("rhopot")
-      initTS     = Cdo.selname('T,S',:input => "-seltimestep,1 #{files[0]}",:options => '-r -f nc',:output => "initTS_#{experiment}")
-      initRhopot = computeRhopot(initTS,"initRhopot_#{experiment}")
+      initTS     = Cdo.selname([tempName,salName].join(','),
+                               :input => "-seltimestep,1 #{files[0]}",
+                               :options => '-r -f nc',
+                               :output => "initTS_#{experiment}")
+      initRhopot = computeRhopot(initTS,"initRhopot_#{experiment}",tempName,salName)
       Cdo.merge(:input => [initTS,initRhopot].join(' '),:output => initFile)
     end
   }
@@ -211,9 +223,9 @@ experimentFiles.each {|experiment, files|
       diffFile        = "T-S-rhopot_diff2init_#{File.basename(file)}"
       initFile        = initFilename(experiment)
 
-      Cdo.div(:input => " -selname,T,S #{file} #{maskFile}",:output => maskedYMeanFile)
+      Cdo.div(:input => " -selname,#{[tempName,salName].join(',')} #{file} #{maskFile}",:output => maskedYMeanFile)
       # compute rhopot
-      computeRhopot(maskedYMeanFile,rhopotFile)
+      computeRhopot(maskedYMeanFile,rhopotFile,tempName,salName)
 
       Cdo.merge(:input => [maskedYMeanFile,rhopotFile].join(' '), :output => mergedFile)
       Cdo.sub(:input => [mergedFile,initFile].join(' '),:output => diffFile)
