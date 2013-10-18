@@ -4,30 +4,112 @@
 ; contour lines. Both modes are capable of masking the input files before
 ; plotting, see the command line options below for details.
 
- load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
- load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
- load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"
- load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/shea_util.ncl"
-
 ;------- lib location from the command line ------------------------------------------------------------------
-   loadscript("icon_plot_lib.ncl")
+loadscript("icon_plot_lib.ncl")
 ;------------------------------------------------------------------------------
 undef("assert")
-procedure assert(tag,givenResult,expectedResult,errorMessage)
+function assert(tag,givenResult,expectedResult,errorMessage)
 begin
+  retval = True
   if (any(givenResult .ne. expectedResult)) then
     print("ERROR found: ================================================")
     print(""+tag)
     print(errorMessage)
     print("Expected Result:"+expectedResult)
     print("Given    Result:"+givenResult)
+    retval = False
   else
     print("No Error in "+tag)
+    retval = True
   end if
+
+  return retval
+end
+;------------------------------------------------------------------------------
+undef("setSimpleResourceAndWks")
+function setSimpleWks(ofile)
+begin
+  otype               = "pdf"
+  otype@wkOrientation = "portrait"
+  wks                 = gsn_open_wks(otype,ofile)
+
+  return wks
 end
 ;------------------------------------------------------------------------------
 ; check version
-assert("NCL version",getNclVersion(),(/6,1,1/),"wrong version found")
-
+;;ret = assert("NCL version",getNclVersion(),(/6,1,1/),"wrong version found")
 ;
+; plot cells
+undef("plot_cells")
+procedure plot_cells(cellList,oFile,iFile)
+begin
+  File                  = addfile( iFile+".nc", "r" )
+
+  resource              = setDefaultResource(True,True,False,"RasterFill")
+  resource@tiMainString = oFile
+  wks                   = setSimpleWks(oFile)
+
+  varname               = "t"
+  var                   = selField(varname,File,0,0,"unstructured")
+  coords                = getCoordinates(var,File)
+  setCoordinates(resource,coords(0,:),coords(1,:))
+  bounds    = getBoundsOfCoordinates(var,File)
+  boundslon = bounds(0,:,:)
+  boundslat = bounds(1,:,:)
+  plot = gsn_csm_contour_map(wks,var,resource)
+
+  do i=0,dimsizes(cellList)-1
+    cell = cellList(i)
+    gsn_polygon(wks,plot,boundslon(cell,:),boundslat(cell,:),resource)
+  end do
+end
+;---------------------------------------------------------------------------------
+;---------------------------------------------------------------------------------
+undef("plot_verts")
+procedure plot_verts(vertList,oFile,iFile)
+begin
+  File                  = addfile( iFile+".nc", "r" )
+  resource              = setDefaultResource(True,True,False,"RasterFill")
+  resource@tiMainString = oFile
+  wks                   = setSimpleWks(oFile)
+
+  varname               = "vort"
+  var                   = selField(varname,File,0,0,"unstructured")
+  coords                = getCoordinates(var,File)
+  setCoordinates(resource,coords(0,:),coords(1,:))
+  bounds                = getBoundsOfCoordinates(var,File)
+  boundslon             = bounds(0,:,:)
+  boundslat             = bounds(1,:,:)
+  plot                  = gsn_csm_contour_map(wks,var,resource)
+
+  do i=0,dimsizes(vertList)-1
+    vert = vertList(i)-1
+    gsn_polygon(wks,plot,boundslon(vert,:),boundslat(vert,:),resource)
+  end do
+end
+;---------------------------------------------------------------------------------
+;---------------------------------------------------------------------------------
+undef("plot_edges")
+procedure plot_edges(edgeList,oFile,iFile)
+begin
+  File                  = addfile( iFile+".nc", "r" )
+  resource              = setDefaultResource(True,True,False,"RasterFill")
+  resource@tiMainString = oFile
+  wks                   = setSimpleWks(oFile)
+
+  varname               = "vn"
+  var                   = selField(varname,File,0,0,"unstructured")
+  coords                = getCoordinates(var,File)
+  setCoordinates(resource,coords(0,:),coords(1,:))
+  bounds                = getBoundsOfCoordinates(var,File)
+  boundslon             = bounds(0,:,:)
+  boundslat             = bounds(1,:,:)
+  plot                  = gsn_csm_contour_map(wks,var,resource)
+
+  do i=0,dimsizes(edgeList)-1
+    edge = edgeList(i)-1
+    gsn_polygon(wks,plot,boundslon(edge,:),boundslat(edge,:),resource)
+  end do
+end
+
 ; vim:list
