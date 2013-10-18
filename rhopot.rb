@@ -25,26 +25,26 @@ def initFilename(experiment)
 end
 initFileName = lambda {|exp| "initial_#{exp}.nc"}
 #------------------------------------------------------------------------------
-def secPlot(ofile,experiment,secPlots,lock,plotDir=".")
+def secPlot(ofile,experiment,secPlots,lock,temp='t_acc',sal='s_acc',rho='rhopoto',plotDir=".")
   plotDir << '/' unless '/' == plotDir[-1]
 
   title = (true) ? experiment : '"ICON Ocean, Mimetic-Miura, L40"'
 
   plotter, plotFile = myPlotter
 
-  im = plotter.scalarPlot(ofile,plotDir+'T_'+     File.basename(ofile,'.nc'),'T',
+  im = plotter.scalarPlot(ofile,plotDir+'T_'+     File.basename(ofile,'.nc'),temp,
                           :tStrg => title, :bStrg => '" "',
                           :hov => true,
                           :minVar => -3.0,:maxVar => 3.0,:withLines => false,:lStrg => 'T',
                           :numLevs => 20,:rStrg => 'Temperature', :colormap => "BlWhRe")
   lock.synchronize {(secPlots[experiment] ||= []) << im }
-  im =  plotter.scalarPlot(ofile,plotDir +'S_'+     File.basename(ofile,'.nc'),'S',
+  im =  plotter.scalarPlot(ofile,plotDir +'S_'+     File.basename(ofile,'.nc'),sal,
                            :tStrg => title, :bStrg => '" "',
                            :hov => true,
                            :minVar => -0.2,:maxVar => 0.2,:withLines => false,:lStrg => 'S',
                            :numLevs => 16,:rStrg => 'Salinity', :colormap => "BlWhRe")
   lock.synchronize {(secPlots[experiment] ||= []) << im }
-  im = plotter.scalarPlot(ofile,plotDir+'rhopot_'+File.basename(ofile,'.nc'),'rhopoto',
+  im = plotter.scalarPlot(ofile,plotDir+'rhopot_'+File.basename(ofile,'.nc'),rho,
                           :tStrg => title, :bStrg => '"  "',
                           :hov => true,
                           :minVar => -0.6,:maxVar => 0.6,:withLines => false,:lStrg => 'rhopot',
@@ -135,7 +135,7 @@ def computeRhopot(ifile,ofile,tempName,salName)
     # remove all codes so that adisit can use names
     #  use ncatted (fast in-place edit) + mv (new filename to mark, that code
     #  attribute is removed)
-    if Cdo.showcode(:input => " -seltimestep,1 #{ifile}")[0].split.map(&:to_i).reduce(0,:+) >= 0
+    if Cdo.showcode(:input => " -seltimestep,1 #{ifileName}")[0].split.map(&:to_i).reduce(0,:+) >= 0
       cmd = "ncatted -O -a code,,d,, #{ifileName}"
       dbg(cmd)
       puts IO.popen(cmd).read
@@ -192,7 +192,7 @@ pp experimentFiles if Cdo.debug
 experimentFiles.each {|experiment, files|
   pp files unless ENV['DEBUG'].nil?
   q.push {
-    initFile    = initFileName.call(experiment)
+    initFile    = initFilename(experiment)
     puts "Computing initial value file: #{initFile}"
     # create a separate File with the initial values
     if not File.exist?(initFile) or not Cdo.showname(:input => initFile).flatten.first.split(' ').include?("rhopot")
@@ -223,13 +223,14 @@ experimentFiles.each {|experiment, files|
       diffFile        = "T-S-rhopot_diff2init_#{File.basename(file)}"
       initFile        = initFilename(experiment)
 
-      Cdo.div(:input => " -selname,#{[tempName,salName].join(',')} #{file} #{maskFile}",:output => maskedYMeanFile)
+      Cdo.div(:input  => " -selname,#{[tempName,salName].join(',')} #{file} #{maskFile}",
+              :output => maskedYMeanFile)
       # compute rhopot
       computeRhopot(maskedYMeanFile,rhopotFile,tempName,salName)
 
       Cdo.merge(:input => [maskedYMeanFile,rhopotFile].join(' '), :output => mergedFile)
-      Cdo.sub(:input => [mergedFile,initFile].join(' '),:output => diffFile)
-      Cdo.fldsum(:input => "-mul #{diffFile} #{maskedAreaWeights}", :output => fldmeanFile,:options => '-r -f nc')
+#      Cdo.sub(:input => [mergedFile,initFile].join(' '),:output => diffFile)
+      Cdo.fldsum(:input => "-mul -sub #{[mergedFile,initFile].join(' ')} #{maskedAreaWeights}", :output => fldmeanFile,:options => '-r -f nc')
       lock.synchronize {experimentAnalyzedData[experiment] << fldmeanFile }
     }
   }
