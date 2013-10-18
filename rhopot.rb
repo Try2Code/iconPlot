@@ -23,7 +23,6 @@ end
 def initFilename(experiment)
   "initial_#{experiment}.nc"
 end
-initFileName = lambda {|exp| "initial_#{exp}.nc"}
 #------------------------------------------------------------------------------
 def secPlot(ofile,experiment,secPlots,lock,temp='t_acc',sal='s_acc',rho='rhopoto',plotDir=".")
   plotDir << '/' unless '/' == plotDir[-1]
