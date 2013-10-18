@@ -90,7 +90,7 @@ def cropSecPlots(secPlots,plotDir='.')
         cropfiles << cropfile
       }
       images = cropfiles[-3,3]
-      system("convert +append #{(images.grep(/crop_T/) + images.grep(/crop_S/) + images.grep(/crop_rho/)).join(' ')} #{plotDir}#{exp}.png")
+      system("convert -append #{(images.grep(/crop_T/) + images.grep(/crop_S/) + images.grep(/crop_rho/)).join(' ')} #{plotDir}#{exp}.png")
     }
   }
   q.run
