@@ -160,6 +160,10 @@ gridFile         = ENV["GRID"].nil? ? "grid.nc" : ENV["GRID"]
 expName          = ENV["EXP"]
 tempName,salName = 't_acc','s_acc'
 # check files
+if files.empty?
+  warn "no files given"
+  exit 1
+end
 files.each {|file|
   warn "Cannot read file '#{file}'" unless File.exist?(file)
 }
