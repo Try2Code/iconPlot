@@ -21,7 +21,7 @@ def myPlotter
 end
 #------------------------------------------------------------------------------
 def initFilename(experiment)
-  "initial_#{experiment}.nc"
+  ENV['INIT'].nil? ? "initial_#{experiment}.nc" : ENV['INIT']
 end
 #------------------------------------------------------------------------------
 def secPlot(ofile,experiment,secPlots,lock,temp='t_acc',sal='s_acc',rho='rhopoto',plotDir=".")
@@ -156,8 +156,10 @@ end
 
 files            = ( ARGV.size > 1 ) ? ARGV : Dir.glob(ARGV[0])
 maskFile         = ENV["MASK"].nil? ? "mask.nc" : ENV["MASK"]
+maskVar          = ENV["MASKVAR"].nil? ? "wet_c" : ENV["MASKVAR"]
 gridFile         = ENV["GRID"].nil? ? "grid.nc" : ENV["GRID"]
 expName          = ENV["EXP"]
+initFile         = ENV['INIT']
 tempName,salName = 't_acc','s_acc'
 # check files
 if files.empty?
@@ -168,8 +170,9 @@ files.each {|file|
   warn "Cannot read file '#{file}'" unless File.exist?(file)
 }
 unless File.exist?(maskFile) 
-  warn "Cannot open maskfile '#{maskFile}'"
-  exit -1
+  warn "Cannot open maskfile '#{maskFile}' - try to compute it"
+  Cdo.selname(maskVar,input: " -seltimestep,1 "+files[0], output: maskFile)
+  exit -1 unless File.exist?(maskFile)
 end
 pp files unless ENV['DEBUG'].nil?
 #------------------------------------------------------------------------------
@@ -190,13 +193,16 @@ end
 # files
 experimentFiles, experimentAnalyzedData = Cdp.splitFilesIntoExperiments(files,expName)
 pp experimentFiles if Cdo.debug
+
+#------------------------------------------------------------------------------
+# create a mask file if it is not given via ENV['MASK']
+
 # process the files
 #   start with selectiong the initial values from the first timestep
 experimentFiles.each {|experiment, files|
   pp files unless ENV['DEBUG'].nil?
   q.push {
     initFile    = initFilename(experiment)
-    puts "Computing initial value file: #{initFile}"
     # create a separate File with the initial values
     if not File.exist?(initFile) or not Cdo.showname(:input => initFile).flatten.first.split(' ').include?("rhopot")
       initTS     = Cdo.selname([tempName,salName].join(','),
