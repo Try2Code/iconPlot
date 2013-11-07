@@ -51,29 +51,26 @@ def secPlot(ofile,experiment,secPlots,lock,temp='t_acc',sal='s_acc',rho='rhopoto
   lock.synchronize {(secPlots[experiment] ||= []) << im }
 end
 #------------------------------------------------------------------------------
-def horizPlot(ifile,experiment,plots,lock,plotDir=".")
+# plot the first 3 levels if possbile
+def horizPlot(ifile,timesteps,varnames,experiment,plots,lock,plotDir=".")
   plotter, plotFile = myPlotter
-  year = 2011
-  # compute the index of the last timestep
-#  lastTimestep = Cdo.ntime(:input => "-selname,ELEV #{ifile}")[0].to_i - 1
-#  lastTimestepData = Cdo.seltimestep(lastTimestep, :input => "-selname,T #{ifile}",:output => "lastTimeStep_"+File.basename(ifile),:force => true)
-  lastTimestepData = Cdo.yearmean(:input => "-selyear,#{year} -selname,T #{ifile}",:output => "lastTimeStep_"+File.basename(ifile),:force => true)
-  diffOfLast2Init = Cdo.sub(:input => [lastTimestepData,"-selname,T " +initFilename(experiment)].join(' '),:output => "diffOfLastTimestep_#{experiment}.nc",:force => true)
-    im = plotter.scalarPlot(diffOfLast2Init,'T_10m'+     File.basename(ifile,'.nc'),'T',
-                            :tStrg => experiment, :bStrg => '" "',:maskName => "wet_c",:maskFile => ifile,
-                            :levIndex => 0, :tStrg => "#{year} yearmean variation to initial",
-                            :rStrg => 'Temperature')
-    lock.synchronize {(plots[experiment] ||= []) << im }
-    im = plotter.scalarPlot(diffOfLast2Init,'T_30m'+     File.basename(ifile,'.nc'),'T',
-                            :tStrg => experiment, :bStrg => '" "',:maskName => "wet_c",:maskFile => ifile,
-                            :levIndex => 1, :tStrg => "#{year} yearmean variation to initial",
-                            :rStrg => 'Temperature')
-    lock.synchronize {(plots[experiment] ||= []) << im }
-    im = plotter.scalarPlot(diffOfLast2Init,'T_50m'+     File.basename(ifile,'.nc'),'T',
-                            :tStrg => experiment, :bStrg => '" "',:maskName => "wet_c",:maskFile => ifile,
-                            :levIndex => 2, :tStrg => "#{year} yearmean variation to initial",
-                            :rStrg => 'Temperature')
-    lock.synchronize {(plots[experiment] ||= []) << im }
+
+  # preselect the timestep
+  timestepData = Cdo.seltimestep(timesteps.join(','), input: ifile,output: [timesteps.join('-'),File.basename(ifile)].join('_'))
+  # precompute levels
+  levelsOfVars = {}
+  varnames.each {|varname| (1..3).each {|levidx| (levelsOfVars[varname] ||= [] ) << Cdo.showlevel(input: " -sellevidx,#{levidx} -selname,#{varname} #{timestepData}").first }}
+
+  timesteps.each {|ts| 
+    levelsOfVars.each {|varname,levels|
+      levels.each_with_index {|level,levidx|
+        im = plotter.scalarPlot(timestepData,"#{varname}_#{level}m_TS#{ts}_#{File.basename(ifile,'.nc')}",varname,
+                          :tStrg => experiment, :bStrg => '" "',:maskName => "wet_c",:maskFile => ifile,
+                          :levIndex => levidx+1, :timeStep => ts-1, :tStrg => "#{varname} ")
+        lock.synchronize {(plots[experiment] ||= []) << im }
+      }
+    }
+  }
 end
 #------------------------------------------------------------------------------
 def cropSecPlots(secPlots,plotDir='.')
@@ -261,9 +258,9 @@ experimentAnalyzedData.each {|experiment,files|
   Cdo.settunits('years',:input => "-yearmean #{ofile}", :output => ymfile,:force => plot?)
 
   q.push { secPlot(ymfile,experiment,secPlots,lock) if plot? }
-#  q.push { horizPlot(experimentFiles[experiment][-1],experiment,mapPlots,lock) if plot? }
+  q.push { horizPlot(experimentFiles[experiment][0],[1,2,3],['t_acc','s_acc'],experiment,mapPlots,lock) if plot? }
 }
 q.run
 cropSecPlots(secPlots) if plot?
-#cropMapPlots(mapPlots) if plot?
+cropMapPlots(mapPlots) if plot?
 
