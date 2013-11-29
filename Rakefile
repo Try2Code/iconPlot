@@ -18,6 +18,7 @@ OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/oce.nc'
 ICON_GRID             = ENV['HOME']+'/data/icon/iconGridR2b4.nc'
 OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/r2b05/test.nc'
 MPIOM_FILE            = ENV['HOME']+'/data/mpiom/depto.nc'
+MPIOM_FILE            = ENV['HOME']+'/data/mpiom/mpiom_y50.nc'
 OCELONG_PLOT_TEST_FILE= ENV['HOME']+'/data/icon/oceLong.nc'
 OCELSM_PLOT_TEST_FILE = ENV['HOME']+'/data/icon/oce_lsm.nc'
 OCE_HOV_FILE          = ENV['HOME']+'/data/icon/test_hov.nc'
@@ -623,7 +624,9 @@ end
 
 desc "check plot with mpiom input"
 task :test_mpiom do
-  show(scalarPlot(MPIOM_FILE,'test_mpiom','depto',:DEBUG => true))
+  @plotter.isIcon = false
+  show(scalarPlot(MPIOM_FILE,'test_mpiom','s',:DEBUG => true,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0'))
+  show(scalarPlot(MPIOM_FILE,'test_mpiom','s',:DEBUG => true,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0',:showGrid => true))
 end
 
 desc "check icon_plot_test.ncl"
