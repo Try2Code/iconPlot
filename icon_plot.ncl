@@ -478,24 +478,6 @@
 
     var = selField(varName,File,timeStep,levIndex,horizonalGridType)
 
-    if (horizonalGridType .eq. "unstructured") then
-      if (isvar("gridFile")) then
-        x      = getCoordinateFromFile(lonCo,gridFile)
-        y      = getCoordinateFromFile(latCo,gridFile)
-        if (showGrid) then
-          bounds = getBoundsFromFile(lonCo,latCo,gridFile)
-        end if
-      else
-        lonlatSizes = getCoordSizes(var,File)
-        x           = new(lonlatSizes(0),double)
-        y           = new(lonlatSizes(1),double)
-        getLonLats(var,File,x,y)
-        if (showGrid) then
-          bounds  = getBoundsOfCoordinates(var,File)
-        end if
-      end if
-    end if
-
     scaleVar(var,scaleFactor)
 
     ; set minVar_maxVar for plotting
@@ -595,10 +577,23 @@
 
   if (useMask) setMaskColor(wks,ResC) end if
 
-
-  if (getHorizGridType(iFile,ivarname,isIcon) .eq. "unstructured") then
+  if (horizonalGridType .eq. "unstructured" .or. horizonalGridType .eq. "curvilinear") then
     if (plotMode.eq."scalar" .or. plotMode.eq."overlay")
-      setCoordinates(ResC,x,y)
+      if (horizonalGridType .eq. "unstructured" .or. horizonalGridType .eq. "curvilinear") then
+        if (isvar("gridFile")) then
+          x      = getCoordinateFromFile(lonCo,gridFile)
+          y      = getCoordinateFromFile(latCo,gridFile)
+          if (showGrid) then
+            bounds = getBoundsFromFile(lonCo,latCo,gridFile)
+          end if
+        else
+          if (showGrid) then
+            bounds  = getBoundsOfCoordinates(var,File)
+          end if
+        end if
+      end if
+
+      setCoordinates(ResC,File,var)
     end if
   end if
 
