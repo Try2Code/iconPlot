@@ -5,8 +5,7 @@ require 'cdo'
 require 'iconPlot'
 require 'jobqueue'
 require 'tempfile'
-require 'test/unit/assertions'
-include Test::Unit::Assertions
+require 'minitest/autorun'
 
 SRC                   = ["icon_plot.ncl","icon_plot_lib.ncl"]
 HOSTS                 = ["m300064@blizzard.dkrz.de"]
@@ -16,7 +15,7 @@ CP                    = 'scp -p'
 LS                    = 'ls -crtlh'
 OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/oce.nc'
 ICON_GRID             = ENV['HOME']+'/data/icon/iconGridR2b4.nc'
-OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/r2b05/test.nc'
+#OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/r2b05/test.nc'
 MPIOM_FILE            = ENV['HOME']+'/data/mpiom/depto.nc'
 MPIOM_FILE            = ENV['HOME']+'/data/mpiom/mpiom_y50.nc'
 OCELONG_PLOT_TEST_FILE= ENV['HOME']+'/data/icon/oceLong.nc'
@@ -184,7 +183,7 @@ task :test_halflog do
   ofile          = 'test_halflog'
   varname        = 'T'
   Cdo.debug=true
-  tfile = Cdo.mulc(100,:in => "-subc,5 -abs -selname,T #{OCE_PLOT_TEST_FILE}")
+  tfile = Cdo.mulc(100,:input => "-subc,5 -abs -selname,T #{OCE_PLOT_TEST_FILE}")
   image = scalarPlot(tfile,ofile,varname,:selMode =>'halflog',:minVar =>-1, :maxVar => 1000, :atmLe => 'm',
                                                 :mapLLC => '-10.0,-80.0' ,:mapURC =>'100.0,-10.0')
   show(image)
