@@ -579,7 +579,7 @@
 
   if (horizonalGridType .eq. "unstructured" .or. horizonalGridType .eq. "curvilinear") then
     if (plotMode.eq."scalar" .or. plotMode.eq."overlay")
-      if (horizonalGridType .eq. "unstructured" .or. horizonalGridType .eq. "curvilinear") then
+      if (horizonalGridType .eq. "unstructured") then
         if (isvar("gridFile")) then
           x      = getCoordinateFromFile(lonCo,gridFile)
           y      = getCoordinateFromFile(latCo,gridFile)
@@ -666,16 +666,25 @@
     draw(plot)
   end if
   if (plotMode.eq."scalar") then
-    if (DEBUG .and. horizonalGridType.eq."unstructured") print("Gridtype is "+getGridType(var)) end if
+    ;if (DEBUG .and. horizonalGridType.eq."unstructured") print("Gridtype is "+getGridType(var)) end if
+    if (showGrid ) then
+      if ( horizonalGridType .eq. "curvilinear") then
+        ResC@cnLinesOn            = False
+        ResC@cnFillMode           = "CellFill"
+        ResC@cnCellFillEdgeColor   = "black"          ;-- set edge color (default: -1 transparent)
+        ResC@cnCellFillMissingValEdgeColor = "grey"   ;-- set miss val edge color (default: -1 transparent)
+      end if
+    end if
     plot = gsn_csm_contour_map(wks,var,ResC)
-
     if (showGrid) then
-      if ( horizonalGridType .ne. "unstructured") then
+      if (horizonalGridType .eq. "unstructured") then
+        plotGrid(wks,plot,var,x,bounds,File,ResC,DEBUG)
+      end if
+      if ( horizonalGridType .ne. "curvilinear" .and. horizonalGridType .ne. "unstructured") then
         print("#=====================================================================")
         print("Grid representation is only implemented for the unstructured ICON grid")
         exit
       end if
-      plotGrid(wks,plot,var,x,bounds,File,ResC,DEBUG)
     end if
     if ( markCells ) then
       plotCellMarkers(x,y,wks,plot,True)
