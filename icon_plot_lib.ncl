@@ -1342,7 +1342,7 @@ end
 ;---------------------------------------------------------------
 ; set the coordinates for an ICON data field
 undef("setCoordinates")
-procedure setCoordinates(resource,filehandle,variable)
+function setCoordinates(resource,filehandle,variable)
 begin
   lonlat = str_split(variable@coordinates," ")
   lon    = lonlat(0)
@@ -1360,6 +1360,7 @@ begin
      resource@sfXArray = x
      resource@sfYArray = y
   end if
+  return (/x,y/)
 end
 ;---------------------------------------------------------------
 ; set the coordinates bounds for an ICON data field
@@ -1432,7 +1433,7 @@ end
 undef("getVarLevelType")
 function getVarLevelType(filename,varname)
 begin
-  f       = addfile(filename+".nc","r")
+  f       = addfile(filename,"r")
   vertdim = getVertDim(f,f->$varname$)
   if (ismissing(vertdim)) then
     delete(f)

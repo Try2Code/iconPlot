@@ -593,7 +593,9 @@
         end if
       end if
 
-      setCoordinates(ResC,File,var)
+     coords = setCoordinates(ResC,File,var)
+     x = coords(0,:)
+     y = coords(1,:)
     end if
   end if
 
