@@ -358,12 +358,12 @@ end
 desc "plot vectors of ocean input"
 task :test_vector_oce do
   jq = JobQueue.new
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_0','u v') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_1','u v',:mapType     => 'ortho') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_2','u v',:streamLine  => 'True') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_3','u v',:streamLine  => 'True',:mapType => 'ortho') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_4','u v',:vecColByLen => 'True') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_5','u v',:streamLine  => 'True',:vecColByLen =>'True') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_0', 'u-veloc v-veloc') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_1', 'u-veloc v-veloc',:mapType     => 'ortho') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_2', 'u-veloc v-veloc',:streamLine  => 'True') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_3', 'u-veloc v-veloc',:streamLine  => 'True',:mapType => 'ortho') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_4', 'u-veloc v-veloc',:vecColByLen => 'True') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_5', 'u-veloc v-veloc',:streamLine  => 'True',:vecColByLen =>'True') }
   jq.run
 end
 desc "plot vectors of atm input"
