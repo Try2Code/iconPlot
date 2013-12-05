@@ -478,24 +478,6 @@
 
     var = selField(varName,File,timeStep,levIndex,horizonalGridType)
 
-    if (horizonalGridType .eq. "unstructured") then
-      if (isvar("gridFile")) then
-        x      = getCoordinateFromFile(lonCo,gridFile)
-        y      = getCoordinateFromFile(latCo,gridFile)
-        if (showGrid) then
-          bounds = getBoundsFromFile(lonCo,latCo,gridFile)
-        end if
-      else
-        lonlatSizes = getCoordSizes(var,File)
-        x           = new(lonlatSizes(0),double)
-        y           = new(lonlatSizes(1),double)
-        getLonLats(var,File,x,y)
-        if (showGrid) then
-          bounds  = getBoundsOfCoordinates(var,File)
-        end if
-      end if
-    end if
-
     scaleVar(var,scaleFactor)
 
     ; set minVar_maxVar for plotting
@@ -595,10 +577,24 @@
 
   if (useMask) setMaskColor(wks,ResC) end if
 
-
-  if (getHorizGridType(iFile,ivarname,isIcon) .eq. "unstructured") then
+  if (horizonalGridType .eq. "unstructured" .or. horizonalGridType .eq. "curvilinear") then
     if (plotMode.eq."scalar" .or. plotMode.eq."overlay")
-      setCoordinates(ResC,x,y)
+      if (horizonalGridType .eq. "unstructured") then
+        if (isvar("gridFile")) then
+          ;TODO: fix x,y creation for external gridfile (plot restart data)
+          x      = getCoordinateFromFile(lonCo,gridFile)
+          y      = getCoordinateFromFile(latCo,gridFile)
+          if (showGrid) then
+            bounds = getBoundsFromFile(lonCo,latCo,gridFile)
+          end if
+        else
+          if (showGrid) then
+            bounds  = getBoundsOfCoordinates(var,File)
+          end if
+        end if
+      end if
+
+     coords = setCoordinates(ResC,File,var)
     end if
   end if
 
@@ -671,18 +667,29 @@
     draw(plot)
   end if
   if (plotMode.eq."scalar") then
-    if (DEBUG .and. horizonalGridType.eq."unstructured") print("Gridtype is "+getGridType(var)) end if
+    ;if (DEBUG .and. horizonalGridType.eq."unstructured") print("Gridtype is "+getGridType(var)) end if
+    if (showGrid ) then
+      if ( horizonalGridType .eq. "curvilinear") then
+        ResC@cnLinesOn            = False
+        ResC@cnFillMode           = "CellFill"
+        ResC@cnCellFillEdgeColor   = "black"          ;-- set edge color (default: -1 transparent)
+        ResC@cnCellFillMissingValEdgeColor = "grey"   ;-- set miss val edge color (default: -1 transparent)
+      end if
+    end if
     plot = gsn_csm_contour_map(wks,var,ResC)
-
     if (showGrid) then
-      if ( horizonalGridType .ne. "unstructured") then
+      if (horizonalGridType .eq. "unstructured") then
+        plotGrid(wks,plot,var,coords(1,:),bounds,File,ResC,DEBUG)
+      end if
+      if ( horizonalGridType .ne. "curvilinear" .and. horizonalGridType .ne. "unstructured") then
         print("#=====================================================================")
         print("Grid representation is only implemented for the unstructured ICON grid")
         exit
       end if
-      plotGrid(wks,plot,var,x,bounds,File,ResC,DEBUG)
     end if
     if ( markCells ) then
+     x = coords(0,:)
+     y = coords(1,:)
       plotCellMarkers(x,y,wks,plot,True)
     end if
   end if

@@ -1,8 +1,8 @@
 $:.unshift File.join(File.dirname(__FILE__),"..","lib")
-require "test/unit"
+require "minitest/autorun"
 require "iconPlot"
 
-class TestIconPlot < Test::Unit::TestCase
+class TestIconPlot < Minitest::Test
 
   CALLER                 = "/home/ram/src/git/icon/scripts/postprocessing/tools/contrib/nclsh"
   PLOTTER                = "/home/ram/src/git/icon/scripts/postprocessing/tools/icon_plot.ncl"

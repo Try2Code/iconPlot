@@ -8,9 +8,7 @@ module IconPathsAlongCells
   # R2B04: list of cellsof which their common edge define the path
   CellPairsLists= {
     :gibraltar      => [[4543,4485]],
-
     :denmarkStrait  => [[4690,4695]],
-
     :drakePassage   => [
       [18481,18495],
       [18483,18493],

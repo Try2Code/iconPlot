@@ -5,8 +5,7 @@ require 'cdo'
 require 'iconPlot'
 require 'jobqueue'
 require 'tempfile'
-require 'test/unit/assertions'
-include Test::Unit::Assertions
+require 'minitest/autorun'
 
 SRC                   = ["icon_plot.ncl","icon_plot_lib.ncl"]
 HOSTS                 = ["m300064@blizzard.dkrz.de"]
@@ -16,8 +15,9 @@ CP                    = 'scp -p'
 LS                    = 'ls -crtlh'
 OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/oce.nc'
 ICON_GRID             = ENV['HOME']+'/data/icon/iconGridR2b4.nc'
-OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/r2b05/test.nc'
+#OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/r2b05/test.nc'
 MPIOM_FILE            = ENV['HOME']+'/data/mpiom/depto.nc'
+MPIOM_FILE            = ENV['HOME']+'/data/mpiom/mpiom_y50.nc'
 OCELONG_PLOT_TEST_FILE= ENV['HOME']+'/data/icon/oceLong.nc'
 OCELSM_PLOT_TEST_FILE = ENV['HOME']+'/data/icon/oce_lsm.nc'
 OCE_HOV_FILE          = ENV['HOME']+'/data/icon/test_hov.nc'
@@ -183,7 +183,7 @@ task :test_halflog do
   ofile          = 'test_halflog'
   varname        = 'T'
   Cdo.debug=true
-  tfile = Cdo.mulc(100,:in => "-subc,5 -abs -selname,T #{OCE_PLOT_TEST_FILE}")
+  tfile = Cdo.mulc(100,:input => "-subc,5 -abs -selname,T #{OCE_PLOT_TEST_FILE}")
   image = scalarPlot(tfile,ofile,varname,:selMode =>'halflog',:minVar =>-1, :maxVar => 1000, :atmLe => 'm',
                                                 :mapLLC => '-10.0,-80.0' ,:mapURC =>'100.0,-10.0')
   show(image)
@@ -317,6 +317,9 @@ end
 
 desc "Compare sections on great circle and straight lines"
 task :test_secmode do
+  # create missing values
+  maskedInput = Cdo.div(input: " -selname,T #{OCELSM_PLOT_TEST_FILE} -selname,wet_c -seltimestep,1 #{OCELSM_PLOT_TEST_FILE}",
+                        output: "test_secmode_maskedInput.nc")
   q = JobQueue.new
 
   {
@@ -334,15 +337,16 @@ task :test_secmode do
       :secRC      => [endLat,endLon].join(','),
       :showSecMap => "True",
       :secPoints  => 201,
-      :maskName   => 'wet_c',
-      :resolution => 'r360x180'
+      :resolution => 'r180x90'
     }
     # enable regular grided data
     @plotter.isIcon = true
     @plotter.debug  = true
     %w[straight circle].each {|secmode|
       q.push {
-        show(scalarPlot(OCELSM_PLOT_TEST_FILE,
+        ofile = [sec,secmode,maskedInput].join('_')
+        FileUtils.cp(maskedInput,ofile)
+        show(scalarPlot(ofile,
                       ['test_secMode',secmode,sec].join("_"),
                       'T',
                       secopts.merge(:secMode => secmode,
@@ -358,12 +362,12 @@ end
 desc "plot vectors of ocean input"
 task :test_vector_oce do
   jq = JobQueue.new
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_0','u v') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_1','u v',:mapType     => 'ortho') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_2','u v',:streamLine  => 'True') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_3','u v',:streamLine  => 'True',:mapType => 'ortho') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_4','u v',:vecColByLen => 'True') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_5','u v',:streamLine  => 'True',:vecColByLen =>'True') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_0', 'u-veloc v-veloc') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_1', 'u-veloc v-veloc',:mapType     => 'ortho') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_2', 'u-veloc v-veloc',:streamLine  => 'True') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_3', 'u-veloc v-veloc',:streamLine  => 'True',:mapType => 'ortho') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_4', 'u-veloc v-veloc',:vecColByLen => 'True') }
+  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_5', 'u-veloc v-veloc',:streamLine  => 'True',:vecColByLen =>'True') }
   jq.run
 end
 desc "plot vectors of atm input"
@@ -623,7 +627,9 @@ end
 
 desc "check plot with mpiom input"
 task :test_mpiom do
-  show(scalarPlot(MPIOM_FILE,'test_mpiom','depto',:DEBUG => true))
+  @plotter.isIcon = false
+  show(scalarPlot(MPIOM_FILE,'test_mpiom'     ,'s',:DEBUG => true,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0'))
+  show(scalarPlot(MPIOM_FILE,'test_mpiom_grid','s',:DEBUG => true,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0',:showGrid => true))
 end
 
 desc "check icon_plot_test.ncl"

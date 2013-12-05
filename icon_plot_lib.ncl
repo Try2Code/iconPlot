@@ -91,7 +91,7 @@ begin
   end if
   if ((get_file_version(filehandle) .eq. "NETCDF4") .and. versionIsGE((/6,1,1/))) then
     print("[nc4Aware_addfile]switch to root group '/'")
-    filehandle = filehandle=>/
+   ;filehandle = filehandle=>/
   end if
   return filehandle
 end
@@ -419,15 +419,17 @@ end
 ;-------------------------------------------------------------------------------
 ; Return the coordinates of a given variable in degrees
 undef("getLonLats")
-procedure getLonLats(variable,filehandle,x,y)
+procedure getLonLats(variable,filehandle,x,y,isicon)
 begin
   lonlat = str_split(variable@coordinates," ")
   lon    = lonlat(0)
   lat    = lonlat(1)
   x      = filehandle->$lon$
   y      = filehandle->$lat$
-  x      = x * RAD2DEG
-  y      = y * RAD2DEG
+  if (isicon) then
+    x      = x * RAD2DEG
+    y      = y * RAD2DEG
+  end if
 end
 ;-------------------------------------------------------------------------------
 ; get variable from a certain file
@@ -1321,9 +1323,11 @@ end
 undef("checkMinMaxVar")
 procedure checkMinMaxVar(minvar,maxvar)
 begin
+  if ( (.not. ismissing(minvar)) .and. (.not. ismissing(maxvar)) ) then
   if ( minvar .gt. maxvar ) then
     print("minVar has to be larger than maxVar")
     exit
+  end if
   end if
 end
 ;---------------------------------------------------------------
@@ -1338,10 +1342,25 @@ end
 ;---------------------------------------------------------------
 ; set the coordinates for an ICON data field
 undef("setCoordinates")
-procedure setCoordinates(resource,lons,lats)
+function setCoordinates(resource,filehandle,variable)
 begin
-  resource@sfXArray = lons
-  resource@sfYArray = lats
+  lonlat = str_split(variable@coordinates," ")
+  lon    = lonlat(0)
+  lat    = lonlat(1)
+  x      = filehandle->$lon$
+  y      = filehandle->$lat$
+
+  if ("radian" .eq. x@units) x = x * RAD2DEG end if
+  if ("radian" .eq. y@units) y = y * RAD2DEG end if
+
+  if (dimsizes(dimsizes(x)).ne.1) then
+     variable@lon2d = x
+     variable@lat2d = y
+  else
+     resource@sfXArray = x
+     resource@sfYArray = y
+  end if
+  return (/x,y/)
 end
 ;---------------------------------------------------------------
 ; set the coordinates bounds for an ICON data field
@@ -1414,7 +1433,7 @@ end
 undef("getVarLevelType")
 function getVarLevelType(filename,varname)
 begin
-  f       = addfile(filename+".nc","r")
+  f       = addfile(filename,"r")
   vertdim = getVertDim(f,f->$varname$)
   if (ismissing(vertdim)) then
     delete(f)
