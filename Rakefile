@@ -317,6 +317,9 @@ end
 
 desc "Compare sections on great circle and straight lines"
 task :test_secmode do
+  # create missing values
+  maskedInput = Cdo.div(input: " -selname,T #{OCELSM_PLOT_TEST_FILE} -selname,wet_c -seltimestep,1 #{OCELSM_PLOT_TEST_FILE}",
+                        output: "test_secmode_maskedInput.nc")
   q = JobQueue.new
 
   {
@@ -334,15 +337,16 @@ task :test_secmode do
       :secRC      => [endLat,endLon].join(','),
       :showSecMap => "True",
       :secPoints  => 201,
-      :maskName   => 'wet_c',
-      :resolution => 'r360x180'
+      :resolution => 'r180x90'
     }
     # enable regular grided data
     @plotter.isIcon = true
     @plotter.debug  = true
     %w[straight circle].each {|secmode|
       q.push {
-        show(scalarPlot(OCELSM_PLOT_TEST_FILE,
+        ofile = [sec,secmode,maskedInput].join('_')
+        FileUtils.cp(maskedInput,ofile)
+        show(scalarPlot(ofile,
                       ['test_secMode',secmode,sec].join("_"),
                       'T',
                       secopts.merge(:secMode => secmode,
@@ -624,8 +628,8 @@ end
 desc "check plot with mpiom input"
 task :test_mpiom do
   @plotter.isIcon = false
-  show(scalarPlot(MPIOM_FILE,'test_mpiom','s',:DEBUG => true,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0'))
-  show(scalarPlot(MPIOM_FILE,'test_mpiom','s',:DEBUG => true,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0',:showGrid => true))
+  show(scalarPlot(MPIOM_FILE,'test_mpiom'     ,'s',:DEBUG => true,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0'))
+  show(scalarPlot(MPIOM_FILE,'test_mpiom_grid','s',:DEBUG => true,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0',:showGrid => true))
 end
 
 desc "check icon_plot_test.ncl"
