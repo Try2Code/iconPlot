@@ -569,6 +569,7 @@ if 'thingol' == `hostname`.chomp
     jq.push(@plotter,:defaultPlot,OCE_PLOT_TEST_FILE   ,'test_show_grid_oce',:showGrid => "True",
                      :mapLLC => '-10.0,-40.0' ,:mapURC =>'10.0,-10.0')
     jq.push(@plotter,:defaultPlot,OCE_PLOT_TEST_FILE   ,'test_show_grid_oce_ortho',:showGrid => "True",:mapType => "ortho")
+    jq.push(@plotter,:scalarPlot,'/home/ram/data/icon/dat.ice.r14716.def.2663-67.nc' ,'test_show_grid_ice_ortho','hi',:showGrid => "True")
     jq.push(@plotter,:defaultPlot,ATM_PLOT_TEST_FILE   ,'test_show_grid_atm',:showGrid => "True",:atmLev => "m")
     jq.run
   end
