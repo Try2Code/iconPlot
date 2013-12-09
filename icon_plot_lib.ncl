@@ -1836,7 +1836,7 @@ begin
   if (.not. ismissing(vhig(0))) then
     do j = 0, dimsizes(vhig) -1
       pres@gsFillColor = colors(i+1)
-      if ( flags(vhig(i))) then
+      if ( flags(vhig(j))) then
       gsn_polygon(wks,plot,boundslon(vhig(j),:),boundslat(vhig(j),:),pres)
       end if
     end do
