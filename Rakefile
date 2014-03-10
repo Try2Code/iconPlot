@@ -426,6 +426,13 @@ COMPARISON.each {|itype,ifile|
                 :levIndex => levIndex,
                 :centerLat => -90,
                 :streamLine => "True")
+    defaultPlot(ifile,"test_overlay_stream_3d_#{itypeS}",
+                :vecVars => vecvars,
+                :mapType => "ortho",
+                :atmLev => "m",
+                :maskName => 'wet_c',
+                :levIndex => levIndex,
+                :streamLine => "True") if :oce == itype
   end
   desc "overlay plot from 2d variable (#{itypeS})"
   task "test_overlay_2d_#{itypeS}".to_sym do
