@@ -895,7 +895,7 @@ end
 ;---------------------------------------------------------------
 ; Create a default NCL resource
 undef("setDefaultResource")
-function setDefaultResource(verticallabelbar,withLines,withLineLabels,fillmode)
+function setDefaultResource(verticallabelbar,withLines,withLineLabels,fillmode,maptype)
 begin
   resource                          = True
   resource@gsnMaximize              = False
@@ -903,6 +903,8 @@ begin
   resource@gsnDraw                  = True
   resource@gsnSpreadColors          = True
   resource@cnFillOn                 = True
+
+  resource@mapType                  = maptype
 
 ; lines/labels inside the plot ================================================
   if (withLines) then
@@ -1733,6 +1735,11 @@ undef("getFlags")
 function getFlags(var,boundslon,boundslat,resource)
 begin
   flags = new(dimsizes(var),logical,"No_FillValue")
+
+  if (resource@mapType .EQ. "NHps" .OR. resource@mapType .EQ. "SHps") then
+    flags = True
+    return flags
+  end if
   do i = 0,dimsizes(var) - 1
     flags(i) = where(all(boundslon(i,:) .gt. resource@mpMaxLonF) .or. \
                      all(boundslon(i,:) .lt. resource@mpMinLonF) .or. \

@@ -569,7 +569,7 @@
     drawNDCGrid(wks)
   end if
 
-  ResC = setDefaultResource(True,withLines,withLineLabels,fillMode)
+  ResC = setDefaultResource(True,withLines,withLineLabels,fillMode,mapType)
 
   if (.not. userColors) setDefaultColors(ResC,minVar,maxVar,DEBUG) end if
 
