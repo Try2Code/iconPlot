@@ -14,6 +14,7 @@ DST                   = HOSTS.map {|v| v + ':' + DIR}
 CP                    = 'scp -p'
 LS                    = 'ls -crtlh'
 OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/oce.nc'
+OCE_R2B2              = ENV['HOME']+ '/data/icon/oce_small.nc'
 ICON_GRID             = ENV['HOME']+'/data/icon/iconGridR2b4.nc'
 #OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/r2b05/test.nc'
 MPIOM_FILE            = ENV['HOME']+'/data/mpiom/depto.nc'
@@ -160,22 +161,21 @@ task :test_mapselect do
 end
 desc "masking with ocean's wet_c"
 task :test_mask do
-  ofile          = 'test_mask'
-  varname        = 'ELEV'
+  ifile,ofile,varname          = OCE_PLOT_TEST_FILE,'test_mask','ELEV'
+  ifile,ofile,varname          = OCE_R2B2,'test_mask','t_acc'
+
   q = JobQueue.new
-  file = '/home/ram/data/icon/oce_small.nc'
-  q.push { show(scalarPlot(OCE_PLOT_TEST_FILE,ofile+"maskOnly",varname,:maskName => 'wet_c'))  }
-  q.push { show(scalarPlot(OCE_PLOT_TEST_FILE,ofile+"maskPlusGrid",varname,:maskName => 'wet_c',:showGrid => true))  }
-  q.push { show(scalarPlot(OCE_PLOT_TEST_FILE,ofile+"ortho",varname,:maskName => 'wet_c',:showGrid => true,:mapType => 'ortho',:centerLon => 0.0, :centerLat => 90.0))  }
-  q.push { show(scalarPlot(OCE_PLOT_TEST_FILE,ofile+"sat",  varname,:maskName => 'wet_c',:showGrid => true,:mapType => 'sat',:centerLon => 0.0, :centerLat => 90.0,:satDist => 0.01))  }
-  q.push { show(scalarPlot(OCE_PLOT_TEST_FILE,ofile+"NHps", varname,:maskName => 'wet_c',:showGrid => true,:mapType => 'NHps'))  }
-  q.run
+  q.push { show(scalarPlot(ifile,ofile+"_maskOnly",varname,:maskName => 'wet_c'))  }
+  q.push { show(scalarPlot(ifile,ofile+"_maskPlusGrid",varname,:maskName => 'wet_c',:showGrid => true))  }
+  q.push { show(scalarPlot(ifile,ofile+"_ortho",varname,:maskName => 'wet_c',:showGrid => true,:mapType => 'ortho',:centerLon => 0.0, :centerLat => 90.0))  }
+  q.push { show(scalarPlot(ifile,ofile+"_NHps", varname,:maskName => 'wet_c',:showGrid => true,:mapType => 'NHps'))  }
   # create mask implicitly by division
-  Cdo.forceOutput = true
-  maskedInput = Cdo.sellonlatbox(0,360,0,90,input: "-div -selname,ELEV #{OCE_PLOT_TEST_FILE} -sellevidx,1 -selname,wet_c #{OCE_PLOT_TEST_FILE}",output: "test_mask_by_div.nc")
-# maskedInput = Cdo.sellonlatbox(0,360,0,90,input: "-div -selname,T #{OCE_PLOT_TEST_FILE} -selname,wet_c #{OCE_PLOT_TEST_FILE}",output: "test_mask_by_div.nc")
-# varname = 'T'
-# show(scalarPlot(maskedInput,ofile,varname,:showGrid => true,:mapType => 'NHps',:centerLat => 90))
+  ifile = Cdo.div(input: " -selname,#{varname} #{ifile} #{%w[h h_acc ELEV].include?(varname) ? "-sellevidx,1" : ''} -selname,wet_c #{ifile}",output: "test_mask_by_div.nc")
+  q.push { show(scalarPlot(ifile,ofile+"_byDiv_maskOnly",varname,))  }
+  q.push { show(scalarPlot(ifile,ofile+"_byDiv_maskPlusGrid",varname,:showGrid => true))  }
+  q.push { show(scalarPlot(ifile,ofile+"_byDiv_ortho",varname,:showGrid => true,:mapType => 'ortho',:centerLon => 0.0, :centerLat => 90.0))  }
+  q.push { show(scalarPlot(ifile,ofile+"_byDiv_NHps", varname,:showGrid => true,:mapType => 'NHps'))  }
+  q.run
 end
 desc "perform simple atm plot from 3d var"
 task :test_atm_3d do
