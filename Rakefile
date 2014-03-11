@@ -7,6 +7,9 @@ require 'jobqueue'
 require 'tempfile'
 require 'minitest/autorun'
 
+#==============================================================================
+def isLocal?; `hostname`.chomp == 'thingol'; end
+#==============================================================================
 @_FILES = {}
 SRC                   = ["icon_plot.ncl","icon_plot_lib.ncl"]
 HOSTS                 = ["m300064@blizzard.dkrz.de"]
@@ -16,7 +19,7 @@ CP                    = 'scp -p'
 LS                    = 'ls -crtlh'
 OFMT                  = 'png'
 DEFAULT_VARNAME       = 'T'
-PLOT_CMD              = 'sxiv'
+PLOT_CMD              = isLocal? ? 'sxiv' : 'eog'
 CDO                   = ENV['CDO'].nil? ? 'cdo' : ENV['CDO']
 REMOTE_DATA_DIR       = '/home/zmaw/m300064/thunder/data/testing'
 
@@ -50,7 +53,7 @@ OCE_NML_OUTPUT        = ENV['HOME']+'/data/icon/oceNmlOutput.nc'
   TOPO_NONGLOBAL        ,
   ICE_DATA              ,
   OCE_NML_OUTPUT        ,
-].each {|f| @_FILES[f] = (`hostname`.chomp == 'thingol') ? f : [REMOTE_DATA_DIR,File.basename(f)].join(FILE::SEPARATOR) }
+].each {|f| @_FILES[f] = (`hostname`.chomp == 'thingol') ? f : [REMOTE_DATA_DIR,File.basename(f)].join(File::SEPARATOR) }
 
 COMPARISON            = {:oce => @_FILES[OCE_PLOT_TEST_FILE], :atm => @_FILES[ATM_PLOT_TEST_FILE]}
 COMPARISON_REG        = {:oce => @_FILES[OCE_REGPLOT_TEST_FILE], :atm => @_FILES[ATM_REGPLOT_TEST_FILE]}
@@ -58,8 +61,15 @@ COMPARISON_REG        = {:oce => @_FILES[OCE_REGPLOT_TEST_FILE], :atm => @_FILES
 
 CLEAN.add(*Dir.glob(["test_*.png","remapnn_*nc","zonmean_*.nc"]))
 
+desc "check if all input files are available at the correct place"
+task :checkInput do
+  @_FILES.each {|_,file|
+    puts "Search file:'#{file}' ............... #{File.exist?(file) ? '   found' : ' NOT found'}"
+  }
+end
+
 desc "move test input to remote machine"
-task :syncInput do
+task :syncInput => [:checkInput] do
   if `hostname`.chomp == 'thingol' then
     user, host, port, remoteDir = 'm300064','localhost',40022,REMOTE_DATA_DIR
     jq = JobQueue.new
@@ -80,7 +90,7 @@ task :syncInput do
 end
 @lock = Mutex.new
 
-@plotter = IconPlot.new("contrib/nclsh","icon_plot.ncl",".",nil,nil,nil,true)
+@plotter = IconPlot.new("#{isLocal? ? "contrib/nclsh" : "nclsh"}","icon_plot.ncl",".",nil,PLOT_CMD,nil,true)
 #=============================================================================== 
 # put some plotter methods into main context
 def show(*args)
@@ -202,7 +212,7 @@ task :test_mapselect do
   jq.run
 end
 desc "masking with ocean's wet_c"
-task :test_mask do
+task :test_mask_internal do
   ifile,ofile,varname          = @_FILES[OCE_PLOT_TEST_FILE],'test_mask','ELEV'
   ifile,ofile,varname          = @_FILES[OCE_R2B2],'test_mask','t_acc'
 
@@ -211,7 +221,14 @@ task :test_mask do
   q.push { show(scalarPlot(ifile,ofile+"_maskPlusGrid",varname,:maskName => 'wet_c',:showGrid => true))  }
   q.push { show(scalarPlot(ifile,ofile+"_ortho",varname,:maskName => 'wet_c',:showGrid => true,:mapType => 'ortho',:centerLon => 0.0, :centerLat => 90.0))  }
   q.push { show(scalarPlot(ifile,ofile+"_NHps", varname,:maskName => 'wet_c',:showGrid => true,:mapType => 'NHps'))  }
-  # create mask implicitly by division
+  q.run
+end
+desc "masking with real missing values /_FillValue"
+task :test_mask_by_division do
+  ifile,ofile,varname          = @_FILES[OCE_PLOT_TEST_FILE],'test_mask','ELEV'
+  ifile,ofile,varname          = @_FILES[OCE_R2B2],'test_mask','t_acc'
+
+  q = JobQueue.new
   ifile = Cdo.div(input: " -selname,#{varname} #{ifile} #{%w[h h_acc ELEV].include?(varname) ? "-sellevidx,1" : ''} -selname,wet_c #{ifile}",output: "test_mask_by_div.nc")
   q.push { show(scalarPlot(ifile,ofile+"_byDiv_maskOnly",varname,))  }
   q.push { show(scalarPlot(ifile,ofile+"_byDiv_maskPlusGrid",varname,:showGrid => true))  }
@@ -219,6 +236,8 @@ task :test_mask do
   q.push { show(scalarPlot(ifile,ofile+"_byDiv_NHps", varname,:showGrid => true,:mapType => 'NHps'))  }
   q.run
 end
+desc "All masking tests"
+task :test_mask => [:test_mask_internal, :test_mask_by_division]
 desc "perform simple atm plot from 3d var"
 task :test_atm_3d do
   ofile          = 'test_icon_plot.' + OFMT
