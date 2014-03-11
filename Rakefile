@@ -7,17 +7,22 @@ require 'jobqueue'
 require 'tempfile'
 require 'minitest/autorun'
 
+@_FILES = {}
 SRC                   = ["icon_plot.ncl","icon_plot_lib.ncl"]
 HOSTS                 = ["m300064@blizzard.dkrz.de"]
 DIR                   = '/pool/data/ICON/tools'
 DST                   = HOSTS.map {|v| v + ':' + DIR}
 CP                    = 'scp -p'
 LS                    = 'ls -crtlh'
+OFMT                  = 'png'
+DEFAULT_VARNAME       = 'T'
+PLOT_CMD              = 'sxiv'
+CDO                   = ENV['CDO'].nil? ? 'cdo' : ENV['CDO']
+REMOTE_DATA_DIR       = '/home/zmaw/m300064/thunder/data/testing'
+
 OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/oce.nc'
-OCE_R2B2              = ENV['HOME']+ '/data/icon/oce_small.nc'
+OCE_R2B2              = ENV['HOME']+'/data/icon/oce_small.nc'
 ICON_GRID             = ENV['HOME']+'/data/icon/iconGridR2b4.nc'
-#OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/r2b05/test.nc'
-MPIOM_FILE            = ENV['HOME']+'/data/mpiom/depto.nc'
 MPIOM_FILE            = ENV['HOME']+'/data/mpiom/mpiom_y50.nc'
 OCELONG_PLOT_TEST_FILE= ENV['HOME']+'/data/icon/oceLong.nc'
 OCELSM_PLOT_TEST_FILE = ENV['HOME']+'/data/icon/oce_lsm.nc'
@@ -26,16 +31,53 @@ ATM_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/atm.nc'
 ICON_LONG_RUN         = ENV['HOME']+'/data/icon/icon-dailyOmip.nc'
 OCE_REGPLOT_TEST_FILE = ENV['HOME']+'/data/icon/regular_oce.nc' #remapnn,r180x90
 ATM_REGPLOT_TEST_FILE = ENV['HOME']+'/data/icon/regular_atm.nc' #remapnn,n63 (no sections), r180x90 (with sections)
-COMPARISON            = {:oce => OCE_PLOT_TEST_FILE, :atm => ATM_PLOT_TEST_FILE}
-COMPARISON_REG        = {:oce => OCE_REGPLOT_TEST_FILE, :atm => ATM_REGPLOT_TEST_FILE}
-OFMT                  = 'png'
-DEFAULT_VARNAME       = 'T'
-PLOT_CMD              = 'sxiv'
-CDO                   = ENV['CDO'].nil? ? 'cdo' : ENV['CDO']
+TOPO_NONGLOBAL        = ENV['HOME']+'/data/icon/topo_2x2_00001.nc'
+ICE_DATA              = ENV['HOME']+'/data/icon/dat.ice.r14716.def.2663-67.nc'
+OCE_NML_OUTPUT        = ENV['HOME']+'/data/icon/oceNmlOutput.nc'
+# add files for being transferes to remote host for remote testing
+[
+  OCE_PLOT_TEST_FILE    ,
+  OCE_R2B2              ,
+  ICON_GRID             ,
+  MPIOM_FILE            ,
+  OCELONG_PLOT_TEST_FILE,
+  OCELSM_PLOT_TEST_FILE ,
+  OCE_HOV_FILE          ,
+  ATM_PLOT_TEST_FILE    ,
+  ICON_LONG_RUN         ,
+  OCE_REGPLOT_TEST_FILE ,
+  ATM_REGPLOT_TEST_FILE ,
+  TOPO_NONGLOBAL        ,
+  ICE_DATA              ,
+  OCE_NML_OUTPUT        ,
+].each {|f| @_FILES[f] = (`hostname`.chomp == 'thingol') ? f : [REMOTE_DATA_DIR,File.basename(f)].join(FILE::SEPARATOR) }
+
+COMPARISON            = {:oce => @_FILES[OCE_PLOT_TEST_FILE], :atm => @_FILES[ATM_PLOT_TEST_FILE]}
+COMPARISON_REG        = {:oce => @_FILES[OCE_REGPLOT_TEST_FILE], :atm => @_FILES[ATM_REGPLOT_TEST_FILE]}
 
 
 CLEAN.add(*Dir.glob(["test_*.png","remapnn_*nc","zonmean_*.nc"]))
 
+desc "move test input to remote machine"
+task :syncInput do
+  if `hostname`.chomp == 'thingol' then
+    user, host, port, remoteDir = 'm300064','localhost',40022,REMOTE_DATA_DIR
+    jq = JobQueue.new
+    # use scp for file copy
+    @_FILES.each {|file,_| 
+      if File.exist?(file) then
+        jq.push {sh "rsync -avz  -e 'ssh -p #{port}' #{file} #{user}@#{host}:#{remoteDir}" }
+      else
+        warn "Cannot find file #{file}"
+        exit
+      end
+    }
+    jq.run
+  else
+    warn "You're already on a remote host!"
+  end
+
+end
 @lock = Mutex.new
 
 @plotter = IconPlot.new("contrib/nclsh","icon_plot.ncl",".",nil,nil,nil,true)
@@ -128,7 +170,7 @@ desc "perform simple oce plot from 3d var"
 task :test_oce_3d do
   ofile          = 'test_icon_plot'
   varname        = 'T'
-  scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:levIndex => 2)
+  scalarPlot(@_FILES[OCE_PLOT_TEST_FILE],ofile,varname,:levIndex => 2)
   ofile          += '.' + OFMT
   show(ofile)
 end
@@ -137,7 +179,7 @@ task :test_oce_2d do
   ofile          = 'test_icon_plot.' + OFMT
   del(ofile)
   varname        = 'ELEV'
-  scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname)
+  scalarPlot(@_FILES[OCE_PLOT_TEST_FILE],ofile,varname)
   show(ofile)
 end
 desc "check for white means zero"
@@ -145,24 +187,24 @@ task :test_zeroEQwhite do
   ofile          = 'test_whiteEQzero'
   del(ofile)
   varname        = 'v'
-  show(scalarPlot(OCELONG_PLOT_TEST_FILE,ofile,varname,:levIndex => 1))
-  show(scalarPlot(OCELONG_PLOT_TEST_FILE,ofile,varname,:levIndex => 1, :mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0'))
-  show(scalarPlot(OCELONG_PLOT_TEST_FILE,ofile,varname,:levIndex => 1, :mapLLC => '-100.0,30.0' ,:mapURC => '35.0,65.0'))
+  show(scalarPlot(@_FILES[OCELONG_PLOT_TEST_FILE],ofile,varname,:levIndex => 1))
+  show(scalarPlot(@_FILES[OCELONG_PLOT_TEST_FILE],ofile,varname,:levIndex => 1, :mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0'))
+  show(scalarPlot(@_FILES[OCELONG_PLOT_TEST_FILE],ofile,varname,:levIndex => 1, :mapLLC => '-100.0,30.0' ,:mapURC => '35.0,65.0'))
 end
 desc "select regions"
 task :test_mapselect do
   ofile          = 'test_mapSelect_'
   varname        = 'ELEV'
   jq = JobQueue.new
-  jq.push {show(scalarPlot(OCE_PLOT_TEST_FILE,ofile+rand.to_s,varname,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0'))}
-  jq.push {show(scalarPlot(OCE_PLOT_TEST_FILE,ofile+rand.to_s,varname,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c'))}
-  jq.push {show(scalarPlot(OCE_PLOT_TEST_FILE,ofile+rand.to_s,varname,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c',:showGrid => true))}
+  jq.push {show(scalarPlot(@_FILES[OCE_PLOT_TEST_FILE],ofile+rand.to_s,varname,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0'))}
+  jq.push {show(scalarPlot(@_FILES[OCE_PLOT_TEST_FILE],ofile+rand.to_s,varname,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c'))}
+  jq.push {show(scalarPlot(@_FILES[OCE_PLOT_TEST_FILE],ofile+rand.to_s,varname,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c',:showGrid => true))}
   jq.run
 end
 desc "masking with ocean's wet_c"
 task :test_mask do
-  ifile,ofile,varname          = OCE_PLOT_TEST_FILE,'test_mask','ELEV'
-  ifile,ofile,varname          = OCE_R2B2,'test_mask','t_acc'
+  ifile,ofile,varname          = @_FILES[OCE_PLOT_TEST_FILE],'test_mask','ELEV'
+  ifile,ofile,varname          = @_FILES[OCE_R2B2],'test_mask','t_acc'
 
   q = JobQueue.new
   q.push { show(scalarPlot(ifile,ofile+"_maskOnly",varname,:maskName => 'wet_c'))  }
@@ -182,27 +224,27 @@ task :test_atm_3d do
   ofile          = 'test_icon_plot.' + OFMT
   del(ofile)
   varname        = 'T'
-  scalarPlot(ATM_PLOT_TEST_FILE,ofile,varname)
+  scalarPlot(@_FILES[ATM_PLOT_TEST_FILE],ofile,varname)
   show(ofile)
 end
 desc "x11 test"
 task :test_x11 do
   ofile          = 'test_x11'
   varname        = 'T'
-  scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:oType => 'x11',:noConfig => true)
+  scalarPlot(@_FILES[OCE_PLOT_TEST_FILE],ofile,varname,:oType => 'x11',:noConfig => true)
 end
 desc "perform halflog plot"
 task :test_halflog do
   ofile          = 'test_halflog'
   varname        = 'T'
   Cdo.debug=true
-  tfile = Cdo.mulc(100,:input => "-subc,5 -abs -selname,T #{OCE_PLOT_TEST_FILE}")
+  tfile = Cdo.mulc(100,:input => "-subc,5 -abs -selname,T #{@_FILES[OCE_PLOT_TEST_FILE]}")
   image = scalarPlot(tfile,ofile,varname,:selMode =>'halflog',:minVar =>-1, :maxVar => 1000, :atmLe => 'm',
                                                 :mapLLC => '-10.0,-80.0' ,:mapURC =>'100.0,-10.0')
   show(image)
 
   varname='W'
-  ifile = ICON_LONG_RUN
+  ifile = @_FILES[ICON_LONG_RUN]
   image = scalarPlot(ifile,ofile,varname,:selMode =>'halflog',
                      :minVar =>-1.0e-6, :maxVar => 1.0e-6, :mapLLC => '-10.0,-80.0' ,:mapURC =>'100.0,-10.0',
                      :scaleLimit => 3,:timeStep => 11)
@@ -217,11 +259,11 @@ task :test_isIcon do
   ofile          = 'test_icon_plot'
   varname        = 'T'
   tstart = Time.new
-  image = scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:levIndex => 2)
+  image = scalarPlot(@_FILES[OCE_PLOT_TEST_FILE],ofile,varname,:levIndex => 2)
   tdiff = Time.new - tstart
   show(image)
   tstart = Time.new
-  image = scalarPlot(OCE_PLOT_TEST_FILE,ofile,varname,:levIndex => 2,:isIcon => "True")
+  image = scalarPlot(@_FILES[OCE_PLOT_TEST_FILE],ofile,varname,:levIndex => 2,:isIcon => "True")
   tdiffisIcon = Time.new - tstart
   show(image)
   #assert(tdiffisIcon < tdiff,"setting isIcon seems to slow down the plotting")
@@ -230,8 +272,8 @@ end
 desc "test setting of min/maxVar"
 task :test_minmax do
   images = []
-  images << scalarPlot(OCE_PLOT_TEST_FILE,'test_minmax_3d','T',:levIndex => 2,:maxVar => 16, :minVar => 10)
-  images << scalarPlot(OCE_PLOT_TEST_FILE,'test_minmax_2d','ELEV', :maxVar => 0.4, :minVar => -0.4)
+  images << scalarPlot(@_FILES[OCE_PLOT_TEST_FILE],'test_minmax_3d','T',:levIndex => 2,:maxVar => 16, :minVar => 10)
+  images << scalarPlot(@_FILES[OCE_PLOT_TEST_FILE],'test_minmax_2d','ELEV', :maxVar => 0.4, :minVar => -0.4)
   images.each {|image| show(image)}
 end
 desc "perform simple atm plot from 2d var"
@@ -239,7 +281,7 @@ task :test_atm_2d do
   ofile          = 'test_icon_plot.' + OFMT
   del(ofile)
   varname        = 'SKT'
-  scalarPlot(ATM_PLOT_TEST_FILE,ofile,varname)
+  scalarPlot(@_FILES[ATM_PLOT_TEST_FILE],ofile,varname)
   show(ofile)
 end
 
@@ -252,7 +294,7 @@ task :test_plotlevels_oce do
   (0...maxlev).each {|lev|
     otag          = "test_icon_oce_plotlevel_#{lev}"
     threads << Thread.new(otag,varname,lev) {|ofile,varname,lev|
-      ofile = scalarPlot(OCE_PLOT_TEST_FILE,otag,varname,:levIndex =>lev)
+      ofile = scalarPlot(@_FILES[OCE_PLOT_TEST_FILE],otag,varname,:levIndex =>lev)
       @lock.synchronize{ images << ofile }
     }
   }
@@ -267,7 +309,7 @@ task :test_plotlevels_atm do
   (0...maxlev).each {|lev|
     otag          = "test_icon_atm_plotlevel_#{lev}"
     threads << Thread.new(otag,varname,lev) {|ofile,varname,lev|
-      ofile = scalarPlot(ATM_PLOT_TEST_FILE,otag,varname,:levIndex => lev,:atmLev =>'m')
+      ofile = scalarPlot(@_FILES[ATM_PLOT_TEST_FILE],otag,varname,:levIndex => lev,:atmLev =>'m')
       @lock.synchronize{ images << ofile }
     }
   }
@@ -317,8 +359,8 @@ task :test_masked_section do
   @plotter.debug  = true
   %w[r90x45 r180x90 r360x180].each {|resolution|
     #next unless resolution == 'r360x180'
-    show(scalarPlot(OCELSM_PLOT_TEST_FILE,'test_masked_section_' + resolution,'T',secopts.merge(:resolution => resolution)))
-    remappedFile = "remapnn_#{resolution}_"+File.basename(OCELSM_PLOT_TEST_FILE)
+    show(scalarPlot(@_FILES[OCELSM_PLOT_TEST_FILE],'test_masked_section_' + resolution,'T',secopts.merge(:resolution => resolution)))
+    remappedFile = "remapnn_#{resolution}_"+File.basename(@_FILES[OCELSM_PLOT_TEST_FILE])
     unless File.exist?(remappedFile)
       warn "file #{remappedFile} does not exist!!!!!"
       next
@@ -331,7 +373,7 @@ end
 desc "Compare sections on great circle and straight lines"
 task :test_secmode do
   # create missing values
-  maskedInput = Cdo.div(input: " -selname,T #{OCELSM_PLOT_TEST_FILE} -selname,wet_c -seltimestep,1 #{OCELSM_PLOT_TEST_FILE}",
+  maskedInput = Cdo.div(input: " -selname,T #{@_FILES[OCELSM_PLOT_TEST_FILE]} -selname,wet_c -seltimestep,1 #{@_FILES[OCELSM_PLOT_TEST_FILE]}",
                         output: "test_secmode_maskedInput.nc")
   q = JobQueue.new
 
@@ -375,12 +417,12 @@ end
 desc "plot vectors of ocean input"
 task :test_vector_oce do
   jq = JobQueue.new
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_0', 'u-veloc v-veloc') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_1', 'u-veloc v-veloc',:mapType     => 'ortho') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_2', 'u-veloc v-veloc',:streamLine  => 'True') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_3', 'u-veloc v-veloc',:streamLine  => 'True',:mapType => 'ortho') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_vector_oce_4', 'u-veloc v-veloc',:vecColByLen => 'True') }
-  jq.push { showVector(OCE_PLOT_TEST_FILE,'test_stream_oce_5', 'u-veloc v-veloc',:streamLine  => 'True',:vecColByLen =>'True') }
+  jq.push { showVector(@_FILES[OCE_PLOT_TEST_FILE],'test_vector_oce_0', 'u-veloc v-veloc') }
+  jq.push { showVector(@_FILES[OCE_PLOT_TEST_FILE],'test_vector_oce_1', 'u-veloc v-veloc',:mapType     => 'ortho') }
+  jq.push { showVector(@_FILES[OCE_PLOT_TEST_FILE],'test_stream_oce_2', 'u-veloc v-veloc',:streamLine  => 'True') }
+  jq.push { showVector(@_FILES[OCE_PLOT_TEST_FILE],'test_stream_oce_3', 'u-veloc v-veloc',:streamLine  => 'True',:mapType => 'ortho') }
+  jq.push { showVector(@_FILES[OCE_PLOT_TEST_FILE],'test_vector_oce_4', 'u-veloc v-veloc',:vecColByLen => 'True') }
+  jq.push { showVector(@_FILES[OCE_PLOT_TEST_FILE],'test_stream_oce_5', 'u-veloc v-veloc',:streamLine  => 'True',:vecColByLen =>'True') }
   jq.run
 end
 desc "plot vectors of atm input"
@@ -389,10 +431,10 @@ task :test_vector_atm do
   images  =  []
 
   jq = JobQueue.new
-  jq.push { showVector(ATM_PLOT_TEST_FILE,ofile+'0','U V',        :vecRefLength => 0.01) }
-  jq.push { showVector(ATM_PLOT_TEST_FILE,ofile+'1','U V',        :vecRefLength => 0.01,:mapType => 'NHps') }
-  jq.push { showVector(ATM_PLOT_TEST_FILE,ofile+'_stream_0','U V',:streamLine   => "True") }
-  jq.push { showVector(ATM_PLOT_TEST_FILE,ofile+'_stream_1','U V',:streamLine   => "True",:mapType => 'NHps') }
+  jq.push { showVector(@_FILES[ATM_PLOT_TEST_FILE],ofile+'0','U V',        :vecRefLength => 0.01) }
+  jq.push { showVector(@_FILES[ATM_PLOT_TEST_FILE],ofile+'1','U V',        :vecRefLength => 0.01,:mapType => 'NHps') }
+  jq.push { showVector(@_FILES[ATM_PLOT_TEST_FILE],ofile+'_stream_0','U V',:streamLine   => "True") }
+  jq.push { showVector(@_FILES[ATM_PLOT_TEST_FILE],ofile+'_stream_1','U V',:streamLine   => "True",:mapType => 'NHps') }
   jq.run
 end
 
@@ -472,10 +514,10 @@ desc "Plot dat from a regular grid"
 task :test_reg_3d do
   @plotter.isIcon = false
   ofile = 'test_oce_reg_3d'
-  scalarPlot(OCE_REGPLOT_TEST_FILE,ofile,'T')
+  scalarPlot(@_FILES[OCE_REGPLOT_TEST_FILE],ofile,'T')
   show(ofile+'.'+OFMT)
   ofile = 'test_atm_reg_3d'
-  scalarPlot(ATM_REGPLOT_TEST_FILE,ofile,'T')
+  scalarPlot(@_FILES[ATM_REGPLOT_TEST_FILE],ofile,'T')
   show(ofile+'.'+OFMT)
   @plotter.isIcon = true
 end
@@ -483,8 +525,8 @@ end
 desc "Plot vector from regular grid"
 task :test_reg_vector do
   @plotter.isIcon = false
-  showVector(OCE_REGPLOT_TEST_FILE,'test_reg_vec_oce','u-veloc v-veloc')
-  showVector(ATM_REGPLOT_TEST_FILE,'test_reg_vec_oce','U V')
+  showVector(@_FILES[OCE_REGPLOT_TEST_FILE],'test_reg_vec_oce','u-veloc v-veloc')
+  showVector(@_FILES[ATM_REGPLOT_TEST_FILE],'test_reg_vec_oce','U V')
   @plotter.isIcon = true
 end
 # orthographic projections
@@ -525,7 +567,7 @@ task :test_reg_section_oce do
     :secPoints => 100
   }
   ofile = "test_reg_section_oce"
-  show(scalarPlot(OCE_REGPLOT_TEST_FILE,ofile,DEFAULT_VARNAME,secopts))
+  show(scalarPlot(@_FILES[OCE_REGPLOT_TEST_FILE],ofile,DEFAULT_VARNAME,secopts))
 end
 desc "plot section of ocean and atmosphere (height, pressure and model level)"
 task :test_reg_sections do
@@ -552,14 +594,14 @@ end
 
 desc "Scatter plots"
 task :test_scatter do
-  ifile = OCE_REGPLOT_TEST_FILE
+  ifile = @_FILES[OCE_REGPLOT_TEST_FILE]
   ofile = "test_scatter"
   image = iconPlot(ifile,ofile,'T S','scatter')
   show(image)
 end
 desc "Level plots"
 task :test_levelPlot do
-  ifile = OCE_REGPLOT_TEST_FILE
+  ifile = @_FILES[OCE_REGPLOT_TEST_FILE]
   ofile = "test_levelPlot"
   image = levelPlot(ifile,ofile,'T')
   show(image)
@@ -572,13 +614,13 @@ end
 desc "test misc mpaTypes"
 task :test_misc_maptypes do
   %w[SHps NHps sat lambert].each {|maptype|
-    defaultPlot(ATM_PLOT_TEST_FILE,maptype,:mapType => maptype,:atmLev => "m")
+    defaultPlot(@_FILES[ATM_PLOT_TEST_FILE],maptype,:mapType => maptype,:atmLev => "m")
   }
 end
 
 desc "test cell markers"
 task :test_markers do
-  show(scalarPlot(OCE_PLOT_TEST_FILE,'test_markers','T',:markCells => true,:mapLLC => '-10.0,-80.0' ,:mapURC =>'100.0,-10.0'))
+  show(scalarPlot(@_FILES[OCE_PLOT_TEST_FILE],'test_markers','T',:markCells => true,:mapLLC => '-10.0,-80.0' ,:mapURC =>'100.0,-10.0'))
 end
 
 if 'thingol' == `hostname`.chomp
@@ -586,45 +628,45 @@ if 'thingol' == `hostname`.chomp
   task :test_show_grid do
     require 'jobqueue'
     jq = JobQueue.new
-    jq.push(@plotter,:defaultPlot,OCE_PLOT_TEST_FILE   ,'test_show_grid_oce',:showGrid => "True",
+    jq.push(@plotter,:defaultPlot,@_FILES[OCE_PLOT_TEST_FILE]   ,'test_show_grid_oce',:showGrid => "True",
                      :mapLLC => '-10.0,-40.0' ,:mapURC =>'10.0,-10.0')
-    jq.push(@plotter,:defaultPlot,OCE_PLOT_TEST_FILE   ,'test_show_grid_oce_ortho',:showGrid => "True",:mapType => "ortho")
-    jq.push(@plotter,:scalarPlot,'/home/ram/data/icon/dat.ice.r14716.def.2663-67.nc' ,'test_show_grid_ice_ortho','hi',:showGrid => "True")
-    jq.push(@plotter,:defaultPlot,ATM_PLOT_TEST_FILE   ,'test_show_grid_atm',:showGrid => "True",:atmLev => "m")
+    jq.push(@plotter,:defaultPlot,@_FILES[OCE_PLOT_TEST_FILE]   ,'test_show_grid_oce_ortho',:showGrid => "True",:mapType => "ortho")
+    jq.push(@plotter,:scalarPlot,@_FILES[ICE_DATA],'test_show_grid_ice_ortho','hi',:showGrid => "True")
+    jq.push(@plotter,:defaultPlot,@_FILES[ATM_PLOT_TEST_FILE]   ,'test_show_grid_atm',:showGrid => "True",:atmLev => "m")
     jq.run
   end
 end
 desc "Try out different colormaps"
 task :test_colors do
   colors = %w|white black firebrick peachpuff orangered navyblue peru yellow wheat1 gray55 thistle coral dodgerblue seagreen maroon gold turquoise mediumorchid|
-  defaultPlot(OCE_PLOT_TEST_FILE   ,'test_colors',
+  defaultPlot(@_FILES[OCE_PLOT_TEST_FILE]   ,'test_colors',
                                    :colormap => colors.reverse.join(','))
   colormap = 'BlGrYeOrReVi200'
-  defaultPlot(OCE_PLOT_TEST_FILE   ,'test_colors',
+  defaultPlot(@_FILES[OCE_PLOT_TEST_FILE]   ,'test_colors',
                                    :colormap => colormap,:mapType => 'ortho')
   colormap = 'testcmap'
-  defaultPlot(OCE_PLOT_TEST_FILE   ,'test_colors',
+  defaultPlot(@_FILES[OCE_PLOT_TEST_FILE]   ,'test_colors',
                                    :colormap => colormap,:mapType => 'ortho')
 end
 
 desc "test for labeled contour lines"
 task :test_line_labels do
   colormap = 'testcmap'
-  defaultPlot(OCE_PLOT_TEST_FILE ,'test_withLines',     :mapType => "ortho",:colormap => "test_cmap",:withLines => false)
-  defaultPlot(OCE_PLOT_TEST_FILE ,'test_withoutLines',  :mapType => "ortho",:colormap => "test_cmap",:withLines => true)
-  defaultPlot(OCE_PLOT_TEST_FILE ,'test_withLineLabels',:mapType => "ortho",:colormap => "test_cmap",:withLineLabels => true)
+  defaultPlot(@_FILES[OCE_PLOT_TEST_FILE] ,'test_withLines',     :mapType => "ortho",:colormap => "test_cmap",:withLines => false)
+  defaultPlot(@_FILES[OCE_PLOT_TEST_FILE] ,'test_withoutLines',  :mapType => "ortho",:colormap => "test_cmap",:withLines => true)
+  defaultPlot(@_FILES[OCE_PLOT_TEST_FILE] ,'test_withLineLabels',:mapType => "ortho",:colormap => "test_cmap",:withLineLabels => true)
 end
 
 desc "test for hovmoeller diagramm"
 task :test_hov do
-  show(scalarPlot(OCE_HOV_FILE,'test_hov','T',:hov => true,:withLineLabels => true,:DEBUG => true))
-  show(scalarPlot(OCE_HOV_FILE,'test_hov','T',:hov => true,:withLines => false))
+  show(scalarPlot(@_FILES[OCE_HOV_FILE],'test_hov','T',:hov => true,:withLineLabels => true,:DEBUG => true))
+  show(scalarPlot(@_FILES[OCE_HOV_FILE],'test_hov','T',:hov => true,:withLines => false))
 end
 
 desc "test with data on a non-global grid"
 task :test_non_global do
   q  = JobQueue.new(2)
-  ifile = 'topo_2x2_00001.nc'
+  ifile = @_FILES[TOPO_NONGLOBAL]
   q.push { system("qiv #{(scalarPlot(ifile,'test_non_global','topo',:DEBUG => true,:isIcon => false))}") }
   q.push { system("ncview #{ifile}") }
   q.run
@@ -635,7 +677,7 @@ task :test_nc4 do
   nc   = Cdo.topo(:options => '-f nc',:output => 'topo_nc.nc')
   nc4  = Cdo.topo(:options => '-f nc4',:output => 'topo_nc4.nc')
   nc4z = Cdo.topo(:options => '-f nc4 -z zip',:output => 'topo_nc4z.nc')
-  oceanNC4Z = Cdo.copy(:options => '-f nc4 -z zip',:input => OCELSM_PLOT_TEST_FILE, :output => 'oceanNC4Z.nc')
+  oceanNC4Z = Cdo.copy(:options => '-f nc4 -z zip',:input => @_FILES[OCELSM_PLOT_TEST_FILE], :output => 'oceanNC4Z.nc')
 
 # show(scalarPlot(nc ,'test_nc_TOPO',   'topo',:isIcon => false))
 # show(scalarPlot(nc4,'test_nc4_TOPO',  'topo',:isIcon => false))
@@ -649,8 +691,8 @@ end
 desc "check plot with mpiom input"
 task :test_mpiom do
   @plotter.isIcon = false
-  show(scalarPlot(MPIOM_FILE,'test_mpiom'     ,'s',:DEBUG => true,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0'))
-  show(scalarPlot(MPIOM_FILE,'test_mpiom_grid','s',:DEBUG => true,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0',:showGrid => true))
+  show(scalarPlot(@_FILES[MPIOM_FILE],'test_mpiom'     ,'s',:DEBUG => true,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0'))
+  show(scalarPlot(@_FILES[MPIOM_FILE],'test_mpiom_grid','s',:DEBUG => true,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0',:showGrid => true))
 end
 
 desc "check icon_plot_test.ncl"
@@ -658,7 +700,7 @@ task :test_paths ,:loc do |t,args|
   require './findPath'
   q                    = JobQueue.new
   lock                 = Mutex.new
-  paths                = IconPathsAlongCells.getEdgesAndVerts(ICON_GRID)
+  paths                = IconPathsAlongCells.getEdgesAndVerts(@_FILES[ICON_GRID])
   ofiles, allPathsFile = [], 'test_paths.pdf'
   paths.each {|location,_paths|
     if args[:loc] then
@@ -667,7 +709,7 @@ task :test_paths ,:loc do |t,args|
     _paths.each {|pathType,locList|
       q.push {
         ofile = ["test_#{location.to_s}_at_#{pathType.to_s}",".pdf"]
-        runNclTest('plot_'+pathType.to_s, parameters: [locList, ofile[0], '$HOME/data/icon/oceNmlOutput.nc'],)
+        runNclTest('plot_'+pathType.to_s, parameters: [locList, ofile[0], @_FILES[OCE_NML_OUTPUT]],)
         ofiles << ofile.join
       }
     }
