@@ -37,6 +37,10 @@ ATM_REGPLOT_TEST_FILE = ENV['HOME']+'/data/icon/regular_atm.nc' #remapnn,n63 (no
 TOPO_NONGLOBAL        = ENV['HOME']+'/data/icon/topo_2x2_00001.nc'
 ICE_DATA              = ENV['HOME']+'/data/icon/dat.ice.r14716.def.2663-67.nc'
 OCE_NML_OUTPUT        = ENV['HOME']+'/data/icon/oceNmlOutput.nc'
+BOX_DATA              = ENV['HOME']+'/data/icon/AquaBox/AquaAtlanticBox_0079km_20041017T000000Z.nc'
+NOCOORDS_DATA         = BOX_DATA
+BOX_GRID              = ENV['HOME']+'/data/icon/AquaBox/AtlanticAquaBox_0079km.nc'
+NOCOORDS_DATA_GRID    = BOX_GRID
 # add files for being transferes to remote host for remote testing
 [
   OCE_PLOT_TEST_FILE    ,
@@ -53,6 +57,8 @@ OCE_NML_OUTPUT        = ENV['HOME']+'/data/icon/oceNmlOutput.nc'
   TOPO_NONGLOBAL        ,
   ICE_DATA              ,
   OCE_NML_OUTPUT        ,
+  BOX_DATA              ,
+  BOX_GRID              ,
 ].each {|f| @_FILES[f] = (`hostname`.chomp == 'thingol') ? f : [REMOTE_DATA_DIR,File.basename(f)].join(File::SEPARATOR) }
 
 COMPARISON            = {:oce => @_FILES[OCE_PLOT_TEST_FILE], :atm => @_FILES[ATM_PLOT_TEST_FILE]}
@@ -736,6 +742,10 @@ task :test_paths ,:loc do |t,args|
   q.run
   IO.popen("pdftk #{ofiles.sort.join(' ')} cat output #{allPathsFile}").read
   IO.popen("evince #{allPathsFile}").read
+end
+
+desc "Check plots for data with non-given coordinates attribute, but given gridFile"
+task :test_no_coordinates do
 end
 #==============================================================================
 # Test collections
