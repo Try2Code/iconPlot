@@ -1341,6 +1341,17 @@ begin
   resource@cnMissingValPerimOn         = True;          turn on missing value outlines
   resource@cnMissingValPerimThicknessF = 2.5;   set the missing value outline thickness
 end
+undef("setCoordsForResouce")
+procedure setCoordsForResouce(x,y,variable,resource)
+begin
+  if (dimsizes(dimsizes(x)).ne.1) then
+     variable@lon2d = x
+     variable@lat2d = y
+  else
+     resource@sfXArray = x
+     resource@sfYArray = y
+  end if
+end
 ;---------------------------------------------------------------
 ; set the coordinates for an ICON data field
 undef("setCoordinates")
@@ -1355,13 +1366,18 @@ begin
   if ("radian" .eq. x@units) x = x * RAD2DEG end if
   if ("radian" .eq. y@units) y = y * RAD2DEG end if
 
-  if (dimsizes(dimsizes(x)).ne.1) then
-     variable@lon2d = x
-     variable@lat2d = y
-  else
-     resource@sfXArray = x
-     resource@sfYArray = y
-  end if
+  setCoordsForResouce(x,y,variable,resource)
+
+  return (/x,y/)
+end
+undef("setCoordinatesFromExtraFile")
+function setCoordinatesFromExtraFile(lon_name,lat_name,filename,variable,resource)
+begin
+  x = getCoordinateFromFile(lon_name,filename)
+  y = getCoordinateFromFile(lat_name,filename)
+
+  setCoordsForResouce(x,y,variable,resource)
+
   return (/x,y/)
 end
 ;---------------------------------------------------------------
@@ -1936,6 +1952,25 @@ begin
     end if
   end if
   return vc
+end
+;---------------------------------------------------------------
+; limit the map to given coords
+undef("limitMap2Coords")
+procedure limitMap2Coords(resource,coords)
+begin
+  lons                       = coords(0,:)
+  lats                       = coords(1,:)
+  resource@mpMinLatF         = floor(min(lats))
+  resource@mpMaxLatF         = ceil(max(lats))
+  resource@mpMinLonF         = floor(min(lons))
+  resource@mpMaxLonF         = ceil(max(lons))
+
+
+;   bounds of plotting area for stereographic plots
+  resource@mpLeftCornerLonF  = floor(min(lons))
+  resource@mpLeftCornerLatF  = floor(min(lats))
+  resource@mpRightCornerLonF = ceil(max(lons))
+  resource@mpRightCornerLatF = ceil(max(lats))
 end
 
 ;

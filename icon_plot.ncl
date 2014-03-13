@@ -582,8 +582,7 @@
       if (horizonalGridType .eq. "unstructured") then
         if (isvar("gridFile")) then
           ;TODO: fix x,y creation for external gridfile (plot restart data)
-          x      = getCoordinateFromFile(lonCo,gridFile)
-          y      = getCoordinateFromFile(latCo,gridFile)
+          coords = setCoordinatesFromExtraFile(lonCo,latCo,gridFile,var,ResC)
           if (showGrid) then
             bounds = getBoundsFromFile(lonCo,latCo,gridFile)
           end if
@@ -594,7 +593,10 @@
         end if
       end if
 
-     coords = setCoordinates(ResC,File,var)
+      if (.not.isvar("coords")) then
+        coords = setCoordinates(ResC,File,var)
+      end if
+
     end if
   end if
 
@@ -621,7 +623,11 @@
 
   setMapType(ResC,mapType,centerLon,centerLat,satDist)
 
-  selMapCut(ResC,mapLLC,mapURC)
+  if (isvar("limitMap") .and. isvar("coords")) then
+    limitMap2Coords(ResC,coords)
+  else
+    selMapCut(ResC,mapLLC,mapURC)
+  end if
 
   setMapVisibility(ResC,mapLine)
 
@@ -688,8 +694,8 @@
       end if
     end if
     if ( markCells ) then
-     x = coords(0,:)
-     y = coords(1,:)
+      x = coords(0,:)
+      y = coords(1,:)
       plotCellMarkers(x,y,wks,plot,True)
     end if
   end if

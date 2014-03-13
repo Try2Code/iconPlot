@@ -746,6 +746,15 @@ end
 
 desc "Check plots for data with non-given coordinates attribute, but given gridFile"
 task :test_no_coordinates do
+  ntime = Cdo.ntime(input: @_FILES[NOCOORDS_DATA])[0].to_i
+  show(scalarPlot(@_FILES[NOCOORDS_DATA],'test_no_coords','t_acc',
+                  :DEBUG => true,:timeStep => ntime - 1,:gridFile => @_FILES[NOCOORDS_DATA_GRID]))
+  show(scalarPlot(@_FILES[NOCOORDS_DATA],'test_no_coords','t_acc',
+                  :DEBUG => true,:timeStep => ntime - 1,:gridFile => @_FILES[NOCOORDS_DATA_GRID],
+                  :limitMap => true,:rStrg => ' ',:bStrg => @_FILES[NOCOORDS_DATA]))
+  show(scalarPlot(@_FILES[NOCOORDS_DATA],'test_no_coords_showGrid','t_acc',
+                  :DEBUG => true,:timeStep => ntime - 1,:gridFile => @_FILES[NOCOORDS_DATA_GRID],
+                  :limitMap => true,:showGrid => true,:rStrg => ' ',:bStrg => @_FILES[NOCOORDS_DATA]))
 end
 #==============================================================================
 # Test collections
