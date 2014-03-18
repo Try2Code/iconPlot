@@ -16,7 +16,7 @@
 ;---------------------------------------------------------------
 ; Authors       : Ralf Mueller (ralf.mueller@zmaw.de)
 ;                 Stephan Lorenz (stephan.lorenz@zmaw.de)
-; VERSION = "0.0.6"
+; VERSION = "0.0.7"
 ;-------------------------------------------------------------------------------
 ; some global defaults
   DEFAULTLON   = "clon"
