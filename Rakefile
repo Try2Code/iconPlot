@@ -41,6 +41,8 @@ BOX_DATA              = ENV['HOME']+'/data/icon/AquaBox/AquaAtlanticBox_0079km_2
 NOCOORDS_DATA         = BOX_DATA
 BOX_GRID              = ENV['HOME']+'/data/icon/AquaBox/AtlanticAquaBox_0079km.nc'
 NOCOORDS_DATA_GRID    = BOX_GRID
+AQUABOX_SYM           = ENV['HOME']+'/data/icon/AquaBox/atlbox.r16661.1.80km_22001214T000000Z.nc'
+AQUABOX_ASYM          = ENV['HOME']+'/data/icon/AquaBox/atlbox.r16664.shift2.80km_22001214T000000Z.nc'
 # add files for being transferes to remote host for remote testing
 [
   OCE_PLOT_TEST_FILE    ,
@@ -59,6 +61,8 @@ NOCOORDS_DATA_GRID    = BOX_GRID
   OCE_NML_OUTPUT        ,
   BOX_DATA              ,
   BOX_GRID              ,
+  AQUABOX_SYM           ,
+  AQUABOX_ASYM          ,
 ].each {|f| @_FILES[f] = (`hostname`.chomp == 'thingol') ? f : [REMOTE_DATA_DIR,File.basename(f)].join(File::SEPARATOR) }
 
 COMPARISON            = {:oce => @_FILES[OCE_PLOT_TEST_FILE], :atm => @_FILES[ATM_PLOT_TEST_FILE]}
@@ -758,6 +762,44 @@ task :test_no_coordinates do
   show(scalarPlot(@_FILES[NOCOORDS_DATA],'test_no_coords_showGrid','t_acc',
                   :DEBUG => true,:timeStep => ntime - 1,:gridFile => @_FILES[NOCOORDS_DATA_GRID],
                   :limitMap => true,:showGrid => true,:rStrg => ' ',:bStrg => @_FILES[NOCOORDS_DATA]))
+end
+
+desc "Sections from a limited Area"
+task :test_sections_from_limitArea do |t,args|
+# title = "'#{t.name}: default setup'"
+# show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
+#                 :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
+#                 :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180' ))
+# title = "'#{t.name}: withoutLines'"
+# show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
+#                 :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
+#                 :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
+#                 :withLines => false))
+# title = "'#{t.name}: withLines'"
+# show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
+#                 :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
+#                 :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
+#                 :withLines => true))
+# title = "'#{t.name}: withLineLabels'"
+# show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
+#                 :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
+#                 :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
+#                 :withLineLabels => true))
+# title = "'#{t.name}: withLineLabels'"
+# show(scalarPlot(@_FILES[AQUABOX_SYM],t.name,'t_acc', 
+#                 :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
+#                 :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
+#                 :withLineLabels => true))
+  title = "'asymetric focring'"
+  show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name+"_#{title.gsub(/ /,'-')}",'t_acc', 
+                  :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
+                  :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
+                  :withLineLabels => true,:showSecMap => false,:maxVar => 20,:minVar => 0, :numLevs => 20))
+  title = "'symetric focring'"
+  show(scalarPlot(@_FILES[AQUABOX_SYM],t.name+"_#{title.gsub(/ /,'-')}",'t_acc', 
+                  :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
+                  :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
+                  :withLineLabels => true,:showSecMap => false,:maxVar => 20,:minVar => 0, :numLevs => 20))
 end
 #==============================================================================
 # Test collections

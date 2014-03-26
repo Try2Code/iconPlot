@@ -400,12 +400,13 @@
       ; perform some remapping to a regular grid because ncl cannot draw vector
       ; from unstructured grids
       ; TODO addVars=(/ "PS","PHIS"/)
-      remapFilename = setRemapFilename(iFile,iType,resolution,atmLev)
+      operator = "remapcon"
+      remapFilename = setRemapFilename(iFile,iType,resolution,atmLev,operator)
       print("remapFilename:"+remapFilename)
       if (.not. checkRemappedFile(iFile,remapFilename,ivarname,iType,atmLev,atmPLevs,atmHLevs) ) then
         addVars=(/""/)
         print("PERFORM remapnn again!")
-        remapForVecPlot(iFile,remapFilename,resolution,useMask,plotMode,DEBUG,addVars)
+        remapForVecPlot(iFile,remapFilename,resolution,useMask,plotMode,DEBUG,addVars,operator)
       end if
       rFile = addfile( remapFilename+".nc", "r" )
     end if
@@ -733,7 +734,7 @@
     end if
     points   = ispan(0,secPoints-1,1)*1.0
 
-    res  = setDefaultSectionResource(points,secPoints,secLC,secRC)
+    res  = setDefaultSectionResource(points,secPoints,secLC,secRC,withLines,withLineLabels)
     setAutomaticPlotCaptions(res,plotMode,varName,File,iFile,timeStep,levIndex,iType,atmLev,k2c)
     setLevels(selMode,res,minVar,maxVar,scaleLimit,numLevs,DEBUG)
     setSectionVertLabel(res,iType,atmLev)

@@ -644,9 +644,9 @@ end
 ;---------------------------------------------------------------
 ; set filename for the automatically remapped file
 undef("setRemapFilename")
-function setRemapFilename(filename,itype,resolution,atmlev)
+function setRemapFilename(filename,itype,resolution,atmlev,operator)
 begin
-  return setNewFilename(filename,"remapnn_"+resolution,itype,atmlev)
+  return setNewFilename(filename,operator+"_"+resolution,itype,atmlev)
 end
 undef("setZonmeanFilename")
 function setZonmeanFilename(filename,itype,atmlev)
@@ -730,7 +730,7 @@ end
 ; Perform a remapping (wich CDO) to a regular grid with a given resolution and return the
 ; filename of the remapped file. If the file is already present, the name is returned only
 undef("remapForVecPlot")
-procedure remapForVecPlot(iFile,remapFilename,resolution,useMask,plotMode,debug,addvars)
+procedure remapForVecPlot(iFile,remapFilename,resolution,useMask,plotMode,debug,addvars,operator)
 begin
   if (plotMode.eq."section") then vecVars=(/varName/) end if
   print("#=====================================================================================")
@@ -748,7 +748,7 @@ begin
   end if
   if (plotMode.eq."overlay") variables = variables+","+varName end if
 
-  cmd = CDO+" -P 8 -remapnn,"+resolution+" -selname,"+variables+" "+iFile+" "+remapFilename
+  cmd = CDO+" -P 8 -"+operator+","+resolution+" -selname,"+variables+" "+iFile+" "+remapFilename
   if debug then
     print(cmd)
   end if
@@ -893,6 +893,22 @@ begin
   end if
 end
 ;---------------------------------------------------------------
+; set the lines and their labels
+undef("setLineAndLineLabels")
+procedure setLineAndLineLabels(resource,withLines,withLineLabels)
+begin
+; lines/labels inside the plot ================================================
+  resource@cnLinesOn                = False
+  resource@cnLineLabelsOn           = False
+  if (withLineLabels ) then
+    withLines                       = True
+    resource@cnLineLabelsOn         = True
+    resource@cnLineLabelFontHeightF = 0.008
+    resource@cnLineLabelFontThicknessF = 0.006
+  end if
+  if (withLines) resource@cnLinesOn = True end if
+end
+;---------------------------------------------------------------
 ; Create a default NCL resource
 undef("setDefaultResource")
 function setDefaultResource(verticallabelbar,withLines,withLineLabels,fillmode,maptype)
@@ -907,20 +923,7 @@ begin
   resource@mapType                  = maptype
 
 ; lines/labels inside the plot ================================================
-  if (withLines) then
-    resource@cnLinesOn              = True
-  else
-    resource@cnLinesOn              = False
-  end if
-  resource@cnLineLabelsOn           = False
-  if (withLineLabels ) then
-    withLines                       = True
-    resource@cnLineLabelsOn         = True
-    resource@cnLineLabelFontHeightF = 0.008
-    resource@cnLineLabelFontThicknessF = 0.006
-  end if
-  if (withLines) resource@cnLinesOn = True end if
-
+  setLineAndLineLabels(resource,withLines,withLineLabels)
   ; representation of missing values ===========================================
   delete(resource@cnMissingValFillPattern);     no longer filling missing value areas
   delete(resource@cnMissingValFillColor);       no longer filling missing value areas
@@ -965,7 +968,7 @@ begin
 end
 ;---------------------------------------------------------------
 undef("setDefaultSectionResource")
-function setDefaultSectionResource(points,secpoints,seclc,secrc)
+function setDefaultSectionResource(points,secpoints,seclc,secrc,withLines,withLineLabels)
 begin
   resource                              = True;           plot mods desired
   resource@gsnFrame                     = False;                don't turn page yet
@@ -986,10 +989,6 @@ begin
   resource@cnFillOn                     = True;          turn on color
   resource@lbLabelAutoStride            = True;          nice label bar label stride
   resource@gsnSpreadColors              = True;          use full range of colormap
-  resource@cnLinesOn                    = False;         turn off countour lines
- ; if (useContourLines)
-  resource@cnLinesOn             = False
-  resource@cnLineLabelsOn        = False
   resource@lbOrientation                = "vertical";    vertical label bar
   resource@pmLabelBarOrthogonalPosF     = -0.05;         move label bar closer to plot
   resource@lbTitlePosition              = "Bottom"
@@ -1009,6 +1008,9 @@ begin
   ;resource@gsnYAxisIrregular2Log        = True
   resource@cnFillMode           = "RasterFill"
   resource@cnRasterSmoothingOn  = False
+
+; lines/labels inside the plot ================================================
+  setLineAndLineLabels(resource,withLines,withLineLabels)
   return resource
 end
 ;---------------------------------------------------------------
