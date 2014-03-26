@@ -16,7 +16,7 @@
 ;---------------------------------------------------------------
 ; Authors       : Ralf Mueller (ralf.mueller@zmaw.de)
 ;                 Stephan Lorenz (stephan.lorenz@zmaw.de)
-; VERSION = "0.0.6"
+; VERSION = "0.0.7"
 ;-------------------------------------------------------------------------------
 ; some global defaults
   DEFAULTLON   = "clon"
@@ -91,7 +91,7 @@ begin
   end if
   if ((get_file_version(filehandle) .eq. "NETCDF4") .and. versionIsGE((/6,1,1/))) then
     print("[nc4Aware_addfile]switch to root group '/'")
-    filehandle = filehandle=>/
+   ;filehandle = filehandle=>/
   end if
   return filehandle
 end
@@ -419,15 +419,17 @@ end
 ;-------------------------------------------------------------------------------
 ; Return the coordinates of a given variable in degrees
 undef("getLonLats")
-procedure getLonLats(variable,filehandle,x,y)
+procedure getLonLats(variable,filehandle,x,y,isicon)
 begin
   lonlat = str_split(variable@coordinates," ")
   lon    = lonlat(0)
   lat    = lonlat(1)
   x      = filehandle->$lon$
   y      = filehandle->$lat$
-  x      = x * RAD2DEG
-  y      = y * RAD2DEG
+  if (isicon) then
+    x      = x * RAD2DEG
+    y      = y * RAD2DEG
+  end if
 end
 ;-------------------------------------------------------------------------------
 ; get variable from a certain file
@@ -642,9 +644,9 @@ end
 ;---------------------------------------------------------------
 ; set filename for the automatically remapped file
 undef("setRemapFilename")
-function setRemapFilename(filename,itype,resolution,atmlev)
+function setRemapFilename(filename,itype,resolution,atmlev,operator)
 begin
-  return setNewFilename(filename,"remapnn_"+resolution,itype,atmlev)
+  return setNewFilename(filename,operator+"_"+resolution,itype,atmlev)
 end
 undef("setZonmeanFilename")
 function setZonmeanFilename(filename,itype,atmlev)
@@ -728,7 +730,7 @@ end
 ; Perform a remapping (wich CDO) to a regular grid with a given resolution and return the
 ; filename of the remapped file. If the file is already present, the name is returned only
 undef("remapForVecPlot")
-procedure remapForVecPlot(iFile,remapFilename,resolution,useMask,plotMode,debug,addvars)
+procedure remapForVecPlot(iFile,remapFilename,resolution,useMask,plotMode,debug,addvars,operator)
 begin
   if (plotMode.eq."section") then vecVars=(/varName/) end if
   print("#=====================================================================================")
@@ -746,7 +748,7 @@ begin
   end if
   if (plotMode.eq."overlay") variables = variables+","+varName end if
 
-  cmd = CDO+" -P 8 -remapnn,"+resolution+" -selname,"+variables+" "+iFile+" "+remapFilename
+  cmd = CDO+" -P 8 -"+operator+","+resolution+" -selname,"+variables+" "+iFile+" "+remapFilename
   if debug then
     print(cmd)
   end if
@@ -891,23 +893,12 @@ begin
   end if
 end
 ;---------------------------------------------------------------
-; Create a default NCL resource
-undef("setDefaultResource")
-function setDefaultResource(verticallabelbar,withLines,withLineLabels,fillmode)
+; set the lines and their labels
+undef("setLineAndLineLabels")
+procedure setLineAndLineLabels(resource,withLines,withLineLabels)
 begin
-  resource                          = True
-  resource@gsnMaximize              = False
-  resource@gsnFrame                 = False
-  resource@gsnDraw                  = True
-  resource@gsnSpreadColors          = True
-  resource@cnFillOn                 = True
-
 ; lines/labels inside the plot ================================================
-  if (withLines) then
-    resource@cnLinesOn              = True
-  else
-    resource@cnLinesOn              = False
-  end if
+  resource@cnLinesOn                = False
   resource@cnLineLabelsOn           = False
   if (withLineLabels ) then
     withLines                       = True
@@ -916,7 +907,23 @@ begin
     resource@cnLineLabelFontThicknessF = 0.006
   end if
   if (withLines) resource@cnLinesOn = True end if
+end
+;---------------------------------------------------------------
+; Create a default NCL resource
+undef("setDefaultResource")
+function setDefaultResource(verticallabelbar,withLines,withLineLabels,fillmode,maptype)
+begin
+  resource                          = True
+  resource@gsnMaximize              = False
+  resource@gsnFrame                 = False
+  resource@gsnDraw                  = True
+  resource@gsnSpreadColors          = True
+  resource@cnFillOn                 = True
 
+  resource@mapType                  = maptype
+
+; lines/labels inside the plot ================================================
+  setLineAndLineLabels(resource,withLines,withLineLabels)
   ; representation of missing values ===========================================
   delete(resource@cnMissingValFillPattern);     no longer filling missing value areas
   delete(resource@cnMissingValFillColor);       no longer filling missing value areas
@@ -961,7 +968,7 @@ begin
 end
 ;---------------------------------------------------------------
 undef("setDefaultSectionResource")
-function setDefaultSectionResource(points,secpoints,seclc,secrc)
+function setDefaultSectionResource(points,secpoints,seclc,secrc,withLines,withLineLabels)
 begin
   resource                              = True;           plot mods desired
   resource@gsnFrame                     = False;                don't turn page yet
@@ -982,10 +989,6 @@ begin
   resource@cnFillOn                     = True;          turn on color
   resource@lbLabelAutoStride            = True;          nice label bar label stride
   resource@gsnSpreadColors              = True;          use full range of colormap
-  resource@cnLinesOn                    = False;         turn off countour lines
- ; if (useContourLines)
-  resource@cnLinesOn             = False
-  resource@cnLineLabelsOn        = False
   resource@lbOrientation                = "vertical";    vertical label bar
   resource@pmLabelBarOrthogonalPosF     = -0.05;         move label bar closer to plot
   resource@lbTitlePosition              = "Bottom"
@@ -1005,6 +1008,9 @@ begin
   ;resource@gsnYAxisIrregular2Log        = True
   resource@cnFillMode           = "RasterFill"
   resource@cnRasterSmoothingOn  = False
+
+; lines/labels inside the plot ================================================
+  setLineAndLineLabels(resource,withLines,withLineLabels)
   return resource
 end
 ;---------------------------------------------------------------
@@ -1321,9 +1327,11 @@ end
 undef("checkMinMaxVar")
 procedure checkMinMaxVar(minvar,maxvar)
 begin
+  if ( (.not. ismissing(minvar)) .and. (.not. ismissing(maxvar)) ) then
   if ( minvar .gt. maxvar ) then
     print("minVar has to be larger than maxVar")
     exit
+  end if
   end if
 end
 ;---------------------------------------------------------------
@@ -1335,13 +1343,44 @@ begin
   resource@cnMissingValPerimOn         = True;          turn on missing value outlines
   resource@cnMissingValPerimThicknessF = 2.5;   set the missing value outline thickness
 end
+undef("setCoordsForResouce")
+procedure setCoordsForResouce(x,y,variable,resource)
+begin
+  if (dimsizes(dimsizes(x)).ne.1) then
+     variable@lon2d = x
+     variable@lat2d = y
+  else
+     resource@sfXArray = x
+     resource@sfYArray = y
+  end if
+end
 ;---------------------------------------------------------------
 ; set the coordinates for an ICON data field
 undef("setCoordinates")
-procedure setCoordinates(resource,lons,lats)
+function setCoordinates(resource,filehandle,variable)
 begin
-  resource@sfXArray = lons
-  resource@sfYArray = lats
+  lonlat = str_split(variable@coordinates," ")
+  lon    = lonlat(0)
+  lat    = lonlat(1)
+  x      = filehandle->$lon$
+  y      = filehandle->$lat$
+
+  if ("radian" .eq. x@units) x = x * RAD2DEG end if
+  if ("radian" .eq. y@units) y = y * RAD2DEG end if
+
+  setCoordsForResouce(x,y,variable,resource)
+
+  return (/x,y/)
+end
+undef("setCoordinatesFromExtraFile")
+function setCoordinatesFromExtraFile(lon_name,lat_name,filename,variable,resource)
+begin
+  x = getCoordinateFromFile(lon_name,filename)
+  y = getCoordinateFromFile(lat_name,filename)
+
+  setCoordsForResouce(x,y,variable,resource)
+
+  return (/x,y/)
 end
 ;---------------------------------------------------------------
 ; set the coordinates bounds for an ICON data field
@@ -1414,7 +1453,7 @@ end
 undef("getVarLevelType")
 function getVarLevelType(filename,varname)
 begin
-  f       = addfile(filename+".nc","r")
+  f       = addfile(filename,"r")
   vertdim = getVertDim(f,f->$varname$)
   if (ismissing(vertdim)) then
     delete(f)
@@ -1714,6 +1753,11 @@ undef("getFlags")
 function getFlags(var,boundslon,boundslat,resource)
 begin
   flags = new(dimsizes(var),logical,"No_FillValue")
+
+  if (resource@mapType .EQ. "NHps" .OR. resource@mapType .EQ. "SHps") then
+    flags = True
+    return flags
+  end if
   do i = 0,dimsizes(var) - 1
     flags(i) = where(all(boundslon(i,:) .gt. resource@mpMaxLonF) .or. \
                      all(boundslon(i,:) .lt. resource@mpMinLonF) .or. \
@@ -1817,7 +1861,7 @@ begin
   if (.not. ismissing(vhig(0))) then
     do j = 0, dimsizes(vhig) -1
       pres@gsFillColor = colors(i+1)
-      if ( flags(vhig(i))) then
+      if ( flags(vhig(j))) then
       gsn_polygon(wks,plot,boundslon(vhig(j),:),boundslat(vhig(j),:),pres)
       end if
     end do
@@ -1910,6 +1954,25 @@ begin
     end if
   end if
   return vc
+end
+;---------------------------------------------------------------
+; limit the map to given coords
+undef("limitMap2Coords")
+procedure limitMap2Coords(resource,coords)
+begin
+  lons                       = coords(0,:)
+  lats                       = coords(1,:)
+  resource@mpMinLatF         = floor(min(lats))
+  resource@mpMaxLatF         = ceil(max(lats))
+  resource@mpMinLonF         = floor(min(lons))
+  resource@mpMaxLonF         = ceil(max(lons))
+
+
+;   bounds of plotting area for stereographic plots
+  resource@mpLeftCornerLonF  = floor(min(lons))
+  resource@mpLeftCornerLatF  = floor(min(lats))
+  resource@mpRightCornerLonF = ceil(max(lons))
+  resource@mpRightCornerLatF = ceil(max(lats))
 end
 
 ;

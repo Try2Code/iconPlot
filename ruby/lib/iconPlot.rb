@@ -68,16 +68,16 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
       exit -1
     end
     Cdo.debug = true
-    unit = Cdo.showunit(:in => "-selname,#{varname} #{ifile}").first
+    unit = Cdo.showunit(:input => "-selname,#{varname} #{ifile}").first
     ExtCsvDiagram.plot_xy(icon,"datetime",varname,
                           "ICON: #{operation} on #{varname} (file:#{ifile})", # Change title here
-    :label_position => 'below',:skipColumnCheck => true,
-      :type => 'lines',:groupBy => ["depth"], :onlyGroupTitle => true,
+                        :label_position => 'below',:skipColumnCheck => true,
+                        :type => 'lines',:groupBy => ["depth"], :onlyGroupTitle => true,
       #                     :addSettings => ["logscale y"],     # Commend theses out for large scale values like Vert_Mixing_V
       #                     :yrange => '[0.0001:10]',           # Otherwise you'll see nothing reasonable
       :terminal => true ? 'png' : 'x11',
       :ylabel => "#{varname} [#{Shellwords.escape(unit)}]",     # Correct the label if necessary
-      :input_time_format => "'%Y%m%d %H:%M:%S'",
+      :input_time_format => "'%Y-%m-%d %H:%M:%S'",
         :filename => ofile,
         :output_time_format => '"%d.%m.%y \n %H:%M"',:size => "1600,600")
       return "#{ofile}.png"
@@ -85,7 +85,7 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
   def scatterPlot(ifile,ofile,xVarname,yVarname,opts={})
     # is there a variable which discribes different regions in the ocean
     regionVar = opts[:regionVar].nil? ? 'rregio_c' : opts[:regionVar]
-    hasRegion = Cdo.showname(:in => ifile).join.split.include?(regionName)
+    hasRegion = Cdo.showname(:input => ifile).join.split.include?(regionName)
     unless hasRegion
       warn "Variable '#{regionName}' for showing regions is NOT found in the input '#{ifile}'!"
       warn "Going on without plotting regions!"
@@ -100,7 +100,7 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
     FileUtils.rm(file) if File.exists?(file)
   end
   def show(*files)
-    files.flatten.each {|file| IO.popen("#{self.display} #{file} &") }
+    files.flatten.each {|file| out = IO.popen("#{self.display} #{file} &").read; puts out if self.debug }
   end
   def defaultPlot(ifile,ofile,opts={})
     show(scalarPlot(ifile,ofile,'T',opts))
@@ -117,13 +117,13 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
     IO.popen("echo 'date|time|depth|#{varname}' > #{dataFile}")
     Cdo.debug = true
     Cdo.outputkey('date,time,level,value', 
-                  :in => "-#{operation} -selname,#{varname} #{ifile} >>#{dataFile} 2>&1")
+                  :input => "-#{operation} -selname,#{varname} #{ifile} >>#{dataFile} 2>/dev/null")
 
     # postprocessing for correct time values
     data = []
     File.open(dataFile).each_with_index {|line,lineIndex|
       next if line.chomp.empty?
-      _t = line.chomp.gsub(/ +/,'|').split('|')
+      _t = line.chomp.sub(/^ /,'').gsub(/ +/,'|').split('|')
       if 0 == lineIndex then
         data << _t
         next
@@ -131,14 +131,14 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
       if "0" == _t[1] then
         _t[1] = '00:00:00'
       else
-        time = _t[1].reverse
-        timeStr = ''
-        while time.size > 2 do
-          timeStr << time[0,2] << ':'
-          time = time[2..-1]
-        end
-        timeStr << time.ljust(2,'0') unless time.size == 0
-        _t[1] = timeStr.reverse
+       #time = _t[1].reverse
+       #timeStr = ''
+       #while time.size > 2 do
+       #  timeStr << time[0,2] << ':'
+       #  time = time[2..-1]
+       #end
+       #timeStr << time.ljust(2,'0') unless time.size == 0
+       #_t[1] = timeStr.reverse
       end
       data << _t
     }
