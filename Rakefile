@@ -766,30 +766,31 @@ end
 
 desc "Sections from a limited Area"
 task :test_sections_from_limitArea do |t,args|
-# title = "'#{t.name}: default setup'"
-# show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
-#                 :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
-#                 :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180' ))
-# title = "'#{t.name}: withoutLines'"
-# show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
-#                 :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
-#                 :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
-#                 :withLines => false))
-# title = "'#{t.name}: withLines'"
-# show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
-#                 :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
-#                 :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
-#                 :withLines => true))
-# title = "'#{t.name}: withLineLabels'"
-# show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
-#                 :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
-#                 :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
-#                 :withLineLabels => true))
-# title = "'#{t.name}: withLineLabels'"
-# show(scalarPlot(@_FILES[AQUABOX_SYM],t.name,'t_acc', 
-#                 :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
-#                 :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
-#                 :withLineLabels => true))
+  title = "'#{t.name}: default setup'"
+  show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
+                  :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
+                  :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180' ))
+  title = "'#{t.name}: withoutLines'"
+  show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
+                  :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
+                  :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
+                  :withLines => false))
+  title = "'#{t.name}: withLines'"
+  show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
+                  :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
+                  :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
+                  :withLines => true))
+  title = "'#{t.name}: withLineLabels'"
+  show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
+                  :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
+                  :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
+                  :withLineLabels => true))
+  title = "'#{t.name}: withLineLabels'"
+  show(scalarPlot(@_FILES[AQUABOX_SYM],t.name,'t_acc', 
+                  :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
+                  :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
+                  :withLineLabels => true))
+  # check min/max
   title = "'asymetric focring'"
   show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name+"_#{title.gsub(/ /,'-')}",'t_acc', 
                   :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
