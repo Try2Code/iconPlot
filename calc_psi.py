@@ -1,6 +1,11 @@
 from cdo import *
 from pylab import *
 import os,sys
+import matplotlib
+import numpy as np
+import matplotlib.cm as cm
+import matplotlib.mlab as mlab
+import matplotlib.pyplot as plt
 
 cdo        = Cdo()
 cdo.debug  = 'DEBUG' in os.environ
@@ -10,6 +15,9 @@ inputfile       = sys.argv[1]
 varnameDefault  = 'u_vint_acc'
 plotfileDefault = 'psi.png'
 colormapDefault = 'RdBu'
+
+if 'DEBUG' in os.environ:
+    print(sys.argv)
 
 if len(sys.argv) > 2:
     # varname is given on the command line
@@ -60,12 +68,19 @@ if lons.max() > 180.0:
     lons = lons - 360.0
 
 if 'DEBUG' in os.environ:
+    print("# DEBUG ===================================================================")
+    print(inputfile)
+    print(varName)
+    print(plotfile)
+    print(colormap)
+    print("#==========================================================================")
     print(varData)
     print(varData.shape)
     print(varDims)
     print(times)
     print(lons)
     print(lats)
+    print("# DEBUG ===================================================================")
 # =======================================================================================
 # CALC PSI ==============================================================================
 psi = array(varData)
@@ -90,10 +105,17 @@ tick_params(axis='y', labelsize=8)
 im = imshow(varData,
         origin='lower',
         interpolation='nearest',
-        aspect='auto',
         cmap=colormap,
         extent=[lons.min(),lons.max(),lats.min(),lats.max()])
 cb = colorbar(im)
 cb.set_label('Transport [Sv]')
+# ------
+matplotlib.rcParams['contour.negative_linestyle'] = 'solid'
+plt.figure()
+X, Y = np.meshgrid(lons, lats)
+CS = plt.contour(X, Y, psi, 20, cmap=colormap)
+plt.clabel(CS, fontsize=6, inline=1)
+plt.title("Bar. streamfunction form:\n"+inputfile)
+
 savefig(plotfile)
 # =======================================================================================
