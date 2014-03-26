@@ -35,7 +35,7 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
                  raise ArgumentError
                end
 
-    opts[:tStrg] =ofile if opts[:tStrg].nil?
+    opts[:tStrg] = opts[:tStrg].nil? ? ofile : opts[:tStrg]
 
     cmd   = [self.caller,self.plotter].join(' ')
     cmd << " -altLibDir=#{self.libdir} #{varIdent} -iFile=#{ifile} -oFile=#{ofile} -oType=#{self.otype}"
