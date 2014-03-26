@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from cdo import *
 from pylab import *
 import os,sys
@@ -53,19 +54,9 @@ file_h  = cdo.readCdf(ifile)
 var     = file_h.variables[varName]
 varData = cdo.readArray(ifile,varName)
 varDims = file_h.variables[varName].dimensions
-
 # read in dimensions: expectes is 2d with time axis (time,lat,lon)
 a          = map(lambda x: file_h.variables[x][:], varDims)
 times, lats, lons = a[0], a[1], a[2]
-
-# use first timestep only
-if times.size > 1: 
-    print('Will only use the first timestep!!!!!!!!!')
-varData = varData[1,:,:]
-
-# avoid longitude greater than 180
-if lons.max() > 180.0:
-    lons = lons - 360.0
 
 if 'DEBUG' in os.environ:
     print("# DEBUG ===================================================================")
@@ -81,6 +72,16 @@ if 'DEBUG' in os.environ:
     print(lons)
     print(lats)
     print("# DEBUG ===================================================================")
+
+# use first timestep only
+if times.size > 1: 
+    print('Will only use the first timestep!!!!!!!!!')
+varData = varData[-1,:,:]
+
+# avoid longitude greater than 180
+if lons.max() > 180.0:
+    lons = lons - 360.0
+
 # =======================================================================================
 # CALC PSI ==============================================================================
 psi = array(varData)
