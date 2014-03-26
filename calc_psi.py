@@ -101,11 +101,13 @@ ylabel('lat [deg]')
 title('Bar. stream function')
 tick_params(axis='x', labelsize=8)
 tick_params(axis='y', labelsize=8)
+
 # draw
 im = imshow(varData,
         origin='lower',
         interpolation='nearest',
         cmap=colormap,
+        aspect='equal', # auto for fill
         extent=[lons.min(),lons.max(),lats.min(),lats.max()])
 cb = colorbar(im)
 cb.set_label('Transport [Sv]')
