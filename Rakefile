@@ -43,6 +43,8 @@ BOX_GRID              = ENV['HOME']+'/data/icon/AquaBox/AtlanticAquaBox_0079km.n
 NOCOORDS_DATA_GRID    = BOX_GRID
 AQUABOX_SYM           = ENV['HOME']+'/data/icon/AquaBox/sym_t_mean_20y.nc'
 AQUABOX_ASYM          = ENV['HOME']+'/data/icon/AquaBox/asym_t_mean_20y.nc'
+GLOBAL_4CALC_PSI      = ENV['HOME']+'/data/icon/avg.r11009.b4.2.2321.10ym.nc'
+AQUABOX_4CALC_PSI     = ENV['HOME']+'/data/icon/AquaBox/sym_u_vint_r360x180.nc'
 # add files for being transferes to remote host for remote testing
 [
   OCE_PLOT_TEST_FILE    ,
@@ -63,6 +65,8 @@ AQUABOX_ASYM          = ENV['HOME']+'/data/icon/AquaBox/asym_t_mean_20y.nc'
   BOX_GRID              ,
   AQUABOX_SYM           ,
   AQUABOX_ASYM          ,
+  GLOBAL_4CALC_PSI      ,
+  AQUABOX_4CALC_PSI     ,
 ].each {|f| @_FILES[f] = (`hostname`.chomp == 'thingol') ? f : [REMOTE_DATA_DIR,File.basename(f)].join(File::SEPARATOR) }
 
 COMPARISON            = {:oce => @_FILES[OCE_PLOT_TEST_FILE], :atm => @_FILES[ATM_PLOT_TEST_FILE]}
@@ -812,6 +816,28 @@ task :test_sections_from_limitArea do |t,args|
                   :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
                   :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
                   :withLineLabels => true,:showSecMap => false,:maxVar => 20,:minVar => 0, :numLevs => 20))
+end
+@_FILES.values_at(AQUABOX_4CALC_PSI,GLOBAL_4CALC_PSI).each_with_index {|ifile,index|
+  tag = %w[box global][index]
+  desc "check calc_psi with #{tag} grid"
+  task "test_psi_#{tag}".to_sym  => [ifile,'nclpsi.plotOld.png'] do |t|
+    ofile = [t.name,OFMT].join('.')
+    ifile = t.prerequisites[0]
+    vname = %w[u_vint_acc u_vint][index]
+    ifile = Cdo.remapcon('r360x180',input: ifile,options: '-P 8',output: 'uvint_r360x180.nc') if 1 == index
+    sh "VAR=#{vname} PLOT=#{ofile};./calc_psi.py #{ifile}"
+    show(t.prerequisites[1]) if 1 == index
+    show(ofile)
+  end
+}
+desc "show old psi calculation"
+file 'nclpsi.plotOld.png' do 
+  sh "./calc_psi_oce_icon.ksh ~/data/icon/avg.r11009.b4.2.2321.10ym.nc r360x180 plotOld"
+end
+desc "check python based PSI (bar. stream function) computation + plotting"
+task :test_psi => [:test_psi_box,:test_psi_global] 
+task :calc_psi do
+  sh "./calc_psi.py #{@_FILES[AQUABOX_4CALC_PSI]} PLOT=psi.svg"
 end
 #==============================================================================
 # Test collections
