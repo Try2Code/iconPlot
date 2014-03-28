@@ -11,6 +11,14 @@ import matplotlib.pyplot as plt
 cdo        = Cdo()
 cdo.debug  = 'DEBUG' in os.environ
 
+# USAGE =================================================================================
+# ./calc_psi.py <ifile> <varname> <plotfile> <colormap>
+#
+# defaults are:
+#   varname  = 'u_vint_acc'
+#   plotfile = 'psi.png' (other output types:  png, pdf, ps, eps and svg)
+#   colormap = 'RdBu' (see http://matplotlib.org/examples/color/colormaps_reference.html for more)
+# =======================================================================================
 # INPUT HANDLING ========================================================================
 inputfile       = sys.argv[1]
 varnameDefault  = 'u_vint_acc'
@@ -43,19 +51,21 @@ else:
 
 # stop if file cannot be read in
 if not os.path.isfile(inputfile):
-    print("Cannot read input: "+inputfiles[0])
+    print("Cannot read input: "+inputfile)
     exit(1)
 # =======================================================================================
 # DATA PREPARATION ======================================================================
 
 # replace missing value with zero for later summation
-ifile   = cdo.setmissval(0.0,input=inputfile)
-file_h  = cdo.readCdf(ifile)
-var     = file_h.variables[varName]
-varData = cdo.readArray(ifile,varName)
-varDims = file_h.variables[varName].dimensions
+ifile     = cdo.setmissval(0.0,input = inputfile)
+file_h    = cdo.readCdf(ifile)
+var       = file_h.variables[varName]
+varData   = cdo.readArray(ifile,varName)
+varDataMa = cdo.readMaArray(ifile,varName)
+varDims   = file_h.variables[varName].dimensions
 # read in dimensions: expectes is 2d with time axis (time,lat,lon)
 a          = map(lambda x: file_h.variables[x][:], varDims)
+#times, depth, lats, lons = a[0], a[1], a[2], a[3] # MPIOM psi input
 times, lats, lons = a[0], a[1], a[2]
 
 if 'DEBUG' in os.environ:
@@ -76,6 +86,7 @@ if 'DEBUG' in os.environ:
 # use first timestep only
 if times.size > 1: 
     print('Will only use the first timestep!!!!!!!!!')
+#varData = varData[-1,0,:,:] # MPIOM psi input
 varData = varData[-1,:,:]
 
 # avoid longitude greater than 180
@@ -94,6 +105,7 @@ erad = 6.371229e6
 pi   = 3.141592653
 dist = pi/lats.size*erad
 psi  = -psi * dist * 1.0e-6
+#psi  = psi * 1.0e-6 / 1025.0 # MPIOM psi input
 # =======================================================================================
 # PLOTTING ==============================================================================
 # labeling
@@ -103,22 +115,23 @@ title('Bar. stream function')
 tick_params(axis='x', labelsize=8)
 tick_params(axis='y', labelsize=8)
 
+if False:
 # draw
-im = imshow(varData,
-        origin='lower',
-        interpolation='nearest',
-        cmap=colormap,
-        aspect='equal', # auto for fill
-        extent=[lons.min(),lons.max(),lats.min(),lats.max()])
-cb = colorbar(im)
-cb.set_label('Transport [Sv]')
-# ------
-matplotlib.rcParams['contour.negative_linestyle'] = 'solid'
-plt.figure()
-X, Y = np.meshgrid(lons, lats)
-CS = plt.contour(X, Y, psi, 20, cmap=colormap)
-plt.clabel(CS, fontsize=6, inline=1)
-plt.title("Bar. streamfunction form:\n"+inputfile)
+    im = imshow(varData,
+            origin='lower',
+            interpolation='nearest',
+            cmap=colormap,
+            aspect='equal', # auto for fill
+            extent=[lons.min(),lons.max(),lats.min(),lats.max()])
+    cb = colorbar(im)
+    cb.set_label('Transport [Sv]')
+else:
+    matplotlib.rcParams['contour.negative_linestyle'] = 'solid'
+    plt.figure()
+    X, Y = np.meshgrid(lons, lats)
+    CS   = plt.contour(X, Y, psi, 20, cmap=colormap)
+    plt.clabel(CS, fontsize=6, inline=1)
+    plt.title("Bar. streamfunction form:\n"+inputfile,fontsize=10)
 
 savefig(plotfile)
 # =======================================================================================
