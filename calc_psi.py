@@ -13,25 +13,37 @@ import matplotlib.pyplot as plt
 cdo        = Cdo()
 cdo.debug  = 'DEBUG' in os.environ
 
+def usage():
+    return """
 # USAGE =================================================================================
-#   ./calc_psi.py <ifile> VAR=<varname> PLOT=<plotfile> CMAP=<colormap>
+#   ./calc_psi.py <ifile> VAR=<varname> PLOT=<plotfile> CMAP=<colormap> REMAP=<True> LEVELS=<levels> AREA=<area>
 #
 # defaults are:
 #   varname  = 'u_vint_acc'
 #   plotfile = 'psi.png'    (other output types:  png, pdf, ps, eps and svg)
 #   colormap = 'jet'        (see http://matplotlib.org/examples/color/colormaps_reference.html for more)
+#   levels   = [-150,-100,-75,-50,-30,-20,-10,-5,0,5,10,20,30,50,75,100,150]
+#   remap    = True         (expect icon input, so that remapping to r360x180 is done internally;
+#                            can be set to False, false or 0 to disable)
+#   area     = 'global'     (if set to another value, the continents will not be drawn)
+# =======================================================================================
+"""
 # =======================================================================================
 # INPUT HANDLING ========================================================================
 if len(sys.argv) < 2:
     print("Provide an input file")
+    print(usage())
     exit(1)
 
 inputfile = sys.argv[1]
 # stop if file cannot be read in
 if not os.path.isfile(inputfile):
     print("Cannot read input: "+inputfile)
+    print(usage())
     exit(1)
 
+# =======================================================================================
+# OPTION HANDLING =======================================================================
 options = {'VAR': 'u_vint_acc',
            'REMAP': True,
            'PLOT': 'psi.png',
