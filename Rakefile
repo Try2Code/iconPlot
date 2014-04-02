@@ -822,23 +822,39 @@ end
   tag = %w[box global][index]
   desc "check calc_psi with #{tag} grid"
   task "test_psi_#{tag}".to_sym  => [ifile,'nclpsi.plotOld.png'] do |t|
-    ofile = [t.name,OFMT].join('.')
-    ifile = t.prerequisites[0]
-    vname = %w[u_vint_acc u_vint][index]
-    ifile = Cdo.remapcon('r360x180',input: ifile,options: '-P 8',output: 'uvint_r360x180.nc') if 1 == index
-    sh "./calc_psi.py #{ifile} VAR=#{vname} PLOT=#{ofile} CMAP=bwr"
+    ofile  = [t.name,OFMT].join('.')
+    ifile  = t.prerequisites[0]
+    vname  = %w[u_vint_acc u_vint][index]
+    area   = (0 == index) ? 'AREA=box'    : ''
+    levels = (0 == index) ? 'LEVELS=16'   : ''
+    remap  = (0 == index) ? 'REMAP=false' : ''
+
+    sh "./calc_psi.py #{ifile} VAR=#{vname} PLOT=#{ofile} CMAP=seismic #{area} #{levels} #{remap}"
     show(t.prerequisites[1]) if 1 == index
     show(ofile)
   end
 }
 desc "show old psi calculation"
-file 'nclpsi.plotOld.png' do 
-  sh "./calc_psi_oce_icon.ksh ~/data/icon/avg.r11009.b4.2.2321.10ym.nc r360x180 plotOld"
+file 'nclpsi.plotOld.png' => [GLOBAL_4CALC_PSI] do |t|
+  sh "./calc_psi_oce_icon.ksh #{t.prerequisites[0]} r360x180 plotOld"
+end
+task :test_calc_psi_levels =>[AQUABOX_4CALC_PSI] do |t|
+  sh "./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}L50.png LEVELS=50 AREA=box"
+  show("#{t.name}L50.png")
+  sh "./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}Lhlog.png LEVELS=-20,-10,-5,-2,-1,-0.5,-0.2,-0.1,0,0.1,0.2,0.5,1,2,5,10,20 AREA=box"
+  show("#{t.name}Lhlog.png")
 end
 desc "check python based PSI (bar. stream function) computation + plotting"
 task :test_psi => [:test_psi_box,:test_psi_global] 
 task :calc_psi do
   sh "./calc_psi.py #{@_FILES[AQUABOX_4CALC_PSI]} PLOT=psi.svg"
+end
+task :cmp_psi do
+  ifiles = %w[u_vint_acc_10ym_r16362.nc u_vint_acc_10ym_r16781.nc u_vint_acc_r14716_10ym.nc u_vint_acc_r15830_10ym.nc].map {|f| ENV['HOME']+'/data/icon/'+f}
+  ifiles.each {|ifile|
+    ofile = "psi_from_#{File.basename(ifile,'.nc')}.png"
+    sh "export DEBUG=1;./calc_psi.py #{ifile} PLOT=#{ofile}" and show(ofile)
+  }
 end
 #==============================================================================
 # Test collections
