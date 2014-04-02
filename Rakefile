@@ -235,6 +235,7 @@ task :test_mask_internal do
   q.push { show(scalarPlot(ifile,ofile+"_maskPlusGrid",varname,:maskName => 'wet_c',:showGrid => true))  }
   q.push { show(scalarPlot(ifile,ofile+"_ortho",varname,:maskName => 'wet_c',:showGrid => true,:mapType => 'ortho',:centerLon => 0.0, :centerLat => 90.0))  }
   q.push { show(scalarPlot(ifile,ofile+"_NHps", varname,:maskName => 'wet_c',:showGrid => true,:mapType => 'NHps'))  }
+  q.push { show(scalarPlot('/home/ram/data/icon/r16777_output.nc',ofile+'error_on_thunder','s_acc',:maskName =>'wet_c')) }
   q.run
 end
 desc "masking with real missing values /_FillValue"
@@ -825,7 +826,7 @@ end
     ifile = t.prerequisites[0]
     vname = %w[u_vint_acc u_vint][index]
     ifile = Cdo.remapcon('r360x180',input: ifile,options: '-P 8',output: 'uvint_r360x180.nc') if 1 == index
-    sh "VAR=#{vname} PLOT=#{ofile};./calc_psi.py #{ifile}"
+    sh "./calc_psi.py #{ifile} VAR=#{vname} PLOT=#{ofile} CMAP=bwr"
     show(t.prerequisites[1]) if 1 == index
     show(ofile)
   end
