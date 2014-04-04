@@ -593,11 +593,9 @@
           end if
         end if
       end if
-
-      if (.not.isvar("coords")) then
-        coords = setCoordinates(ResC,File,var)
-      end if
-
+    end if
+    if (.not.isvar("coords")) then
+      coords = setCoordinates(ResC,File,var)
     end if
   end if
 
@@ -624,8 +622,8 @@
 
   setMapType(ResC,mapType,centerLon,centerLat,satDist)
 
-  if (isvar("limitMap") .and. isvar("coords")) then
-    limitMap2Coords(ResC,coords)
+  if (isvar("limitMap")) then
+    limitMap2Coords(ResC)
   else
     selMapCut(ResC,mapLLC,mapURC)
   end if
@@ -675,6 +673,9 @@
   end if
   if (plotMode.eq."scalar") then
     ;if (DEBUG .and. horizonalGridType.eq."unstructured") print("Gridtype is "+getGridType(var)) end if
+      if ( horizonalGridType .eq. "curvilinear") then
+        ResC@cnFillMode           = "CellFill"
+      end if
     if (showGrid ) then
       if ( horizonalGridType .eq. "curvilinear") then
         ResC@cnLinesOn            = False

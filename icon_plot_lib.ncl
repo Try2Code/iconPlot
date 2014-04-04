@@ -1349,10 +1349,9 @@ begin
   if (dimsizes(dimsizes(x)).ne.1) then
      variable@lon2d = x
      variable@lat2d = y
-  else
+  end if
      resource@sfXArray = x
      resource@sfYArray = y
-  end if
 end
 ;---------------------------------------------------------------
 ; set the coordinates for an ICON data field
@@ -1364,7 +1363,6 @@ begin
   lat    = lonlat(1)
   x      = filehandle->$lon$
   y      = filehandle->$lat$
-
   if ("radian" .eq. x@units) x = x * RAD2DEG end if
   if ("radian" .eq. y@units) y = y * RAD2DEG end if
 
@@ -1958,10 +1956,10 @@ end
 ;---------------------------------------------------------------
 ; limit the map to given coords
 undef("limitMap2Coords")
-procedure limitMap2Coords(resource,coords)
+procedure limitMap2Coords(resource)
 begin
-  lons                       = coords(0,:)
-  lats                       = coords(1,:)
+  lons = resource@sfXArray
+  lats = resource@sfYArray
   resource@mpMinLatF         = floor(min(lats))
   resource@mpMaxLatF         = ceil(max(lats))
   resource@mpMinLonF         = floor(min(lons))
