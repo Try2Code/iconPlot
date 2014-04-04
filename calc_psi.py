@@ -4,10 +4,8 @@ from pylab import *
 import os,sys,math
 import matplotlib
 import netCDF4 as Cdf
-import mpl_toolkits.basemap as bm
 import numpy as np
-import matplotlib.cm as cm
-import matplotlib.mlab as mlab
+import mpl_toolkits.basemap as bm
 import matplotlib.pyplot as plt
 
 cdo        = Cdo()
