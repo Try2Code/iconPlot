@@ -845,9 +845,9 @@ file 'nclpsi.plotOld.png' => [GLOBAL_4CALC_PSI] do |t|
   sh "./calc_psi_oce_icon.ksh #{t.prerequisites[0]} r360x180 plotOld"
 end
 task :test_calc_psi_levels =>[AQUABOX_4CALC_PSI] do |t|
-  sh "./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}L50.png LEVELS=50 AREA=box"
+  sh "./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}L50.png LEVELS=50 AREA=box REMAP=false"
   show("#{t.name}L50.png")
-  sh "./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}Lhlog.png LEVELS=-20,-10,-5,-2,-1,-0.5,-0.2,-0.1,0,0.1,0.2,0.5,1,2,5,10,20 AREA=box"
+  sh "./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}Lhlog.png REMAP=false LEVELS=-20,-10,-5,-2,-1,-0.5,-0.2,-0.1,0,0.1,0.2,0.5,1,2,5,10,20 AREA=box"
   show("#{t.name}Lhlog.png")
 end
 desc "check python based PSI (bar. stream function) computation + plotting"
