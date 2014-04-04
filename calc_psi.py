@@ -2,7 +2,6 @@
 from cdo import *
 import os,sys,math
 import matplotlib
-import netCDF4 as Cdf
 import numpy as np
 import mpl_toolkits.basemap as bm
 import matplotlib.pyplot as plt
@@ -134,15 +133,17 @@ mapproj = bm.Basemap(projection='cyl',
                      urcrnrlat=math.ceil(lats.max()),
                      urcrnrlon=math.ceil(lons.max()))
 mapproj.drawcoastlines(linewidth=.2)
+
 if 'global' == area:
     mapproj.fillcontinents(color='grey',lake_color='k')
+
 mapproj.drawmapboundary(fill_color='0.99')
-#   mapproj.drawparallels(np.array([-80,-60,-40,-20, 0, 20,40,60,80]), labels=[1,0,0,0],fontsize=2)
-#   mapproj.drawmeridians(range(0,360,30), labels=[0,0,0,1],fontsize=8)
+mapproj.drawparallels(np.array([-80,-60,-40,-20, 0, 20,40,60,80]), labels=[1,1,0,0],fontsize=6,linewidth=0.1)
+mapproj.drawmeridians(range(0,360,30), labels=[0,0,0,1],fontsize=6,linewidth=0.1)
 lonsPlot, latsPlot = mapproj(lon2d, lat2d)
 
 # contour plot
-CS   = plt.contourf(lonsPlot, latsPlot, psi, 
+CS = plt.contourf(lonsPlot, latsPlot, psi,
                     levels,
                     extend='both',
                     #colors=colormap.mpl_colors)
@@ -160,9 +161,11 @@ CSBar = plt.contour(lonsPlot,
 plt.clabel(CSBar, fmt = '%2.1f', colors = 'k', fontsize=6)
 
 # colorbar
-plt.colorbar(CS,orientation='horizontal')
+cbar = plt.colorbar(CS,orientation='horizontal')
+cbar.set_label("Sv")
 
-plt.title("Bar. streamfunction form:\n"+inputfile,fontsize=10)
+plt.suptitle("Bar. Streamfunction for\n"+inputfile,fontsize=9)
+plt.title("psi",fontsize=8,loc='left')
 
 fig.savefig(plotfile)
 # =======================================================================================
