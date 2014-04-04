@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 from cdo import *
-from pylab import *
 import os,sys,math
 import matplotlib
 import netCDF4 as Cdf
@@ -125,15 +124,15 @@ psi  = -psi * dist * 1.0e-6
 #psi  = psi * 1.0e-6 / 1025.0 # MPIOM psi input
 # =======================================================================================
 # PLOTTING ==============================================================================
-plt.figure()
+fig = plt.figure()
 
 matplotlib.rcParams['contour.negative_linestyle'] = 'solid'
 lon2d, lat2d = np.meshgrid(lons, lats)
 mapproj = bm.Basemap(projection='cyl', 
                      llcrnrlat=math.floor(lats.min()), 
                      llcrnrlon=math.floor(lons.min()),
-                     urcrnrlat=math.floor(lats.max()),
-                     urcrnrlon=math.floor(lons.max()))
+                     urcrnrlat=math.ceil(lats.max()),
+                     urcrnrlon=math.ceil(lons.max()))
 mapproj.drawcoastlines(linewidth=.2)
 if 'global' == area:
     mapproj.fillcontinents(color='grey',lake_color='k')
@@ -146,6 +145,7 @@ lonsPlot, latsPlot = mapproj(lon2d, lat2d)
 CS   = plt.contourf(lonsPlot, latsPlot, psi, 
                     levels,
                     extend='both',
+                    #colors=colormap.mpl_colors)
                     cmap=colormap)
 # contour lines
 CSBar = plt.contour(lonsPlot,
@@ -164,5 +164,5 @@ plt.colorbar(CS,orientation='horizontal')
 
 plt.title("Bar. streamfunction form:\n"+inputfile,fontsize=10)
 
-savefig(plotfile)
+fig.savefig(plotfile)
 # =======================================================================================
