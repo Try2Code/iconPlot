@@ -43,6 +43,7 @@ BOX_GRID              = ENV['HOME']+'/data/icon/AquaBox/AtlanticAquaBox_0079km.n
 NOCOORDS_DATA_GRID    = BOX_GRID
 AQUABOX_SYM           = ENV['HOME']+'/data/icon/AquaBox/sym_t_mean_20y.nc'
 AQUABOX_ASYM          = ENV['HOME']+'/data/icon/AquaBox/asym_t_mean_20y.nc'
+AQUABOX_MPIOM         = ENV['HOME']+'/data/icon/mpiom_aquabox.nc'
 GLOBAL_4CALC_PSI      = ENV['HOME']+'/data/icon/avg.r11009.b4.2.2321.10ym.nc'
 AQUABOX_4CALC_PSI     = ENV['HOME']+'/data/icon/AquaBox/sym_u_vint_r360x180.nc'
 # add files for being transferes to remote host for remote testing
@@ -63,6 +64,7 @@ AQUABOX_4CALC_PSI     = ENV['HOME']+'/data/icon/AquaBox/sym_u_vint_r360x180.nc'
   OCE_NML_OUTPUT        ,
   BOX_DATA              ,
   BOX_GRID              ,
+  AQUABOX_MPIOM         ,
   AQUABOX_SYM           ,
   AQUABOX_ASYM          ,
   GLOBAL_4CALC_PSI      ,
@@ -725,8 +727,12 @@ end
 desc "check plot with mpiom input"
 task :test_mpiom do
   @plotter.isIcon = false
-  show(scalarPlot(@_FILES[MPIOM_FILE],'test_mpiom'     ,'s',:DEBUG => true,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0'))
-  show(scalarPlot(@_FILES[MPIOM_FILE],'test_mpiom_grid','s',:DEBUG => true,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0',:showGrid => true))
+# show(scalarPlot(@_FILES[MPIOM_FILE],'test_mpiom'     ,'s',:DEBUG => true,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0'))
+# show(scalarPlot(@_FILES[MPIOM_FILE],'test_mpiom_grid','s',:DEBUG => true,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0',:showGrid => true))
+  show(scalarPlot(@_FILES[AQUABOX_MPIOM],'test_mpiom_box','tho',
+                  :DEBUG => true,:showGrid => true, :mapLLC => '-50,-45',:mapURC => '-22,45'))
+  show(scalarPlot(@_FILES[AQUABOX_MPIOM],'test_mpiom_box','tho',
+                  :DEBUG => true,:showGrid => true, :limitMap => true,:rStrg => 'O',:bStrg => @_FILES[AQUABOX_MPIOM]))
 end
 
 desc "check icon_plot_test.ncl"
