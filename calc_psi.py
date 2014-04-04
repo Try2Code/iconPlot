@@ -22,7 +22,7 @@ def usage():
 #   varname  = 'u_vint_acc'
 #   plotfile = 'psi.png'    (other output types:  png, pdf, ps, eps and svg)
 #   colormap = 'jet'        (see http://matplotlib.org/examples/color/colormaps_reference.html for more)
-#   levels   = [-150,-100,-75,-50,-30,-20,-10,-5,0,5,10,20,30,50,75,100,150]
+#   levels   = [-500,-200,-150,-100,-75,-50,-30,-20,-10,-5,0,5,10,20,30,50,75,100,150,200,500]
 #   remap    = True         (expect icon input, so that remapping to r360x180 is done internally;
 #                            can be set to False, false or 0 to disable)
 #   area     = 'global'     (if set to another value, the continents will not be drawn)
@@ -48,7 +48,7 @@ options = {'VAR': 'u_vint_acc',
            'REMAP': True,
            'PLOT': 'psi.png',
            'CMAP': 'jet',
-           'LEVELS': [-150,-100,-75,-50,-30,-20,-10,-5,0,5,10,20,30,50,75,100,150],
+           'LEVELS': [-500,-200,-150,-100,-75,-50,-30,-20,-10,-5,0,5,10,20,30,50,75,100,150,200,500],
            'AREA': 'global'}
 
 optsGiven = sys.argv[2:]
