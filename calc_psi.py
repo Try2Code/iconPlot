@@ -161,7 +161,12 @@ CSBar = plt.contour(lonsPlot,
 plt.clabel(CSBar, fmt = '%2.1f', colors = 'k', fontsize=6)
 
 # colorbar
-cbar = plt.colorbar(CS,orientation='horizontal')
+if 'global' == area:
+    orientation = 'horizontal'
+else:
+    orientation = 'vertical'
+
+cbar = plt.colorbar(CS,orientation=orientation)
 cbar.set_label("Sv")
 
 plt.suptitle("Bar. Streamfunction for\n"+inputfile,fontsize=9)
