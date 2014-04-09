@@ -864,7 +864,7 @@ task :cmp_psi do
 end
 desc "test psi when the input date is an icon limited area field"
 task :test_psi_box_on_icongrid => @_FILES[AQUABOX_ICONGRID] do |t|
-  sh "./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}.png AREA=box LEVELS=15 CMAP=BrBG ASPECT='equal'"
+  sh "./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}.png AREA=box LEVELS=15 CMAP=BrBG ASPECT='auto'"
   show("#{t.name}.png")
 end
 desc "test psi plot with AREA setup"
@@ -896,7 +896,7 @@ end
 #==============================================================================
 # Test collections
 desc "check python based PSI (bar. stream function) computation + plotting"
-task :test_psi => [:test_psi_box,:test_psi_global,:test_psi_box_on_icongrid,:test_psi_aspect] 
+task :test_psi => [:test_psi_box,:test_psi_global,:test_psi_box_on_icongrid,:test_psi_aspect,:test_psi_area] 
 desc "Run all tests"
 task :all_tests do
   tests = grepTests(/^test/)

@@ -12,7 +12,7 @@ cdo.debug  = 'DEBUG' in os.environ
 def usage():
     return """
 # USAGE =================================================================================
-#   ./calc_psi.py <ifile> VAR=<varname> PLOT=<plotfile> CMAP=<colormap> REMAP=<True> LEVELS=<levels> AREA=<area>
+#   ./calc_psi.py <ifile> VAR=<varname> PLOT=<plotfile> CMAP=<colormap> REMAP=<True> LEVELS=<levels> AREA=<area> ASPECT=<aspect>
 #
 # default values are:
 #   varname  = u_vint_acc
@@ -22,6 +22,7 @@ def usage():
 #   remap    = True        (expect icon input, so that remapping to r360x180 is done internally;
 #                           can be set to False, false or 0 to disable)
 #   area     = global      (if set to another value, the continents will not be drawn)
+#   aspect   = auto        (other values: equal or a number)
 # =======================================================================================
 """
 # =======================================================================================
@@ -79,8 +80,9 @@ if 'global' != area and True == remapInput:
     file_h      = cdo.readCdf(inputfile)
     v           = file_h.variables[varName]
     x,y         = getattr(v,'coordinates').split(' ')
-    x_min,x_max = file_h.variables[x][:].min() ,file_h.variables[x][:].max()
-    y_min,y_max = file_h.variables[y][:].min() ,file_h.variables[y][:].max()
+    xArr, yArr  = file_h.variables[x][:], file_h.variables[y][:]
+    x_min,x_max = xArr.min() ,xArr.max()
+    y_min,y_max = yArr.min() ,yArr.max()
 
     if 'radian' == getattr(file_h.variables[x],'units'):
         rad2deg = 45.0/math.atan(1.0)
