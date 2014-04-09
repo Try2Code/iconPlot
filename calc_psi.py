@@ -45,7 +45,8 @@ options = {'VAR': 'u_vint_acc',
            'PLOT': 'psi.png',
            'CMAP': 'jet',
            'LEVELS': [-500,-200,-150,-100,-75,-50,-30,-20,-10,-5,0,5,10,20,30,50,75,100,150,200,500],
-           'AREA': 'global'}
+           'AREA': 'global',
+           'ASPECT': 'auto'}
 
 optsGiven = sys.argv[2:]
 for optVal in optsGiven:
@@ -68,11 +69,12 @@ plotfile   = options['PLOT']
 colormap   = options['CMAP']
 levels     = options['LEVELS']
 area       = options['AREA']
+aspect     = options['ASPECT']
 # =======================================================================================
 # DATA PREPARATION ======================================================================
 
 # if the input is NOT global, the remapping has to be limitted to the area
-if 'global' != area:
+if 'global' != area and True == remapInput:
     # read min/max of input lon/lat
     file_h      = cdo.readCdf(inputfile)
     v           = file_h.variables[varName]
@@ -92,7 +94,8 @@ if 'global' != area:
 # replace missing value with zero for later summation
 if remapInput:
     ifile = cdo.setmisstoc(0.0,input = '-remapcon,r360x180 '+inputfile,options='-P 8')
-    ifile = cdo.sellonlatbox(x_min,x_max,y_min,y_max,input = ifile)
+    if 'global' != area:
+        ifile = cdo.sellonlatbox(x_min,x_max,y_min,y_max,input = ifile)
 else:
     ifile = cdo.setmisstoc(0.0,input = inputfile)
 
@@ -118,6 +121,8 @@ if 'DEBUG' in os.environ:
     print(times)
     print(lons)
     print(lats)
+    print("#==========================================================================")
+    print(options)
     print("# DEBUG ===================================================================")
 
 # use first timestep only
@@ -141,6 +146,7 @@ psi  = -psi * dist * 1.0e-6
 #psi  = psi * 1.0e-6 / 1025.0 # MPIOM psi input
 # =======================================================================================
 # PLOTTING ==============================================================================
+#fig = plt.figure(figsize=(10,5))
 fig = plt.figure()
 
 matplotlib.rcParams['contour.negative_linestyle'] = 'solid'
@@ -150,21 +156,22 @@ mapproj = bm.Basemap(projection='cyl',
                      llcrnrlon=math.floor(lons.min()),
                      urcrnrlat=math.ceil(lats.max()),
                      urcrnrlon=math.ceil(lons.max()))
-mapproj.drawcoastlines(linewidth=.2)
 
 if 'global' == area:
+    mapproj.drawcoastlines(linewidth=.2)
     mapproj.fillcontinents(color='grey',lake_color='k')
 
 mapproj.drawmapboundary(fill_color='0.99')
-mapproj.drawparallels(np.array([-80,-60,-40,-20, 0, 20,40,60,80]), labels=[1,1,0,0],fontsize=6,linewidth=0.1)
-mapproj.drawmeridians(range(0,360,30), labels=[0,0,0,1],fontsize=6,linewidth=0.1)
+mapproj.drawparallels(np.array([-80,-60,-40,-20, 0, 20,40,60,80]), labels=[1,1,0,0],fontsize=6,linewidth=0.2)
+mapproj.drawmeridians(range(0,360,30), labels=[0,0,0,1],fontsize=6,linewidth=0.2)
 lonsPlot, latsPlot = mapproj(lon2d, lat2d)
 
-# contour plot
+plt.gca().set_aspect(aspect)
+
+# filled contours
 CS = plt.contourf(lonsPlot, latsPlot, psi,
                     levels,
                     extend='both',
-                    #colors=colormap.mpl_colors)
                     cmap=colormap)
 # contour lines
 CSBar = plt.contour(lonsPlot,

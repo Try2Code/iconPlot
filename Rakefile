@@ -852,8 +852,6 @@ task :test_calc_psi_levels =>[@_FILES[AQUABOX_4CALC_PSI]] do |t|
   sh "./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}Lhlog.png REMAP=false LEVELS=-20,-10,-5,-2,-1,-0.5,-0.2,-0.1,0,0.1,0.2,0.5,1,2,5,10,20 AREA=box"
   show("#{t.name}Lhlog.png")
 end
-desc "check python based PSI (bar. stream function) computation + plotting"
-task :test_psi => [:test_psi_box,:test_psi_global] 
 task :calc_psi => [@_FILES[AQUABOX_4CALC_PSI]] do |t|
   sh "./calc_psi.py #{t.prerequisites} PLOT=psi.svg"
 end
@@ -866,11 +864,39 @@ task :cmp_psi do
 end
 desc "test psi when the input date is an icon limited area field"
 task :test_psi_box_on_icongrid => @_FILES[AQUABOX_ICONGRID] do |t|
-  sh "./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}.png AREA=box LEVELS=30"
+  sh "./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}.png AREA=box LEVELS=15 CMAP=BrBG ASPECT='equal'"
+  show("#{t.name}.png")
+end
+desc "test psi plot with AREA setup"
+task :test_psi_area => [@_FILES[AQUABOX_ICONGRID],@_FILES[GLOBAL_4CALC_PSI]] do |t|
+  sh "DEBUG=1 ./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}.png AREA=box LEVELS=15 CMAP=spectral"
+  show("#{t.name}.png")
+  sh "DEBUG=1 ./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}.png LEVELS=15 CMAP=spectral"
+  show("#{t.name}.png")
+  sh "./calc_psi.py #{t.prerequisites[1]} PLOT=#{t.name}.png AREA=box VAR=u_vint LEVELS=15 CMAP=spectral"
+  show("#{t.name}.png")
+  sh "./calc_psi.py #{t.prerequisites[1]} PLOT=#{t.name}.png VAR=u_vint LEVELS=15 CMAP=spectral"
+  show("#{t.name}.png")
+end
+desc "test psi with differnent aspect ratios"
+task :test_psi_aspect => [@_FILES[AQUABOX_ICONGRID],@_FILES[GLOBAL_4CALC_PSI]] do |t|
+  sh "./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}.png AREA=box LEVELS=15 CMAP=BrBG ASPECT='equal'"
+  show("#{t.name}.png")
+  sh "./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}.png AREA=box LEVELS=15 CMAP=BrBG ASPECT='auto'"
+  show("#{t.name}.png")
+  sh "./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}.png AREA=box LEVELS=15 CMAP=BrBG ASPECT=0.24"
+  show("#{t.name}.png")
+  sh "./calc_psi.py #{t.prerequisites[1]} PLOT=#{t.name}.png VAR=u_vint LEVELS=15 CMAP=BrBG ASPECT=1.2"
+  show("#{t.name}.png")
+  sh "./calc_psi.py #{t.prerequisites[1]} PLOT=#{t.name}.png VAR=u_vint LEVELS=15 CMAP=BrBG ASPECT='auto'"
+  show("#{t.name}.png")
+  sh "./calc_psi.py #{t.prerequisites[1]} PLOT=#{t.name}.png VAR=u_vint LEVELS=15 CMAP=BrBG ASPECT=0.24"
   show("#{t.name}.png")
 end
 #==============================================================================
 # Test collections
+desc "check python based PSI (bar. stream function) computation + plotting"
+task :test_psi => [:test_psi_box,:test_psi_global,:test_psi_box_on_icongrid,:test_psi_aspect] 
 desc "Run all tests"
 task :all_tests do
   tests = grepTests(/^test/)
