@@ -14,14 +14,14 @@ def usage():
 # USAGE =================================================================================
 #   ./calc_psi.py <ifile> VAR=<varname> PLOT=<plotfile> CMAP=<colormap> REMAP=<True> LEVELS=<levels> AREA=<area>
 #
-# defaults are:
-#   varname  = 'u_vint_acc'
-#   plotfile = 'psi.png'    (other output types:  png, pdf, ps, eps and svg)
-#   colormap = 'jet'        (see http://matplotlib.org/examples/color/colormaps_reference.html for more)
-#   levels   = [-500,-200,-150,-100,-75,-50,-30,-20,-10,-5,0,5,10,20,30,50,75,100,150,200,500]
-#   remap    = True         (expect icon input, so that remapping to r360x180 is done internally;
-#                            can be set to False, false or 0 to disable)
-#   area     = 'global'     (if set to another value, the continents will not be drawn)
+# default values are:
+#   varname  = u_vint_acc
+#   plotfile = psi.png'    (other output types:  png, pdf, ps, eps and svg)
+#   colormap = jet         (see http://matplotlib.org/examples/color/colormaps_reference.html for more)
+#   levels   = -500,-200,-150,-100,-75,-50,-30,-20,-10,-5,0,5,10,20,30,50,75,100,150,200,500
+#   remap    = True        (expect icon input, so that remapping to r360x180 is done internally;
+#                           can be set to False, false or 0 to disable)
+#   area     = global      (if set to another value, the continents will not be drawn)
 # =======================================================================================
 """
 # =======================================================================================
@@ -71,10 +71,28 @@ area       = options['AREA']
 # =======================================================================================
 # DATA PREPARATION ======================================================================
 
+# if the input is NOT global, the remapping has to be limitted to the area
+if 'global' != area:
+    # read min/max of input lon/lat
+    file_h      = cdo.readCdf(inputfile)
+    v           = file_h.variables[varName]
+    x,y         = getattr(v,'coordinates').split(' ')
+    x_min,x_max = file_h.variables[x][:].min() ,file_h.variables[x][:].max()
+    y_min,y_max = file_h.variables[y][:].min() ,file_h.variables[y][:].max()
+
+    if 'radian' == getattr(file_h.variables[x],'units'):
+        rad2deg = 45.0/math.atan(1.0)
+        x_min,x_max = x_min*rad2deg,x_max*rad2deg
+        y_min,y_max = y_min*rad2deg,y_max*rad2deg
+
+    x_min,x_max = math.floor(x_min), math.ceil(x_max)
+    y_min,y_max = math.floor(y_min), math.ceil(y_max)
+
 # remapcon to regular 1deg grid
 # replace missing value with zero for later summation
 if remapInput:
     ifile = cdo.setmisstoc(0.0,input = '-remapcon,r360x180 '+inputfile,options='-P 8')
+    ifile = cdo.sellonlatbox(x_min,x_max,y_min,y_max,input = ifile)
 else:
     ifile = cdo.setmisstoc(0.0,input = inputfile)
 

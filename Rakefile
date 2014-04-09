@@ -46,6 +46,7 @@ AQUABOX_ASYM          = ENV['HOME']+'/data/icon/AquaBox/asym_t_mean_20y.nc'
 AQUABOX_MPIOM         = ENV['HOME']+'/data/icon/mpiom_aquabox.nc'
 GLOBAL_4CALC_PSI      = ENV['HOME']+'/data/icon/avg.r11009.b4.2.2321.10ym.nc'
 AQUABOX_4CALC_PSI     = ENV['HOME']+'/data/icon/AquaBox/sym_u_vint_r360x180.nc'
+AQUABOX_ICONGRID      = ENV['HOME']+'/data/icon/AquaBox/uvint.atlbox.r16664.noshift.80-100ym.nc'
 # add files for being transferes to remote host for remote testing
 [
   OCE_PLOT_TEST_FILE    ,
@@ -69,6 +70,7 @@ AQUABOX_4CALC_PSI     = ENV['HOME']+'/data/icon/AquaBox/sym_u_vint_r360x180.nc'
   AQUABOX_ASYM          ,
   GLOBAL_4CALC_PSI      ,
   AQUABOX_4CALC_PSI     ,
+  AQUABOX_ICONGRID      ,
 ].each {|f| @_FILES[f] = (`hostname`.chomp == 'thingol') ? f : [REMOTE_DATA_DIR,File.basename(f)].join(File::SEPARATOR) }
 
 COMPARISON            = {:oce => @_FILES[OCE_PLOT_TEST_FILE], :atm => @_FILES[ATM_PLOT_TEST_FILE]}
@@ -841,10 +843,10 @@ end
   end
 }
 desc "show old psi calculation"
-file 'nclpsi.plotOld.png' => [GLOBAL_4CALC_PSI] do |t|
+file 'nclpsi.plotOld.png' => [@_FILES[GLOBAL_4CALC_PSI]] do |t|
   sh "./calc_psi_oce_icon.ksh #{t.prerequisites[0]} r360x180 plotOld"
 end
-task :test_calc_psi_levels =>[AQUABOX_4CALC_PSI] do |t|
+task :test_calc_psi_levels =>[@_FILES[AQUABOX_4CALC_PSI]] do |t|
   sh "./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}L50.png LEVELS=50 AREA=box REMAP=false"
   show("#{t.name}L50.png")
   sh "./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}Lhlog.png REMAP=false LEVELS=-20,-10,-5,-2,-1,-0.5,-0.2,-0.1,0,0.1,0.2,0.5,1,2,5,10,20 AREA=box"
@@ -852,8 +854,8 @@ task :test_calc_psi_levels =>[AQUABOX_4CALC_PSI] do |t|
 end
 desc "check python based PSI (bar. stream function) computation + plotting"
 task :test_psi => [:test_psi_box,:test_psi_global] 
-task :calc_psi do
-  sh "./calc_psi.py #{@_FILES[AQUABOX_4CALC_PSI]} PLOT=psi.svg"
+task :calc_psi => [@_FILES[AQUABOX_4CALC_PSI]] do |t|
+  sh "./calc_psi.py #{t.prerequisites} PLOT=psi.svg"
 end
 task :cmp_psi do
   ifiles = %w[u_vint_acc_10ym_r16362.nc u_vint_acc_10ym_r16781.nc u_vint_acc_r14716_10ym.nc u_vint_acc_r15830_10ym.nc].map {|f| ENV['HOME']+'/data/icon/'+f}
@@ -861,6 +863,11 @@ task :cmp_psi do
     ofile = "psi_from_#{File.basename(ifile,'.nc')}.png"
     sh "export DEBUG=1;./calc_psi.py #{ifile} PLOT=#{ofile}" and show(ofile)
   }
+end
+desc "test psi when the input date is an icon limited area field"
+task :test_psi_box_on_icongrid => @_FILES[AQUABOX_ICONGRID] do |t|
+  sh "./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}.png AREA=box LEVELS=30"
+  show("#{t.name}.png")
 end
 #==============================================================================
 # Test collections
