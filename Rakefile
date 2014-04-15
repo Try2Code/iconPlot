@@ -28,7 +28,8 @@ OCE_R2B2              = ENV['HOME']+'/data/icon/oce_small.nc'
 ICON_GRID             = ENV['HOME']+'/data/icon/iconGridR2b4.nc'
 MPIOM_FILE            = ENV['HOME']+'/data/mpiom/mpiom_y50.nc'
 OCELONG_PLOT_TEST_FILE= ENV['HOME']+'/data/icon/oceLong.nc'
-OCELSM_PLOT_TEST_FILE = ENV['HOME']+'/data/icon/oce_lsm.nc'
+#OCELSM_PLOT_TEST_FILE = ENV['HOME']+'/data/icon/oce_lsm.nc'
+OCELSM_PLOT_TEST_FILE = ENV['HOME']+'/data/icon/icon_oce_new.nc'
 OCE_HOV_FILE          = ENV['HOME']+'/data/icon/test_hov.nc'
 ATM_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/atm.nc'
 ICON_LONG_RUN         = ENV['HOME']+'/data/icon/icon-dailyOmip.nc'
@@ -383,37 +384,49 @@ task :test_sections do
 end
 
 desc "Section with different types of masking"
-task :test_masked_section do
+task :test_masked_section => @_FILES[OCELSM_PLOT_TEST_FILE] do |t|
   secopts = {
     :secLC      => '-45,-70',
     :secRC      =>  '30,80',
     :showSecMap => "True",
     :secPoints  => 201,
-    :maskName   => 'wet_c',
-    :secMode    => 'straight'
+    :rStrg      => '-',
+    :secMode    => 'circle'
   }
+  varname = 's_acc'
+  ifile = t.prerequisites[0]
+  ifile_masked = Cdo.div(input: "-selname,#{varname} #{ifile} -selname,wet_c -seltimestep,1 #{ifile}",output: "#{t.name}_masked.nc")
   # enable regular grided data
   @plotter.isIcon = false
   @plotter.debug  = true
-  %w[r90x45 r180x90 r360x180].each {|resolution|
+  %w[r90x45 r180x90 r360x180][0,2].each {|resolution|
     #next unless resolution == 'r360x180'
-    show(scalarPlot(@_FILES[OCELSM_PLOT_TEST_FILE],'test_masked_section_' + resolution,'T',secopts.merge(:resolution => resolution)))
+    # plot with using maskName
+    show(scalarPlot(@_FILES[OCELSM_PLOT_TEST_FILE],
+                    'test_masked_section_' + resolution,varname,secopts.merge(:resolution => resolution,
+                                                                              :maskName => 'wet_c',
+                                                                              :bStrg => @_FILES[OCELSM_PLOT_TEST_FILE])))
     remappedFile = "remapnn_#{resolution}_"+File.basename(@_FILES[OCELSM_PLOT_TEST_FILE])
     unless File.exist?(remappedFile)
       warn "file #{remappedFile} does not exist!!!!!"
       next
     end
+    # plot with using missing Values
+    show(scalarPlot(ifile_masked,"#{t.name}_#{resolution}_byMissVal",varname,secopts.merge(:resolution => 'r180x90')))
+                                                                                  #  :timeStep => 8)))
+
+    # plot the mask itself
     ofile = 'test_showMask_' + resolution
-    #show(scalarPlot(remappedFile,ofile,'wet_c',:mapLLC => "0,30",:mapURC => "40,90",:withLines => false,:fillMode => "CellFill"))
+    show(scalarPlot(remappedFile,ofile,'wet_c',:mapLLC => "0,30",:mapURC => "40,90",:withLines => false,:fillMode => "CellFill",:bStrg => @_FILES[OCELSM_PLOT_TEST_FILE],:rStrg => '-'))
   }
 end
 
 desc "Compare sections on great circle and straight lines"
 task :test_secmode do
   # create missing values
-  maskedInput = Cdo.div(input: " -selname,T #{@_FILES[OCELSM_PLOT_TEST_FILE]} -selname,wet_c -seltimestep,1 #{@_FILES[OCELSM_PLOT_TEST_FILE]}",
+  maskedInput = Cdo.div(input: " -selname,t_acc #{@_FILES[OCELSM_PLOT_TEST_FILE]} -selname,wet_c -seltimestep,1 #{@_FILES[OCELSM_PLOT_TEST_FILE]}",
                         output: "test_secmode_maskedInput.nc")
-  q = JobQueue.new
+  q = JobQueue.new(2)
 
   {
     :atlantic      => [-45,-70,30,80],
@@ -441,7 +454,7 @@ task :test_secmode do
         FileUtils.cp(maskedInput,ofile)
         show(scalarPlot(ofile,
                       ['test_secMode',secmode,sec].join("_"),
-                      'T',
+                      't_acc',
                       secopts.merge(:secMode => secmode,
                                     :tStrg => 'secMode - '+secmode,
                                     :rStrg =>"'s|#{[startLat,startLon].join(',')}||e|#{[endLat,endLon].join(',')}|'" )))
