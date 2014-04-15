@@ -433,7 +433,7 @@ task :test_secmode do
     :merdidian_20W => [-20,-70,-20,70],
     :merdidian_20E => [20,-70,20,70],
     :acc           => [-100,-65,100,-45],
-    :sohth         => [0,-30,360,-30],
+    :south         => [0,-30,360,-30],
     :equator       => [-100,0,100,0]
   }.each {|sec,corners|
    #next unless sec == :atlantic
@@ -456,7 +456,7 @@ task :test_secmode do
                       ['test_secMode',secmode,sec].join("_"),
                       't_acc',
                       secopts.merge(:secMode => secmode,
-                                    :tStrg => 'secMode - '+secmode,
+                                    :tStrg => "'secMode:#{secmode} - #{sec.to_s}'",
                                     :rStrg =>"'s|#{[startLat,startLon].join(',')}||e|#{[endLat,endLon].join(',')}|'" )))
       }
     }
