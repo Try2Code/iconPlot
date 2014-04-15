@@ -422,10 +422,11 @@ task :test_masked_section => @_FILES[OCELSM_PLOT_TEST_FILE] do |t|
 end
 
 desc "Compare sections on great circle and straight lines"
-task :test_secmode do
+task :test_secmode => @_FILES[OCELSM_PLOT_TEST_FILE] do |t|
   # create missing values
   maskedInput = Cdo.div(input: " -selname,t_acc #{@_FILES[OCELSM_PLOT_TEST_FILE]} -selname,wet_c -seltimestep,1 #{@_FILES[OCELSM_PLOT_TEST_FILE]}",
-                        output: "test_secmode_maskedInput.nc")
+                        output: "test_secmode_maskedInput.nc") if false
+  maskedInput = t.prerequisites[0]
   q = JobQueue.new(2)
 
   {
@@ -443,14 +444,15 @@ task :test_secmode do
       :secRC      => [endLat,endLon].join(','),
       :showSecMap => "True",
       :secPoints  => 201,
-      :resolution => 'r180x90'
+      :resolution => 'r180x90',
+      :maskName   => 'wet_c',
     }
     # enable regular grided data
     @plotter.isIcon = true
     @plotter.debug  = true
     %w[straight circle].each {|secmode|
       q.push {
-        ofile = [sec,secmode,maskedInput].join('_')
+        ofile = [sec,secmode,File.basename(maskedInput)].join('_')
         FileUtils.cp(maskedInput,ofile)
         show(scalarPlot(ofile,
                       ['test_secMode',secmode,sec].join("_"),
