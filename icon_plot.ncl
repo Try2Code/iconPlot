@@ -400,7 +400,7 @@
       ; perform some remapping to a regular grid because ncl cannot draw vector
       ; from unstructured grids
       ; TODO addVars=(/ "PS","PHIS"/)
-      operator = "remapcon"
+      operator = "remapnn"
       remapFilename = setRemapFilename(iFile,iType,resolution,atmLev,operator)
       print("remapFilename:"+remapFilename)
       if (.not. checkRemappedFile(iFile,remapFilename,ivarname,iType,atmLev,atmPLevs,atmHLevs) ) then
@@ -595,7 +595,11 @@
       end if
     end if
     if (.not.isvar("coords")) then
-      coords = setCoordinates(ResC,File,var)
+      if (isvar("rFile")) then
+        coords = setCoordinates(ResC,rFile,var)
+      else
+        coords = setCoordinates(ResC,File,var)
+      end if
     end if
   end if
 

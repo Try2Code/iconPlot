@@ -100,11 +100,7 @@ end
 undef("has_time")
 function has_time(dims)
 begin
-  if (.not.ismissing(any(dims.eq."time"))) then
-    return(True)
-  else
-    return(False)
-  end if
+  return any(dims.eq."time")
 end
 ;-------------------------------------------------------------------------------
 ; Has the input variable the dimension 'time'?
@@ -1358,9 +1354,16 @@ end
 undef("setCoordinates")
 function setCoordinates(resource,filehandle,variable)
 begin
-  lonlat = str_split(variable@coordinates," ")
-  lon    = lonlat(0)
-  lat    = lonlat(1)
+  ret = True
+  if (isatt(variable,"coordinates")) then
+    lonlat = str_split(variable@coordinates," ")
+    lon    = lonlat(0)
+    lat    = lonlat(1)
+  else
+    lon = "lon"
+    lat = "lat"
+    ret = False
+  end if
   x      = filehandle->$lon$
   y      = filehandle->$lat$
   if ("radian" .eq. x@units) x = x * RAD2DEG end if
@@ -1368,7 +1371,11 @@ begin
 
   setCoordsForResouce(x,y,variable,resource)
 
+  if (ret) then
   return (/x,y/)
+  else
+  return (/1,1/)
+  end if
 end
 undef("setCoordinatesFromExtraFile")
 function setCoordinatesFromExtraFile(lon_name,lat_name,filename,variable,resource)
