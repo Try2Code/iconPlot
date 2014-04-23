@@ -48,6 +48,8 @@ AQUABOX_MPIOM         = ENV['HOME']+'/data/icon/mpiom_aquabox.nc'
 GLOBAL_4CALC_PSI      = ENV['HOME']+'/data/icon/avg.r11009.b4.2.2321.10ym.nc'
 AQUABOX_4CALC_PSI     = ENV['HOME']+'/data/icon/AquaBox/sym_u_vint_r360x180.nc'
 AQUABOX_ICONGRID      = ENV['HOME']+'/data/icon/AquaBox/uvint.atlbox.r16664.noshift.80-100ym.nc'
+AQUABOX_ACC           = ENV['HOME']+'/data/icon/oce_AquaAtlanticBoxACC.nc'
+AQUABOX_ACC_GRID      = ENV['HOME']+'/data/icon/AtlanticAquaBoxACC_0079km.nc'
 # add files for being transferes to remote host for remote testing
 [
   OCE_PLOT_TEST_FILE    ,
@@ -72,6 +74,8 @@ AQUABOX_ICONGRID      = ENV['HOME']+'/data/icon/AquaBox/uvint.atlbox.r16664.nosh
   GLOBAL_4CALC_PSI      ,
   AQUABOX_4CALC_PSI     ,
   AQUABOX_ICONGRID      ,
+  AQUABOX_ACC           ,
+  AQUABOX_ACC_GRID      ,
 ].each {|f| @_FILES[f] = (`hostname`.chomp == 'thingol') ? f : [REMOTE_DATA_DIR,File.basename(f)].join(File::SEPARATOR) }
 
 COMPARISON            = {:oce => @_FILES[OCE_PLOT_TEST_FILE], :atm => @_FILES[ATM_PLOT_TEST_FILE]}
@@ -907,6 +911,13 @@ task :test_psi_aspect => [@_FILES[AQUABOX_ICONGRID],@_FILES[GLOBAL_4CALC_PSI]] d
   show("#{t.name}.png")
   sh "./calc_psi.py #{t.prerequisites[1]} PLOT=#{t.name}.png VAR=u_vint LEVELS=15 CMAP=BrBG ASPECT=0.24"
   show("#{t.name}.png")
+end
+desc "check plot for box setup incl. ACC"
+task :test_box_acc => [@_FILES[AQUABOX_ACC],@_FILES[AQUABOX_ACC_GRID]] do |t|
+  show(scalarPlot(t.prerequisites[0], t.name ,'t_acc', :DEBUG => true,:showGrid => false, :limitMap => true,:rStrg => 'O',:bStrg => t.prerequisites[0],:gridFile => t.prerequisites[1]))
+# show(scalarPlot(t.prerequisites[0], t.name ,'t_acc', :DEBUG => true,:showGrid => false, :fillMode => 'AreaFill',  :rStrg => 'O',:bStrg => t.prerequisites[0]))#,:mapLLC => '-60,-50', :mapURC => '60,60'))
+# show(scalarPlot(t.prerequisites[0], t.name ,'t_acc', :DEBUG => true,:showGrid => false, :fillMode => 'RasterFill',:rStrg => 'O',:bStrg => t.prerequisites[0]))#,:mapLLC => '-60,-50', :mapURC => '60,60'))
+# show(scalarPlot(t.prerequisites[0], t.name ,'t_acc', :DEBUG => true,:showGrid => false, :fillMode => 'CellFill',:rStrg => 'O',:bStrg => t.prerequisites[0]))#,:mapLLC => '-60,-50', :mapURC => '60,60'))
 end
 #==============================================================================
 # Test collections
