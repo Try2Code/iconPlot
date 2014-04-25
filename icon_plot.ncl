@@ -691,7 +691,14 @@
     plot = gsn_csm_contour_map(wks,var,ResC)
     if (showGrid) then
       if (horizonalGridType .eq. "unstructured") then
+        ;=======================================================================================
         plotGrid(wks,plot,var,coords(1,:),bounds,File,ResC,DEBUG)
+        ;boundslon = bounds(0,:,:)
+        ;boundslat = bounds(1,:,:)
+        ;pres = plotGrid_62(wks,plot,var,boundslon,boundslat)
+        ;gsid = gsn_add_polygon(wks,plot,ndtooned(boundslon),ndtooned(boundslat),pres)
+        ; }}}
+        ;=======================================================================================
       end if
       if ( horizonalGridType .ne. "curvilinear" .and. horizonalGridType .ne. "unstructured") then
         print("#=====================================================================")
@@ -704,6 +711,7 @@
       y = coords(1,:)
       plotCellMarkers(x,y,wks,plot,True)
     end if
+    ;draw(plot)
   end if
   if (plotMode.eq."scatter") then
     plot = gsn_csm_xy(wks,xvar,yvar,ResC)

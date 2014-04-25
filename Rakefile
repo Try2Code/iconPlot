@@ -6,6 +6,7 @@ require 'iconPlot'
 require 'jobqueue'
 require 'tempfile'
 require 'minitest/autorun'
+require 'time'
 
 #==============================================================================
 def isLocal?; `hostname`.chomp == 'thingol'; end
@@ -685,11 +686,13 @@ if 'thingol' == `hostname`.chomp
   task :test_show_grid do
     require 'jobqueue'
     jq = JobQueue.new
-    jq.push(@plotter,:defaultPlot,@_FILES[OCE_PLOT_TEST_FILE]   ,'test_show_grid_oce',:showGrid => "True",
-                     :mapLLC => '-10.0,-40.0' ,:mapURC =>'10.0,-10.0')
-    jq.push(@plotter,:defaultPlot,@_FILES[OCE_PLOT_TEST_FILE]   ,'test_show_grid_oce_ortho',:showGrid => "True",:mapType => "ortho")
-    jq.push(@plotter,:scalarPlot,@_FILES[ICE_DATA],'test_show_grid_ice_ortho','hi',:showGrid => "True")
-    jq.push(@plotter,:defaultPlot,@_FILES[ATM_PLOT_TEST_FILE]   ,'test_show_grid_atm',:showGrid => "True",:atmLev => "m")
+#   jq.push{ show(defaultPlot,@_FILES[OCE_PLOT_TEST_FILE]   ,'test_show_grid_oce',:showGrid => "True",:apLLC => '-10.0,-40.0' ,:mapURC =>'10.0,-10.0')
+#   jq.push{ show(defaultPlot(@_FILES[OCE_PLOT_TEST_FILE]   ,'test_show_grid_oce_ortho',:showGrid => "True",:mapLLC => '-30,-88', :mapURC => '30,88',:mapType => "ortho")
+    jq.push{ show(scalarPlot(@_FILES[OCELSM_PLOT_TEST_FILE],'test_show_grid_oce_cell','t_acc',:showGrid => "True",:mapLLC => '-30,-88', :mapURC => '30,88')) }
+    jq.push{ show(scalarPlot(@_FILES[OCELSM_PLOT_TEST_FILE],'test_show_grid_oce_vert','w_acc',:showGrid => "True",:mapLLC => '-30,-88', :mapURC => '30,88',:levIndex => 10,:timeStep => 2,:selMode => 'halflog',:colormap => 'hotres',:rStrg => '-')) }
+#   jq.push{ show(scalarPlot(@_FILES[ICE_DATA],'test_show_grid_ice_ortho','hi',:showGrid => "True")
+#   jq.push{ show(defaultPlot(@_FILES[ATM_PLOT_TEST_FILE]   ,'test_show_grid_atm_local',:showGrid => "True",:atmLev => "m",:mapLLC => '-30,-88', :mapURC => '30,88')
+#   jq.push{ show(defaultPlot(@_FILES[ATM_PLOT_TEST_FILE]   ,'test_show_grid_atm',:showGrid => "True",:atmLev => "m")
     jq.run
   end
 end
@@ -911,6 +914,29 @@ task :test_psi_aspect => [@_FILES[AQUABOX_ICONGRID],@_FILES[GLOBAL_4CALC_PSI]] d
   show("#{t.name}.png")
   sh "./calc_psi.py #{t.prerequisites[1]} PLOT=#{t.name}.png VAR=u_vint LEVELS=15 CMAP=BrBG ASPECT=0.24"
   show("#{t.name}.png")
+end
+desc "check plot for box setup"
+task :test_grid_plot => [@_FILES[AQUABOX_ASYM],@_FILES[OCELSM_PLOT_TEST_FILE]] do |t|
+  startBox   = Time.now
+  boxImage   = scalarPlot(t.prerequisites[0], t.name+"BOX",'t_acc', :DEBUG => false,
+                  :showGrid => true, :limitMap => true,:rStrg => 'O',:bStrg => t.prerequisites[0])
+  endBox     = Time.now
+  startGlobe =Time.now
+  globeImage = scalarPlot(t.prerequisites[1], t.name+"GLOBE",'t_acc', :DEBUG => false,
+                  :showGrid => true,                   :rStrg => 'O',:bStrg => t.prerequisites[1])
+  endGlobe   = Time.now
+
+  timeBox    = endBox - startBox
+  timeGlobe  = endGlobe - startGlobe
+
+  puts "#================================================================================="
+  puts "# Time for box   plot: #{timeBox}"
+  puts "# Time for globe plot: #{timeGlobe}"
+  puts "#================================================================================="
+# q = JobQueue.new(2)
+# q.push { show(boxImage) }
+# q.push { show(globeImage) }
+# q.run
 end
 desc "check plot for box setup incl. ACC"
 task :test_box_acc => [@_FILES[AQUABOX_ACC],@_FILES[AQUABOX_ACC_GRID]] do |t|

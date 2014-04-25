@@ -1913,6 +1913,50 @@ begin
   performGridPlot(variable,levels,colors,boundslon,boundslat,workstation,plot,flags,debug)
 end
 ;---------------------------------------------------------------
+; Plot the ICON grid: New version, req. ncl 6.2
+undef("plotGrid_62")
+function plotGrid_62(wks,plot,var,boundslon,boundslat)
+begin
+  pres             = True
+  pres@gsEdgesOn   = True   ; Turn on edges
+  pres@gsFillIndex = 0      ; Solid fill, the default
+  ;---Create color array for triangles
+  ntri     = dimsizes(var)                  ;-- Number of triangles
+  gscolors = new(ntri,integer)
+  gscolors = -1                           ;-- Initialize to transparent
+
+  getvalues plot@contour
+   "cnLevels"     : levels
+   "cnFillColors" : colors
+  end getvalues
+  ;---All triangles less than lowest level
+  vind = ind(var .lt. levels(0))
+  if(.not.all(ismissing(vind))) then
+    gscolors(vind) = colors(0)
+  end if
+
+  ;---All triangles inbetween levels
+  do i = 1, dimsizes(levels) - 1
+    vind := ind(var .ge. levels(i-1) .and. var .lt. levels(i))
+    if(.not.all(ismissing(vind))) then
+      gscolors(vind) = colors(i)
+    end if
+  end do
+
+  ;---All triangles higher than highest level
+  delete(vind)
+  vind = ind(var .ge. levels(dimsizes(levels)-1))
+  if(.not.all(ismissing(vind))) then
+    gscolors(vind) = colors(dimsizes(levels)-1)
+  end if
+
+  pres@gsColors = gscolors
+  pres@gsSegments = ispan(0,dimsizes(var) * 3,3)
+
+  return pres
+  ; }}}
+end
+;---------------------------------------------------------------
 ; read in mask variable
 undef("readMaskVar")
 function readMaskVar()
