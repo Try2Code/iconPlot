@@ -51,6 +51,7 @@ AQUABOX_4CALC_PSI     = ENV['HOME']+'/data/icon/AquaBox/sym_u_vint_r360x180.nc'
 AQUABOX_ICONGRID      = ENV['HOME']+'/data/icon/AquaBox/uvint.atlbox.r16664.noshift.80-100ym.nc'
 AQUABOX_ACC           = ENV['HOME']+'/data/icon/oce_AquaAtlanticBoxACC.nc'
 AQUABOX_ACC_GRID      = ENV['HOME']+'/data/icon/AtlanticAquaBoxACC_0079km.nc'
+NOLAND                = ENV['HOME']+'/data/icon/noland/1.nc'
 # add files for being transferes to remote host for remote testing
 [
   OCE_PLOT_TEST_FILE    ,
@@ -77,6 +78,7 @@ AQUABOX_ACC_GRID      = ENV['HOME']+'/data/icon/AtlanticAquaBoxACC_0079km.nc'
   AQUABOX_ICONGRID      ,
   AQUABOX_ACC           ,
   AQUABOX_ACC_GRID      ,
+  NOLAND                ,
 ].each {|f| @_FILES[f] = (`hostname`.chomp == 'thingol') ? f : [REMOTE_DATA_DIR,File.basename(f)].join(File::SEPARATOR) }
 
 COMPARISON            = {:oce => @_FILES[OCE_PLOT_TEST_FILE], :atm => @_FILES[ATM_PLOT_TEST_FILE]}
@@ -944,6 +946,20 @@ task :test_box_acc => [@_FILES[AQUABOX_ACC],@_FILES[AQUABOX_ACC_GRID]] do |t|
 # show(scalarPlot(t.prerequisites[0], t.name ,'t_acc', :DEBUG => true,:showGrid => false, :fillMode => 'AreaFill',  :rStrg => 'O',:bStrg => t.prerequisites[0]))#,:mapLLC => '-60,-50', :mapURC => '60,60'))
 # show(scalarPlot(t.prerequisites[0], t.name ,'t_acc', :DEBUG => true,:showGrid => false, :fillMode => 'RasterFill',:rStrg => 'O',:bStrg => t.prerequisites[0]))#,:mapLLC => '-60,-50', :mapURC => '60,60'))
 # show(scalarPlot(t.prerequisites[0], t.name ,'t_acc', :DEBUG => true,:showGrid => false, :fillMode => 'CellFill',:rStrg => 'O',:bStrg => t.prerequisites[0]))#,:mapLLC => '-60,-50', :mapURC => '60,60'))
+end
+desc "check for plotting data on the noland grid"
+task :check_noland, [:var] => @_FILES[NOLAND] do |t,args|
+  show(scalarPlot(t.prerequisites[0], t.name ,args.var.to_s, :DEBUG => true,:showGrid => false, :rStrg => 'O',:bStrg => t.prerequisites[0]))
+  show(scalarPlot(t.prerequisites[0], t.name ,args.var.to_s, :DEBUG => true,
+                  :mapLLC => '-60,0',:mapURC => '20,60',:showGrid => false, :rStrg => 'O',:bStrg => t.prerequisites[0]))
+  show(scalarPlot(t.prerequisites[0], t.name ,args.var.to_s, :DEBUG => true,:maskName => 'wet_c',
+                  :mapLLC => '-60,0',:mapURC => '20,60',:showGrid => false, :rStrg => 'O',:bStrg => t.prerequisites[0]))
+  show(scalarPlot(t.prerequisites[0], t.name ,args.var.to_s, :DEBUG => true,
+                  :mapLLC => '-60,0',:mapURC => '20,60',:showGrid => true, :rStrg => 'O',:bStrg => t.prerequisites[0]))
+  show(scalarPlot(t.prerequisites[0], t.name ,args.var.to_s, :DEBUG => true,:maskName => 'wet_c',
+                  :mapLLC => '-60,0',:mapURC => '20,60',:showGrid => true, :rStrg => 'O',:bStrg => t.prerequisites[0]))
+  show(scalarPlot(t.prerequisites[0], t.name ,args.var.to_s, :DEBUG => true,                     :showGrid => true, :rStrg => 'O',:bStrg => t.prerequisites[0]))
+  show(scalarPlot(t.prerequisites[0], t.name ,args.var.to_s, :DEBUG => true,:maskName => 'wet_c',:showGrid => true, :rStrg => 'O',:bStrg => t.prerequisites[0]))
 end
 #==============================================================================
 # Test collections
