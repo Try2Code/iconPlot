@@ -55,7 +55,8 @@
   end if
 ;------------------------------------------------------------------------------
 ;==============================================================================
-  VERSION = "0.0.6"
+  VERSION = "0.0.9"
+;  setfileoption("nc", "filestructure", "advanced")
 ;----- MAIN PROGRAM -----------------------------------------------------------
   if (isvar("help")) then
     dq = str_get_dq()
@@ -63,7 +64,7 @@
     print("; Basic Usage:")
     print(";   ncl icon_plot.ncl 'iFile=" + dq + "path/file.nc" + dq + "' 'varName=" + dq + "ELEV" + dq + "' 'oFile=" + dq + "test" + dq + "' timeStep=1 levIndex=1")
     print(";")
-    print("; Select an special area of the globe with mapLLC (LowerLeftCorner) and mapURC (UpperRightCorner)   ")
+    print("; Select a special area of the globe with mapLLC (LowerLeftCorner) and mapURC (UpperRightCorner)   ")
     print(";   ncl icon_plot.ncl 'iFile=" + dq + "path/file.nc" + dq + "' 'varName=" + dq + "W" + dq + "'    'mapLLC=(/35.0, -8/)' 'mapURC=(/55, 8/)'")
     print(";")
     print("; Masking:")
@@ -98,7 +99,9 @@
     print(";")
     print("; Optional Parameter:")
     print("; oType         : output graphics format (ps, eps, png, default: eps)")
-    print("; resolution    : resolution string whish is used for remapping the icon data")
+    print("; xsize         : width of plot (PNG only)")
+    print("; ysize         : height of plot (PNG only)")
+    print("; resolution    : resolution string which is used for remapping the icon data")
     print(";                 to regular grid (default: r90x45)")
     print("; vecRefLength  : reference vector length (default: 8.0)")
     print("; vecColByLen   : should vectors get coloured according to their lengths (default:False)")
@@ -112,15 +115,15 @@
     print("; mapLLC        : (lon,lat) value array of the Lower Left Corner of the map")
     print("; mapURC        : (lon,lat) ------- || ------- Upper Right Corner of the map")
     print(";                  use -180 to 180 for longitude !")
-    print("; secLC, secRC  : start and and point of a vertical section (no default value)")
-    print(";                 section is plotted it secLC and secRC are present")
-    print("; secMode       : perform transection along a great crice or on a straight line")
+    print("; secLC, secRC  : start and end point of a vertical section (no default value)")
+    print(";                 section is plotted if secLC and secRC are present")
+    print("; secMode       : perform transection along a great cricle or on a straight line")
     print(";                 possible values: circle, straight (default)")
     print(";               : ATTENTION: using 'circle' for sections with a small angle wrt the equator is NOT RECOMMENDED")
     print("; showSecMap    : display the location of the vertical section in an additional map (default:true)")
     print("; centerLon     : center longitute for satelite view (default:30.)")
     print("; centerLat     : center latitude for satelite view (default:20.)")
-    print("; satDist       : satelite distance (default:20.0)")
+    print("; satDist       : satellite distance (default:20.0)")
     print("; scaleFactor   : optional scale factor")
     print("; fillMode      : how to color contour plots,i.e. sets cnFillMode: CellFill or RasterFill (default:RasterFill)")
     print("; selMode       : mode for level spacing of the plot:")
@@ -128,14 +131,17 @@
     print(";                 manual (automatic linear spacing with usage of minVar and maxVar)")
     print(";                 auto (default: let do ncl the spacing)")
     print("; scaleLimit    : Limits the number of decades for levels in selMode-halflog")
-    print("; minVar/maxVar : min/maximal Value to plot for selMode = 'manual' or 'halflog'")
+    print("; minVar/maxVar : min/maximal value to plot for selMode = 'manual' or 'halflog'")
     print("; numLevs       : set a number of labels for manual selMode only. NumCol=numLevs+2")
     print(";                 (Not set directly, but used for computing the contour level spacing. default=10)")
     print("; plotLevs      : set individual contour levels, selMode is set to 'manual' automatically")
     print("; mapType       : projection type (default: lonlat), other: ortho (not compatible with showGrid), NHps")
     print(";                 and SHps (polar stereographic projections centered at the north and south pole respectively),")
     print(";                 sat (satelite view, use option centerLat, centerLon and satDist)")
-    print("; hov           : plot hovmoeller diagram, expects variable with two 'active' dimensions, i.e. var(:,:,0,0)")
+    print("; hov[Depth]    : plot hovmoeller diagram, expects variable with only two 'active' dimensions, i.e. time/depth")
+    print("; hovCut        : plot hovmoeller diagram, input is 'levIndex' and 'hovLC' 'hovRC'")
+    print("; hovLC, hovRC  : start and end point of a section for hovCut - currently same longitude allowed only,")
+    print(";                 the Northern and Southern values are used as plotting boundaries; switches to hovCut")
     print("; mapLine       : (logical) draws continent lines on the plot (foreground/transparent)")
     print("; maskName      : variable to mask with. maskName is expected NOT to have time dimension")
     print(";                  'maskName=" + dq + "none" + dq + "' is same as default (no mask variable)")
@@ -146,17 +152,17 @@
     print("; lStrg         : left string")
     print("; rStrg         : right string")
     print("; tStrg         : title string")
-    print("; bStrg         : base string - default is prgr name and time stamp only")
+    print("; bStrg         : base string - default is program name and time stamp only")
     print("; maxView       : (logical) maximize plot area on paper (not for buildbot -> convert to png)")
     print("; colormap      : string for predefined colormaps of the plot (e.g. 'colormap=" + dq + "BlAqGrYeOrReVi200" + dq + "')")
     print("; withLines     : draw lines between each contour color (default:True)")
-    print("; withLineLabels: label the countour lines with theri values (auto-enable withLines, default:False)")
+    print("; withLineLabels: label the countour lines with their values (auto-enable withLines, default:False)")
     print("; showGrid      : display polygon lines with filled colors instead of contour plot")
     print("; markCells     : mark cell centers with dots")
     print("; showNcd       : display NDC Grid to find Normalized Device Coordinates on the plot")
     print("; k2c           : if True, perform Kelvin2Celsius shift (default:True)")
     print(";")
-    print("; ATMOSPEHRE STUFF:")
+    print("; ATMOSPHERE STUFF:")
     print("; atmLev        : chooses vertical plot levels for atmosphere input (h: height,p:pressure,m:modellevel,default:p)")
     print(";---------------------------------------------------------------")
     print("; altLibDir     : Alternative directory for loading icon_plot_lib.ncl")
@@ -374,30 +380,37 @@
     end if
   end if
 
-  if ( (isvar("secLC").or.isvar("secRC")).ne.(isvar("secLC").and.isvar("secRC"))) then
-    print("Please provide secLC AND secRC for generatin a section plot!")
+  if ((isvar("secLC").or.isvar("secRC")).ne.(isvar("secLC").and.isvar("secRC"))) then
+    print("Please provide secLC AND secRC for generating a section plot!")
     exit
   end if
   if (isvar("secLC").and.isvar("secRC")) plotMode = "section" end if
-  if (isvar("hov")) plotMode = "hovmoeller" end if
+
+  if ((isvar("hovLC").or.isvar("hovRC")).ne.(isvar("hovLC").and.isvar("hovRC"))) then
+    print("Please provide hovLC AND hovRC for generating a Hovmoeller plot!")
+    exit
+  end if
+  if (isvar("hovLC").and.isvar("hovRC")) plotMode = "hovmoeller" end if
+  if (isvar("hovDepth").or.isvar("hovCut").or.(isvar("hov"))) plotMode = "hovmoeller" end if
 
   if (plotMode.eq."vector" .or. plotMode.eq."overlay" .or. plotMode.eq."section") then
     if (horizonalGridType .ne. "unstructured") then ; regular grid expected, i.e. remappgin is NOT required
       rFile = addfile(iFile+".nc","r")
     else
-      ; performe some remapping to a regular grid because ncl cannot draw vector
+      ; perform some remapping to a regular grid because ncl cannot draw vector
       ; from unstructured grids
       ; TODO addVars=(/ "PS","PHIS"/)
-      remapFilename = setRemapFilename(iFile,iType,resolution,atmLev)
+      operator = "remapnn"
+      remapFilename = setRemapFilename(iFile,iType,resolution,atmLev,operator)
       print("remapFilename:"+remapFilename)
       if (.not. checkRemappedFile(iFile,remapFilename,ivarname,iType,atmLev,atmPLevs,atmHLevs) ) then
         addVars=(/""/)
         print("PERFORM remapnn again!")
-        remapForVecPlot(iFile,remapFilename,resolution,useMask,plotMode,DEBUG,addVars)
+        remapForVecPlot(iFile,remapFilename,resolution,useMask,plotMode,DEBUG,addVars,operator)
       end if
       rFile = addfile( remapFilename+".nc", "r" )
     end if
-   ;if (plotMode .eq. "hoffmueller") then ; perform zonmean
+   ;if (plotMode .eq. "hovmoeller") then ; perform zonmean
    ;  zonmeanFilename = setZonmeanFilename(remapFilename,ivarname,atmLev)
    ;  zonmean4HoffmuellerPlot(remapFilename,ivarname,zonmeanFilename)
    ;end if
@@ -437,6 +450,7 @@
     print("oFile       = "+oFile)
     print("Graphics format is " +oType)
     print("plotMode    = "+plotMode)
+    print("showGrid    = "+showGrid)
 
     if (plotMode.eq."scalar" .or. plotMode.eq."section" .or. plotMode.eq."hovmoeller") then
       print("varName     = "+varName)
@@ -464,24 +478,6 @@
     printVar(varName, File)
 
     var = selField(varName,File,timeStep,levIndex,horizonalGridType)
-
-    if (horizonalGridType .eq. "unstructured") then
-      if (isvar("gridFile")) then
-        x      = getCoordinateFromFile(lonCo,gridFile)
-        y      = getCoordinateFromFile(latCo,gridFile)
-        if (showGrid) then
-          bounds = getBoundsFromFile(lonCo,latCo,gridFile)
-        end if
-      else
-        lonlatSizes = getCoordSizes(var,File)
-        x           = new(lonlatSizes(0),double)
-        y           = new(lonlatSizes(1),double)
-        getLonLats(var,File,x,y)
-        if (showGrid) then
-          bounds  = getBoundsOfCoordinates(var,File)
-        end if
-      end if
-    end if
 
     scaleVar(var,scaleFactor)
 
@@ -562,6 +558,10 @@
   ; make the plot
   ;---------------------------------------------------------------
   ; preparations
+  if (oType .eq. "png") then
+  if(isvar("xsize")) oType@wkWidth  = xsize end if
+  if(isvar("ysize")) oType@wkHeight = ysize end if
+  end if
   wks = gsn_open_wks(oType,oFile)
 
   gsn_define_colormap(wks,colormap)
@@ -570,7 +570,7 @@
     drawNDCGrid(wks)
   end if
 
-  ResC = setDefaultResource(True,withLines,withLineLabels,fillMode)
+  ResC = setDefaultResource(True,withLines,withLineLabels,fillMode,mapType)
 
   if (.not. userColors) setDefaultColors(ResC,minVar,maxVar,DEBUG) end if
 
@@ -578,10 +578,28 @@
 
   if (useMask) setMaskColor(wks,ResC) end if
 
-
-  if (getHorizGridType(iFile,ivarname,isIcon) .eq. "unstructured") then
+  if (horizonalGridType .eq. "unstructured" .or. horizonalGridType .eq. "curvilinear") then
     if (plotMode.eq."scalar" .or. plotMode.eq."overlay")
-      setCoordinates(ResC,x,y)
+      if (horizonalGridType .eq. "unstructured") then
+        if (isvar("gridFile")) then
+          ;TODO: fix x,y creation for external gridfile (plot restart data)
+          coords = setCoordinatesFromExtraFile(lonCo,latCo,gridFile,var,ResC)
+          if (showGrid) then
+            bounds = getBoundsFromFile(lonCo,latCo,gridFile)
+          end if
+        else
+          if (showGrid) then
+            bounds  = getBoundsOfCoordinates(var,File)
+          end if
+        end if
+      end if
+    end if
+    if (.not.isvar("coords")) then
+      if (isvar("rFile")) then
+        coords = setCoordinates(ResC,rFile,var)
+      else
+        coords = setCoordinates(ResC,File,var)
+      end if
     end if
   end if
 
@@ -608,7 +626,11 @@
 
   setMapType(ResC,mapType,centerLon,centerLat,satDist)
 
-  selMapCut(ResC,mapLLC,mapURC)
+  if (isvar("limitMap")) then
+    limitMap2Coords(ResC)
+  else
+    selMapCut(ResC,mapLLC,mapURC)
+  end if
 
   setMapVisibility(ResC,mapLine)
 
@@ -654,29 +676,67 @@
     draw(plot)
   end if
   if (plotMode.eq."scalar") then
-    if (DEBUG .and. horizonalGridType.eq."unstructured") print("Gridtype is "+getGridType(var)) end if
+    ;if (DEBUG .and. horizonalGridType.eq."unstructured") print("Gridtype is "+getGridType(var)) end if
+      if ( horizonalGridType .eq. "curvilinear") then
+        ResC@cnFillMode           = "CellFill"
+      end if
+    if (showGrid ) then
+      if ( horizonalGridType .eq. "curvilinear") then
+        ResC@cnLinesOn            = False
+        ResC@cnFillMode           = "CellFill"
+        ResC@cnCellFillEdgeColor   = "black"          ;-- set edge color (default: -1 transparent)
+        ResC@cnCellFillMissingValEdgeColor = "grey"   ;-- set miss val edge color (default: -1 transparent)
+      end if
+    end if
     plot = gsn_csm_contour_map(wks,var,ResC)
-
     if (showGrid) then
-      if ( horizonalGridType .ne. "unstructured") then
+      if (horizonalGridType .eq. "unstructured") then
+        ;=======================================================================================
+        ;plotGrid(wks,plot,var,coords(1,:),bounds,File,ResC,DEBUG)
+        boundslon = bounds(0,:,:)
+        boundslat = bounds(1,:,:)
+        pres = plotGrid_62(wks,plot,var,boundslon,boundslat)
+        gsid = gsn_add_polygon(wks,plot,ndtooned(boundslon),ndtooned(boundslat),pres)
+        ; }}}
+        ;=======================================================================================
+      end if
+      if ( horizonalGridType .ne. "curvilinear" .and. horizonalGridType .ne. "unstructured") then
         print("#=====================================================================")
         print("Grid representation is only implemented for the unstructured ICON grid")
         exit
       end if
-      plotGrid(wks,plot,var,x,bounds,File,ResC,DEBUG)
     end if
     if ( markCells ) then
+      x = coords(0,:)
+      y = coords(1,:)
       plotCellMarkers(x,y,wks,plot,True)
     end if
+    draw(plot)
   end if
   if (plotMode.eq."scatter") then
     plot = gsn_csm_xy(wks,xvar,yvar,ResC)
   end if
   if (plotMode .eq. "hovmoeller") then ; create hoffmuelle diagram
-    ; select the whole time series
-    ; and plot it with
-    ResC@trYReverse    = True
-    plot = gsn_csm_hov(wks, var(depth|:,time|:,lat|0,lon|0), ResC)
+    if (isvar("hovDepth").or.(isvar("hov"))) then
+      ; select the whole time series
+      ; and plot it with
+      ResC@trYReverse    = True
+      plot = gsn_csm_hov(wks, var(depth|:,time|:,lat|0,lon|0), ResC)
+    end if
+    if (isvar("hovRC")) then
+      startLon = hovRC(0)
+      northLat = hovRC(1)
+      endLon   = hovLC(0)
+      southLat = hovLC(1)
+      hovCut = True
+    end if
+    if (isvar("hovCut")) then
+      ;plot = gsn_csm_hov(wks, var(depth|0,time|:,lat|:,lon|0), ResC)
+      ;plot = gsn_csm_lat_time(wks, var(depth|0,time|:,lat|:,lon|0), ResC)
+      ;plot = gsn_csm_lat_time(wks, var(depth|0,lat|:,lon|165,time|:), ResC)
+      ;plot = gsn_csm_hov(wks, var({depth|150},{lat|70:-80},{lon|330},time|:), ResC)
+      plot = gsn_csm_hov(wks, var(depth|levIndex,{lat|northLat:southLat},{lon|startLon},time|:), ResC)
+    end if
   end if
   if (plotMode.eq."section") then
 
@@ -687,7 +747,7 @@
     end if
     points   = ispan(0,secPoints-1,1)*1.0
 
-    res  = setDefaultSectionResource(points,secPoints,secLC,secRC)
+    res  = setDefaultSectionResource(points,secPoints,secLC,secRC,withLines,withLineLabels)
     setAutomaticPlotCaptions(res,plotMode,varName,File,iFile,timeStep,levIndex,iType,atmLev,k2c)
     setLevels(selMode,res,minVar,maxVar,scaleLimit,numLevs,DEBUG)
     setSectionVertLabel(res,iType,atmLev)

@@ -1,22 +1,22 @@
 ;---------------------------------------------------------------
 ; ICON PLOT LIB
 ; This library aimes to provide an abstract way to access and plot ICON data
-; fields from NetCDF files. It should obay some general requirements:
-; * Don-Repeat-Yourself-principle: Every method has one responsebility, which no
+; fields from NetCDF files. It should obey some general requirements:
+; * Dont-Repeat-Yourself-Principle: Every method has one responsibility, which no
 ;   other method has. Or in other words: Don't just CopyAndPaste.
 ; * Use as much information from the input files as possible. If something is
-;   missing, create a better file or let the user input this peace of
-;   information. Examples are coordinates of data variabels and bounds of them.
+;   missing, create a better file or let the user input this piece of
+;   information. Examples are coordinates of data variables and bounds of them.
 ;   There are attributes for this.
 ; * naming conventions:
 ;   # check* methods are procedure which can exit the whole program
-;   # get* methods are functions with return, what they descibe with their
+;   # get* methods are functions with return, what they describe with their
 ;     name. This is similar to NCL itself, e.g. getfilevardims()
 ;   # set* methods are procedures
 ;---------------------------------------------------------------
 ; Authors       : Ralf Mueller (ralf.mueller@zmaw.de)
 ;                 Stephan Lorenz (stephan.lorenz@zmaw.de)
-; VERSION = "0.0.6"
+; VERSION = "0.0.9"
 ;-------------------------------------------------------------------------------
 ; some global defaults
   DEFAULTLON   = "clon"
@@ -29,9 +29,10 @@
   DEFAULTCOLOR = "BlueDarkRed18"      ; ncolors = 256
   DEFAULTCOLOR = "BlueWhiteOrangeRed" ; ncolors = 256
 ;-------------------------------------------------------------------------------
-procedure setCDO(path)
+undef("setCDO")
+procedure setCDO(path2Cdo)
 begin
-  CDO=path
+  CDO=path2Cdo
 end
 ;-------------------------------------------------------------------------------
 ; signum function
@@ -44,16 +45,62 @@ begin
     return(val/abs(val))
   end if
 end
+;---------------------------------------------------------------
+; return ncl version string
+undef("getNclVersion")
+function getNclVersion()
+begin
+  version_string = systemfunc("ncl -V")
+  version_array  = str_split(version_string, ".")
+  ; use integers instead
+  return stringtointeger(version_array)
+end
+;---------------------------------------------------------------
+; return true if ncl uses groups for netcdf4 input (release 6.1.1 with netcdf4 input)
+undef("versionWithNC4GroupNotationSupport")
+function versionWithNC4GroupNotationSupport()
+begin
+  return (/6,1,1/)
+end
+undef("versionIsGE")
+function versionIsGE(otherVersion)
+begin
+  return True
+  diff = otherVersion .gt. getNclVersion()
+  print(""+diff)
+  do i=0,dimsizes(diff)
+    if (.not. diff(i)) then
+      return False
+    end if
+  end do
+  return True
+end
+;-------------------------------------------------------------------------------
+; return a filehandle that can access variables names without leading '/' even
+; if the input it nc4 and ncl has version 6.1.1 or above
+undef("nc4Aware_addfile")
+function nc4Aware_addfile(filename,debug)
+begin
+  filehandle = addfile( filename, "r" )
+  filetype   = get_file_version(filehandle)
+  if debug then
+    print("[nc4Aware_addfile]Read in file:'" + filename +"'")
+    print("[nc4Aware_addfile]    Filetype:'" + filetype +"'")
+    print("[nc4Aware_addfile]NCL  version:'" + str_join(getNclVersion(),".") +"'")
+    print("[nc4Aware_addfile]version > 611'" + versionIsGE((/6,1,1/)) )
+  end if
+  if ((get_file_version(filehandle) .eq. "NETCDF4") .and. versionIsGE((/6,1,1/))) then
+    print("[nc4Aware_addfile]switch to root group '/'")
+   ;filehandle = filehandle=>/
+  end if
+  return filehandle
+end
 ;-------------------------------------------------------------------------------
 ; Is the 'time' variable a dimesions in the input dimensions array?
 undef("has_time")
 function has_time(dims)
 begin
-  if (any(dims.eq."time")) then
-    return(True)
-  else
-    return(False)
-  end if
+  return any(dims.eq."time")
 end
 ;-------------------------------------------------------------------------------
 ; Has the input variable the dimension 'time'?
@@ -74,7 +121,7 @@ function has_var(filehandle,varname)
 begin
   vNames = getfilevarnames(filehandle)
   n      = dimsizes (vNames)
-  do i=0,n-1              ; loop thru each variable
+  do i=0,n-1              ; loop through each variable
     if (vNames(i).eq.varname) return True end if
   end do
   return False
@@ -103,7 +150,7 @@ begin
 end
 ;-------------------------------------------------------------------------------
 ; Read a horizontal field of the variable 'varname' from the given filehandle.
-; If it is time dependend or has a vertival axis, use the given values for
+; If it is time dependant or has a vertical axis, use the given values for
 ; timstep and levelindex for selecting the field.
 ;
 ; Currently this limited to 3 dimensions, so that 4D tracer variables are ignored
@@ -368,15 +415,17 @@ end
 ;-------------------------------------------------------------------------------
 ; Return the coordinates of a given variable in degrees
 undef("getLonLats")
-procedure getLonLats(variable,filehandle,x,y)
+procedure getLonLats(variable,filehandle,x,y,isicon)
 begin
   lonlat = str_split(variable@coordinates," ")
   lon    = lonlat(0)
   lat    = lonlat(1)
   x      = filehandle->$lon$
   y      = filehandle->$lat$
-  x      = x * RAD2DEG
-  y      = y * RAD2DEG
+  if (isicon) then
+    x      = x * RAD2DEG
+    y      = y * RAD2DEG
+  end if
 end
 ;-------------------------------------------------------------------------------
 ; get variable from a certain file
@@ -401,7 +450,7 @@ end
 ; Examples:
 ;   (/1,2,5,10,20,50,100,200,500/) or
 ;   (/-1,-5e-1,-2e-1,-1e-1,-5e-2,-2e-2,-1e-2,0,1e-2,2e-2,5e-2,1e-1,2e-1,5e-1,1/)
-; scaleLimit determines the numer of decades on the positive or negtive axis of the output array
+; scaleLimit determines the number of decades on the positive or negative axis of the output array
 undef("createLevels")
 function createLevels(minVar, maxVar, scaleLimit)
 begin
@@ -486,6 +535,7 @@ begin
 end
 ;---------------------------------------------------------------
 ; Print information about dimensions and attributes of a given varaiable
+undef("printVar")
 procedure printVar(varname, filehandle)
 begin
   dims  = getfilevardims(filehandle,varname)
@@ -590,9 +640,9 @@ end
 ;---------------------------------------------------------------
 ; set filename for the automatically remapped file
 undef("setRemapFilename")
-function setRemapFilename(filename,itype,resolution,atmlev)
+function setRemapFilename(filename,itype,resolution,atmlev,operator)
 begin
-  return setNewFilename(filename,"remapnn_"+resolution,itype,atmlev)
+  return setNewFilename(filename,operator+"_"+resolution,itype,atmlev)
 end
 undef("setZonmeanFilename")
 function setZonmeanFilename(filename,itype,atmlev)
@@ -600,7 +650,7 @@ begin
   return setNewFilename(filename,"zonmean",itype,atmlev)
 end
 ;---------------------------------------------------------------
-; Check, if two files have the same number of timestemps. Exit otherwise
+; Check, if two files have the same number of time steps. Exit otherwise
 undef("checkRemappedFile")
 function checkRemappedFile(infilename,remapfilename,varname,itype,atmlev,atmplevs,atmhlevs)
 begin
@@ -676,13 +726,13 @@ end
 ; Perform a remapping (wich CDO) to a regular grid with a given resolution and return the
 ; filename of the remapped file. If the file is already present, the name is returned only
 undef("remapForVecPlot")
-procedure remapForVecPlot(iFile,remapFilename,resolution,useMask,plotMode,debug,addvars)
+procedure remapForVecPlot(iFile,remapFilename,resolution,useMask,plotMode,debug,addvars,operator)
 begin
   if (plotMode.eq."section") then vecVars=(/varName/) end if
   print("#=====================================================================================")
   print("Looking for remapped file: "+remapFilename)
   print("Use CDO to perform remapping: Create intermediate file: "+remapFilename)
-  print("Remove this intermediate file, if it was NOT automatically created from your inpur file "+iFile+"!")
+  print("Remove this intermediate file, if it was NOT automatically created from your input file "+iFile+"!")
   variables = str_join(vecVars,",")
   if ( addvars(0) .ne. "")
     variables = str_concat((/variables,",",str_join(addvars,",")/))
@@ -694,7 +744,7 @@ begin
   end if
   if (plotMode.eq."overlay") variables = variables+","+varName end if
 
-  cmd = CDO+" -P 8 -remapnn,"+resolution+" -selname,"+variables+" "+iFile+" "+remapFilename
+  cmd = CDO+" -P 8 -"+operator+","+resolution+" -selname,"+variables+" "+iFile+" "+remapFilename
   if debug then
     print(cmd)
   end if
@@ -712,7 +762,7 @@ begin
   system(cmd)
 end
 ;---------------------------------------------------------------
-; Return the bounds of the coordinates of agiven variable
+; Return the bounds of the coordinates of a given variable
 undef("getBoundsOfCoordinates")
 function getBoundsOfCoordinates(variable,filehandle)
 begin
@@ -729,7 +779,7 @@ begin
     return (/boundslon, boundslat/)
 end
 ;---------------------------------------------------------------
-; Return the bounds of the coordinates of agiven variable
+; Return the bounds of the coordinates of a given variable
 undef("getBoundsFromFile")
 function getBoundsFromFile(lonname,latname,filename)
 begin
@@ -839,23 +889,12 @@ begin
   end if
 end
 ;---------------------------------------------------------------
-; Create a default NCL resource
-undef("setDefaultResource")
-function setDefaultResource(verticallabelbar,withLines,withLineLabels,fillmode)
+; set the lines and their labels
+undef("setLineAndLineLabels")
+procedure setLineAndLineLabels(resource,withLines,withLineLabels)
 begin
-  resource                          = True
-  resource@gsnMaximize              = False
-  resource@gsnFrame                 = False
-  resource@gsnDraw                  = True
-  resource@gsnSpreadColors          = True
-  resource@cnFillOn                 = True
-
 ; lines/labels inside the plot ================================================
-  if (withLines) then
-    resource@cnLinesOn              = True
-  else
-    resource@cnLinesOn              = False
-  end if
+  resource@cnLinesOn                = False
   resource@cnLineLabelsOn           = False
   if (withLineLabels ) then
     withLines                       = True
@@ -864,7 +903,23 @@ begin
     resource@cnLineLabelFontThicknessF = 0.006
   end if
   if (withLines) resource@cnLinesOn = True end if
+end
+;---------------------------------------------------------------
+; Create a default NCL resource
+undef("setDefaultResource")
+function setDefaultResource(verticallabelbar,withLines,withLineLabels,fillmode,maptype)
+begin
+  resource                          = True
+  resource@gsnMaximize              = False
+  resource@gsnFrame                 = False
+  resource@gsnDraw                  = True
+  resource@gsnSpreadColors          = True
+  resource@cnFillOn                 = True
 
+  resource@mapType                  = maptype
+
+; lines/labels inside the plot ================================================
+  setLineAndLineLabels(resource,withLines,withLineLabels)
   ; representation of missing values ===========================================
   delete(resource@cnMissingValFillPattern);     no longer filling missing value areas
   delete(resource@cnMissingValFillColor);       no longer filling missing value areas
@@ -909,7 +964,7 @@ begin
 end
 ;---------------------------------------------------------------
 undef("setDefaultSectionResource")
-function setDefaultSectionResource(points,secpoints,seclc,secrc)
+function setDefaultSectionResource(points,secpoints,seclc,secrc,withLines,withLineLabels)
 begin
   resource                              = True;           plot mods desired
   resource@gsnFrame                     = False;                don't turn page yet
@@ -930,10 +985,6 @@ begin
   resource@cnFillOn                     = True;          turn on color
   resource@lbLabelAutoStride            = True;          nice label bar label stride
   resource@gsnSpreadColors              = True;          use full range of colormap
-  resource@cnLinesOn                    = False;         turn off countour lines
- ; if (useContourLines)
-  resource@cnLinesOn             = False
-  resource@cnLineLabelsOn        = False
   resource@lbOrientation                = "vertical";    vertical label bar
   resource@pmLabelBarOrthogonalPosF     = -0.05;         move label bar closer to plot
   resource@lbTitlePosition              = "Bottom"
@@ -953,6 +1004,9 @@ begin
   ;resource@gsnYAxisIrregular2Log        = True
   resource@cnFillMode           = "RasterFill"
   resource@cnRasterSmoothingOn  = False
+
+; lines/labels inside the plot ================================================
+  setLineAndLineLabels(resource,withLines,withLineLabels)
   return resource
 end
 ;---------------------------------------------------------------
@@ -1026,7 +1080,8 @@ end
 undef("setBaseString")
 procedure setBaseString(workstation,plot,resource,basestring)
 begin
-  resource@txFontHeightF = 0.01 ; if this is changed, please adjust the implementation of getLshiftForNDCString()
+  resource@txFontHeightF = 0.01 ; if this is changed, please adjust 
+                                ; the implementation of getLshiftForNDCString()
   gsn_text_ndc(workstation,basestring,getLshiftForNDCString(basestring),.01,resource)
 end
 ;---------------------------------------------------------------
@@ -1268,9 +1323,11 @@ end
 undef("checkMinMaxVar")
 procedure checkMinMaxVar(minvar,maxvar)
 begin
+  if ( (.not. ismissing(minvar)) .and. (.not. ismissing(maxvar)) ) then
   if ( minvar .gt. maxvar ) then
     print("minVar has to be larger than maxVar")
     exit
+  end if
   end if
 end
 ;---------------------------------------------------------------
@@ -1282,13 +1339,53 @@ begin
   resource@cnMissingValPerimOn         = True;          turn on missing value outlines
   resource@cnMissingValPerimThicknessF = 2.5;   set the missing value outline thickness
 end
+undef("setCoordsForResouce")
+procedure setCoordsForResouce(x,y,variable,resource)
+begin
+  if (dimsizes(dimsizes(x)).ne.1) then
+     variable@lon2d = x
+     variable@lat2d = y
+  end if
+     resource@sfXArray = x
+     resource@sfYArray = y
+end
 ;---------------------------------------------------------------
 ; set the coordinates for an ICON data field
 undef("setCoordinates")
-procedure setCoordinates(resource,lons,lats)
+function setCoordinates(resource,filehandle,variable)
 begin
-  resource@sfXArray = lons
-  resource@sfYArray = lats
+  ret = True
+  if (isatt(variable,"coordinates")) then
+    lonlat = str_split(variable@coordinates," ")
+    lon    = lonlat(0)
+    lat    = lonlat(1)
+  else
+    lon = "lon"
+    lat = "lat"
+    ret = False
+  end if
+  x      = filehandle->$lon$
+  y      = filehandle->$lat$
+  if ("radian" .eq. x@units) x = x * RAD2DEG end if
+  if ("radian" .eq. y@units) y = y * RAD2DEG end if
+
+  setCoordsForResouce(x,y,variable,resource)
+
+  if (ret) then
+  return (/x,y/)
+  else
+  return (/1,1/)
+  end if
+end
+undef("setCoordinatesFromExtraFile")
+function setCoordinatesFromExtraFile(lon_name,lat_name,filename,variable,resource)
+begin
+  x = getCoordinateFromFile(lon_name,filename)
+  y = getCoordinateFromFile(lat_name,filename)
+
+  setCoordsForResouce(x,y,variable,resource)
+
+  return (/x,y/)
 end
 ;---------------------------------------------------------------
 ; set the coordinates bounds for an ICON data field
@@ -1361,7 +1458,7 @@ end
 undef("getVarLevelType")
 function getVarLevelType(filename,varname)
 begin
-  f       = addfile(filename+".nc","r")
+  f       = addfile(filename,"r")
   vertdim = getVertDim(f,f->$varname$)
   if (ismissing(vertdim)) then
     delete(f)
@@ -1385,7 +1482,7 @@ begin
     gridtype = "unstructured"
   else
     print("CDO:"+CDO)
-    print("Call cdo griddes for determine the horizontal gridtype")
+    print("Call cdo griddes to determine the horizontal gridtype")
     gridtype = systemfunc(CDO+" -griddes -selname,"+varname+" -seltimestep,1 "+filename+" | grep gridtype | cut -d ' ' -f 4")
   end if
   print("Found horizontal grid of type: "+gridtype)
@@ -1408,7 +1505,7 @@ begin
 
   lats = fspan(startLat,endLat,npoints)
   lons = fspan(startLon,endLon,npoints)
-  ; dont let the lons be greater than 360, because theses values will not be in
+  ; don't let the lons be greater than 360, because these values will not be in
   ; the data. Otherwise an interpolation error will occur
   lons = where(lons.gt.360, lons-360.0, lons)
 
@@ -1531,7 +1628,7 @@ begin
   var_at_p@units     = var@units
   var_at_p@long_name = var@long_name
 
-  extrapolate = True ; switch for doing extrapolation below the ground:
+  extrapolate = True ; switch to do extrapolation below the ground:
   intmethod   = 1 ; 1: method for temperature, -1: method for geopotential, 0: other vars
   tlow =  var(nlevels-1,:,:)  ; temperature at lowest model level
                                        ; (use ground temperature if available)
@@ -1641,7 +1738,7 @@ begin
   var_at_p@units     = theta3d@units
   var_at_p@long_name = theta3d@long_name
 
-  extrapolate = True ; switch for doing extrapolation below the ground:
+  extrapolate = True ; switch to do extrapolation below the ground:
   intmethod   = 1 ; 1: method for temperature, -1: method for geopotential, 0: other vars
   tlow =  theta3dll(nlevels-1,:,:)  ; temperature at lowest model level
                                        ; (use ground temperature if available)
@@ -1661,6 +1758,11 @@ undef("getFlags")
 function getFlags(var,boundslon,boundslat,resource)
 begin
   flags = new(dimsizes(var),logical,"No_FillValue")
+
+  if (resource@mapType .EQ. "NHps" .OR. resource@mapType .EQ. "SHps") then
+    flags = True
+    return flags
+  end if
   do i = 0,dimsizes(var) - 1
     flags(i) = where(all(boundslon(i,:) .gt. resource@mpMaxLonF) .or. \
                      all(boundslon(i,:) .lt. resource@mpMinLonF) .or. \
@@ -1764,7 +1866,7 @@ begin
   if (.not. ismissing(vhig(0))) then
     do j = 0, dimsizes(vhig) -1
       pres@gsFillColor = colors(i+1)
-      if ( flags(vhig(i))) then
+      if ( flags(vhig(j))) then
       gsn_polygon(wks,plot,boundslon(vhig(j),:),boundslat(vhig(j),:),pres)
       end if
     end do
@@ -1811,6 +1913,50 @@ begin
   performGridPlot(variable,levels,colors,boundslon,boundslat,workstation,plot,flags,debug)
 end
 ;---------------------------------------------------------------
+; Plot the ICON grid: New version, req. ncl 6.2
+undef("plotGrid_62")
+function plotGrid_62(wks,plot,var,boundslon,boundslat)
+begin
+  pres             = True
+  pres@gsEdgesOn   = True   ; Turn on edges
+  pres@gsFillIndex = 0      ; Solid fill, the default
+  ;---Create color array for triangles
+  ntri     = dimsizes(var)                  ;-- Number of triangles
+  gscolors = new(ntri,integer)
+  gscolors = -1                           ;-- Initialize to transparent
+
+  getvalues plot@contour
+   "cnLevels"     : levels
+   "cnFillColors" : colors
+  end getvalues
+  ;---All triangles less than lowest level
+  vind = ind(var .lt. levels(0))
+  if(.not.all(ismissing(vind))) then
+    gscolors(vind) = colors(0)
+  end if
+
+  ;---All triangles inbetween levels
+  do i = 1, dimsizes(levels) - 1
+    vind := ind(var .ge. levels(i-1) .and. var .lt. levels(i))
+    if(.not.all(ismissing(vind))) then
+      gscolors(vind) = colors(i)
+    end if
+  end do
+
+  ;---All triangles higher than highest level
+  delete(vind)
+  vind = ind(var .ge. levels(dimsizes(levels)-1))
+  if(.not.all(ismissing(vind))) then
+    gscolors(vind) = colors(dimsizes(levels)-1)
+  end if
+
+  pres@gsColors = gscolors
+  pres@gsSegments = ispan(0,dimsizes(var) * 3,3)
+
+  return pres
+  ; }}}
+end
+;---------------------------------------------------------------
 ; read in mask variable
 undef("readMaskVar")
 function readMaskVar()
@@ -1822,10 +1968,11 @@ undef("plotVecOrStream")
 function plotVecOrStream(useScalar,useStreamlines,uvar,vvar,scalarvar,resource,workstation,showMap)
 begin
   ; streamline setup
-  resource@stArrowStride    = 3;           arrows start every third
-  resource@stArrowLengthF   = 0.002;       default is dynamic
-  resource@stMinDistanceF   = 0.025;       streamline dist
-  resource@stLineThicknessF = 2.0;         streamline thickness
+  resource@stArrowStride    = 4;           arrows start every third
+  resource@stArrowLengthF   = 0.0015;      default is dynamic
+  resource@stMinDistanceF   = 0.008;       streamline dist
+  resource@stLineThicknessF = 1.0;         streamline thickness
+ ; resource@stCrossoverCheckCount = 100;
   if (useScalar) then
     if (useStreamlines) then
       if (showMap)
@@ -1856,6 +2003,25 @@ begin
     end if
   end if
   return vc
+end
+;---------------------------------------------------------------
+; limit the map to given coords
+undef("limitMap2Coords")
+procedure limitMap2Coords(resource)
+begin
+  lons = resource@sfXArray
+  lats = resource@sfYArray
+  resource@mpMinLatF         = floor(min(lats))
+  resource@mpMaxLatF         = ceil(max(lats))
+  resource@mpMinLonF         = floor(min(lons))
+  resource@mpMaxLonF         = ceil(max(lons))
+
+
+;   bounds of plotting area for stereographic plots
+  resource@mpLeftCornerLonF  = floor(min(lons))
+  resource@mpLeftCornerLatF  = floor(min(lats))
+  resource@mpRightCornerLonF = ceil(max(lons))
+  resource@mpRightCornerLatF = ceil(max(lats))
 end
 
 ;
