@@ -143,7 +143,7 @@ end
 ######### M A I N   S C R I P T ###############################################
 #==============================================================================
 # USAGE:
-#   MASK=mask.nc GRID=grid.nc rhopot.rb <list-of-icon-ocean-result-files>
+#   MASK=mask.nc GRID=grid.nc <INIT=initFile.nc> rhopot.rb <list-of-icon-ocean-result-files>
 #------------------------------------------------------------------------------
 # check input
 if ARGV[0].nil?
