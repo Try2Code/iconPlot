@@ -1530,7 +1530,6 @@ begin
   dist        = gc_latlon(startLat,startLon,endLat,endLon,npoints,2)
   distRes@lat = dist@gclat
   distRes@lon = dist@gclon
-
   return distRes
 end
 ;---------------------------------------------------------------
