@@ -764,7 +764,7 @@ end
 desc "check icon_plot_test.ncl"
 task :test_paths ,:loc do |t,args|
   require './findPath'
-  q                    = JobQueue.new
+  q                    = JobQueue.new(1)
   lock                 = Mutex.new
   paths                = IconPathsAlongCells.getEdgesAndVerts(@_FILES[ICON_GRID])
   ofiles, allPathsFile = [], 'test_paths.pdf'
@@ -977,5 +977,20 @@ task "#{category}_tests".to_sym do
   runTests(tests)
 end
 }
+
+desc "Draw great circle lines"
+task :plot_line, [:lonStart, :latStart, :lonEnd, :latEnd] => @_FILES[OCE_PLOT_TEST_FILE] do |t,args|
+  keys                               = [:lonStart, :latStart, :lonEnd, :latEnd]
+  lonStart, latStart, lonEnd, latEnd = args.values_at(*keys)
+
+  show(scalarPlot(t.prerequisites[0], t.name ,'T', :DEBUG => true,:showGrid => false,:xsize => 1200, :ysize => 1500, 
+                  :rStrg => 'O',:bStrg => t.prerequisites[0],
+                  :secLC      => [latStart,lonStart].join(','),
+                  :secRC      => [latEnd,lonEnd].join(','),
+                  :showSecMap => "True",
+                  :secPoints  => 201,
+                 ))
+
+end
 
 # vim:ft=ruby
