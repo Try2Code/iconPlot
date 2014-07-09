@@ -43,6 +43,33 @@ module IconPathsAlongCells
       [4238,4270],
       [4268,4271],
       [4256,4259]],
+
+    :mozambique => [
+      [5809,5813],
+      [5810,5815],
+      [11155,11163]],
+
+    :framStrait => [ #spitsbergen - greenland
+      [690,697],
+      [4755,4765]],
+
+    :beringStrait => [
+      [2642,2647]],
+
+    :barentsOpening => [ #spitsgerben - norway
+      [562,567],
+      [560,561],
+      [572,575]],
+
+    :agulhas => [ #eastOfsouth africa - coutner current to acc
+      [20384,20385]],
+    :agulhas_long => [ #longer
+      [20384,20385],
+      [20388,20391]],
+    :agulhas_longer => [ #longer
+      [20384,20385],
+      [20388,20391],
+      [15788,15790]],
   }
 
   def IconPathsAlongCells.getEdgesAndVerts(ifile)
