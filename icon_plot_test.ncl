@@ -6,7 +6,6 @@
 
 ;------- lib location from the command line ------------------------------------------------------------------
 loadscript("icon_plot_lib.ncl")
-MAPTYPE = "Orthographic"
 ;------------------------------------------------------------------------------
 undef("assert")
 function assert(tag,givenResult,expectedResult,errorMessage)
@@ -46,7 +45,7 @@ procedure plot_cells(cellList,oFile,iFile)
 begin
   File                  = addfile( iFile+".nc", "r" )
 
-  resource              = setDefaultResource(True,True,False,"RasterFill",MAPTYPE)
+  resource              = setDefaultResource(True,True,False,"RasterFill")
   resource@tiMainString = oFile
   wks                   = setSimpleWks(oFile)
 
@@ -70,7 +69,7 @@ undef("plot_verts")
 procedure plot_verts(vertList,oFile,iFile)
 begin
   File                  = addfile( iFile+".nc", "r" )
-  resource              = setDefaultResource(True,True,False,"RasterFill",MAPTYPE)
+  resource              = setDefaultResource(True,True,False,"RasterFill")
   resource@tiMainString = oFile
   wks                   = setSimpleWks(oFile)
 
@@ -94,7 +93,7 @@ undef("plot_edges")
 procedure plot_edges(edgeList,oFile,iFile)
 begin
   File                  = addfile( iFile+".nc", "r" )
-  resource              = setDefaultResource(True,True,False,"RasterFill",MAPTYPE)
+  resource              = setDefaultResource(True,True,False,"RasterFill")
   resource@tiMainString = oFile
   wks                   = setSimpleWks(oFile)
 
