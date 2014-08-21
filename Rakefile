@@ -764,7 +764,7 @@ end
 desc "check icon_plot_test.ncl"
 task :test_paths ,:loc do |t,args|
   require './findPath'
-  q                    = JobQueue.new(1)
+  q                    = JobQueue.new
   lock                 = Mutex.new
   paths                = IconPathsAlongCells.getEdgesAndVerts(@_FILES[ICON_GRID])
   ofiles, allPathsFile = [], 'test_paths.pdf'
@@ -892,7 +892,7 @@ task :test_psi_box_on_icongrid => @_FILES[AQUABOX_ICONGRID] do |t|
   show("#{t.name}.png")
 end
 desc "test psi plot with AREA setup"
-task :test_psi_area => [@_FILES[AQUABOX_ICONGRID],@_FILES[GLOBAL_4CALC_PSI]] do |t|
+task :test_psi_area => [@_FILES[AQUABOX_ICONGRID],@_FILES[GLOBAL_4CALC_PSI],@_FILES[NOLAND]] do |t|
   sh "DEBUG=1 ./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}.png AREA=box LEVELS=15 CMAP=spectral"
   show("#{t.name}.png")
   sh "DEBUG=1 ./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}.png LEVELS=15 CMAP=spectral"
@@ -900,6 +900,11 @@ task :test_psi_area => [@_FILES[AQUABOX_ICONGRID],@_FILES[GLOBAL_4CALC_PSI]] do 
   sh "./calc_psi.py #{t.prerequisites[1]} PLOT=#{t.name}.png AREA=box VAR=u_vint LEVELS=15 CMAP=spectral"
   show("#{t.name}.png")
   sh "./calc_psi.py #{t.prerequisites[1]} PLOT=#{t.name}.png VAR=u_vint LEVELS=15 CMAP=spectral"
+  show("#{t.name}.png")
+end
+desc "test psu plot with NOLAND input"
+task :test_psi_noland => [@_FILES[NOLAND]] do |t|
+  sh "./calc_psi.py #{t.prerequisites[0]} PLOT=#{t.name}.png LEVELS=15 CMAP=spectral"
   show("#{t.name}.png")
 end
 desc "test psi with differnent aspect ratios"
@@ -977,20 +982,5 @@ task "#{category}_tests".to_sym do
   runTests(tests)
 end
 }
-
-desc "Draw great circle lines"
-task :plot_line, [:lonStart, :latStart, :lonEnd, :latEnd] => @_FILES[OCE_PLOT_TEST_FILE] do |t,args|
-  keys                               = [:lonStart, :latStart, :lonEnd, :latEnd]
-  lonStart, latStart, lonEnd, latEnd = args.values_at(*keys)
-
-  show(scalarPlot(t.prerequisites[0], t.name ,'T', :DEBUG => true,:showGrid => false,:xsize => 1200, :ysize => 1500, 
-                  :rStrg => 'O',:bStrg => t.prerequisites[0],
-                  :secLC      => [latStart,lonStart].join(','),
-                  :secRC      => [latEnd,lonEnd].join(','),
-                  :showSecMap => "True",
-                  :secPoints  => 201,
-                 ))
-
-end
 
 # vim:ft=ruby
