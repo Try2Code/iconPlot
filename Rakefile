@@ -20,38 +20,38 @@ CP                    = 'scp -p'
 LS                    = 'ls -crtlh'
 OFMT                  = 'png'
 DEFAULT_VARNAME       = 'T'
-PLOT_CMD              = isLocal? ? 'sxiv' : 'eog'
+PLOT_CMD              = 'sxiv'#isLocal? ? 'sxiv' : 'eog'
 CDO                   = ENV['CDO'].nil? ? 'cdo' : ENV['CDO']
 REMOTE_DATA_DIR       = '/home/zmaw/m300064/thunder/data/testing'
 
-OCE_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/oce.nc'
-OCE_R2B2              = ENV['HOME']+'/data/icon/oce_small.nc'
-ICON_GRID             = ENV['HOME']+'/data/icon/iconGridR2b4.nc'
-MPIOM_FILE            = ENV['HOME']+'/data/mpiom/mpiom_y50.nc'
-OCELONG_PLOT_TEST_FILE= ENV['HOME']+'/data/icon/oceLong.nc'
-#OCELSM_PLOT_TEST_FILE = ENV['HOME']+'/data/icon/oce_lsm.nc'
-OCELSM_PLOT_TEST_FILE = ENV['HOME']+'/data/icon/icon_oce_new.nc'
-OCE_HOV_FILE          = ENV['HOME']+'/data/icon/test_hov.nc'
-ATM_PLOT_TEST_FILE    = ENV['HOME']+'/data/icon/atm.nc'
-ICON_LONG_RUN         = ENV['HOME']+'/data/icon/icon-dailyOmip.nc'
-OCE_REGPLOT_TEST_FILE = ENV['HOME']+'/data/icon/regular_oce.nc' #remapnn,r180x90
-ATM_REGPLOT_TEST_FILE = ENV['HOME']+'/data/icon/regular_atm.nc' #remapnn,n63 (no sections), r180x90 (with sections)
-TOPO_NONGLOBAL        = ENV['HOME']+'/data/icon/topo_2x2_00001.nc'
-ICE_DATA              = ENV['HOME']+'/data/icon/dat.ice.r14716.def.2663-67.nc'
-OCE_NML_OUTPUT        = ENV['HOME']+'/data/icon/oceNmlOutput.nc'
-BOX_DATA              = ENV['HOME']+'/data/icon/AquaBox/AquaAtlanticBox_0079km_20041017T000000Z.nc'
+OCE_PLOT_TEST_FILE    = ENV['HOME']+'/local/data/icon/oce.nc'
+OCE_R2B2              = ENV['HOME']+'/local/data/icon/oce_small.nc'
+ICON_GRID             = ENV['HOME']+'/local/data/icon/iconGridR2b4.nc'
+MPIOM_FILE            = ENV['HOME']+'/local/data/mpiom/mpiom_y50.nc'
+OCELONG_PLOT_TEST_FILE= ENV['HOME']+'/local/data/icon/oceLong.nc'
+#OCELSM_PLOT_TEST_FILE = ENV['HOME']+/l/data/icon/oce_lsm.nc'
+OCELSM_PLOT_TEST_FILE = ENV['HOME']+'/local/data/icon/icon_oce_new.nc'
+OCE_HOV_FILE          = ENV['HOME']+'/local/data/icon/test_hov.nc'
+ATM_PLOT_TEST_FILE    = ENV['HOME']+'/local/data/icon/atm.nc'
+ICON_LONG_RUN         = ENV['HOME']+'/local/data/icon/icon-dailyOmip.nc'
+OCE_REGPLOT_TEST_FILE = ENV['HOME']+'/local/data/icon/regular_oce.nc' #remapnn,r180x90
+ATM_REGPLOT_TEST_FILE = ENV['HOME']+'/local/data/icon/regular_atm.nc' #remapnn,n63 (no sections), r180x90 (with sections)
+TOPO_NONGLOBAL        = ENV['HOME']+'/local/data/icon/topo_2x2_00001.nc'
+ICE_DATA              = ENV['HOME']+'/local/data/icon/dat.ice.r14716.def.2663-67.nc'
+OCE_NML_OUTPUT        = ENV['HOME']+'/local/data/icon/oceNmlOutput.nc'
+BOX_DATA              = ENV['HOME']+'/local/data/icon/AquaBox/AquaAtlanticBox_0079km_20041017T000000Z.nc'
 NOCOORDS_DATA         = BOX_DATA
-BOX_GRID              = ENV['HOME']+'/data/icon/AquaBox/AtlanticAquaBox_0079km.nc'
+BOX_GRID              = ENV['HOME']+'/local/data/icon/AquaBox/AtlanticAquaBox_0079km.nc'
 NOCOORDS_DATA_GRID    = BOX_GRID
-AQUABOX_SYM           = ENV['HOME']+'/data/icon/AquaBox/sym_t_mean_20y.nc'
-AQUABOX_ASYM          = ENV['HOME']+'/data/icon/AquaBox/asym_t_mean_20y.nc'
-AQUABOX_MPIOM         = ENV['HOME']+'/data/icon/mpiom_aquabox.nc'
-GLOBAL_4CALC_PSI      = ENV['HOME']+'/data/icon/avg.r11009.b4.2.2321.10ym.nc'
-AQUABOX_4CALC_PSI     = ENV['HOME']+'/data/icon/AquaBox/sym_u_vint_r360x180.nc'
-AQUABOX_ICONGRID      = ENV['HOME']+'/data/icon/AquaBox/uvint.atlbox.r16664.noshift.80-100ym.nc'
-AQUABOX_ACC           = ENV['HOME']+'/data/icon/oce_AquaAtlanticBoxACC.nc'
-AQUABOX_ACC_GRID      = ENV['HOME']+'/data/icon/AtlanticAquaBoxACC_0079km.nc'
-NOLAND                = ENV['HOME']+'/data/icon/noland/1.nc'
+AQUABOX_SYM           = ENV['HOME']+'/local/data/icon/AquaBox/sym_t_mean_20y.nc'
+AQUABOX_ASYM          = ENV['HOME']+'/local/data/icon/AquaBox/asym_t_mean_20y.nc'
+AQUABOX_MPIOM         = ENV['HOME']+'/local/data/icon/mpiom_aquabox.nc'
+GLOBAL_4CALC_PSI      = ENV['HOME']+'/local/data/icon/avg.r11009.b4.2.2321.10ym.nc'
+AQUABOX_4CALC_PSI     = ENV['HOME']+'/local/data/icon/AquaBox/sym_u_vint_r360x180.nc'
+AQUABOX_ICONGRID      = ENV['HOME']+'/local/data/icon/AquaBox/uvint.atlbox.r16664.noshift.80-100ym.nc'
+AQUABOX_ACC           = ENV['HOME']+'/local/data/icon/oce_AquaAtlanticBoxACC.nc'
+AQUABOX_ACC_GRID      = ENV['HOME']+'/local/data/icon/AtlanticAquaBoxACC_0079km.nc'
+NOLAND                = ENV['HOME']+'/local/data/icon/noland/1.nc'
 # add files for being transferes to remote host for remote testing
 [
   OCE_PLOT_TEST_FILE    ,
@@ -79,7 +79,7 @@ NOLAND                = ENV['HOME']+'/data/icon/noland/1.nc'
   AQUABOX_ACC           ,
   AQUABOX_ACC_GRID      ,
   NOLAND                ,
-].each {|f| @_FILES[f] = (`hostname`.chomp == 'thingol') ? f : [REMOTE_DATA_DIR,File.basename(f)].join(File::SEPARATOR) }
+].each {|f| @_FILES[f] = (`hostname`.chomp == 'luthien') ? f : [REMOTE_DATA_DIR,File.basename(f)].join(File::SEPARATOR) }
 
 COMPARISON            = {:oce => @_FILES[OCE_PLOT_TEST_FILE], :atm => @_FILES[ATM_PLOT_TEST_FILE]}
 COMPARISON_REG        = {:oce => @_FILES[OCE_REGPLOT_TEST_FILE], :atm => @_FILES[ATM_REGPLOT_TEST_FILE]}
@@ -965,8 +965,15 @@ task :check_noland, [:var] => @_FILES[NOLAND] do |t,args|
                   :mapLLC => '-60,0',:mapURC => '20,60',:showGrid => true, :rStrg => 'O',:bStrg => t.prerequisites[0]))
   show(scalarPlot(t.prerequisites[0], t.name ,args.var.to_s, :DEBUG => true,                     :showGrid => true, :rStrg => 'O',:bStrg => t.prerequisites[0]))
   show(scalarPlot(t.prerequisites[0], t.name ,args.var.to_s, :DEBUG => true,:maskName => 'wet_c',:showGrid => true, :rStrg => 'O',:bStrg => t.prerequisites[0]))
+  show(scalarPlot(t.prerequisites[0], t.name ,args.var.to_s, :DEBUG => true,:maskName => 'wet_c',:showGrid => true, :rStrg => 'O',:bStrg => t.prerequisites[0],:mapType => 'NHps'))
 end
 #==============================================================================
+task :test_hi do
+  ifile='/home/ram/local/data/icon/6611/hi.nc'
+
+  show(scalarPlot(ifile,'test_hi_6611','hi_acc', :DEBUG => true,:showGrid => false))
+  show(scalarPlot(ifile,'test_hi_6611','hi_acc', :DEBUG => true,:showGrid => true))
+end
 # Test collections
 desc "check python based PSI (bar. stream function) computation + plotting"
 task :test_psi => [:test_psi_box,:test_psi_global,:test_psi_box_on_icongrid,:test_psi_aspect,:test_psi_area] 
