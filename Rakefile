@@ -4,6 +4,7 @@ require 'pp'
 require 'cdo'
 require 'iconPlot'
 require 'jobqueue'
+require 'parallel'
 require 'tempfile'
 require 'minitest/autorun'
 require 'time'
@@ -337,14 +338,10 @@ task :test_plotlevels_oce do
   varname         = 'T'
   maxlev          = 10
   images, threads = [],[]
-  (0...maxlev).each {|lev|
+  images = Parallel.map((0...maxlev).to_a,:in_threads => 10) {|lev|
     otag          = "test_icon_oce_plotlevel_#{lev}"
-    threads << Thread.new(otag,varname,lev) {|ofile,varname,lev|
-      ofile = scalarPlot(@_FILES[OCE_PLOT_TEST_FILE],otag,varname,:levIndex =>lev)
-      @lock.synchronize{ images << ofile }
-    }
+    scalarPlot(@_FILES[OCE_PLOT_TEST_FILE],otag,varname,:levIndex =>lev)
   }
-  threads.map(&:join)
   show(*images)
 end
 desc "plot different levels of an atmosphere file"
@@ -352,14 +349,10 @@ task :test_plotlevels_atm do
   varname         = 'T'
   maxlev          = 10
   images, threads = [],[]
-  (0...maxlev).each {|lev|
+  images = Parallel.map((0...maxlev).to_a) {|lev|
     otag          = "test_icon_atm_plotlevel_#{lev}"
-    threads << Thread.new(otag,varname,lev) {|ofile,varname,lev|
-      ofile = scalarPlot(@_FILES[ATM_PLOT_TEST_FILE],otag,varname,:levIndex => lev,:atmLev =>'m')
-      @lock.synchronize{ images << ofile }
+    scalarPlot(@_FILES[ATM_PLOT_TEST_FILE],otag,varname,:levIndex => lev,:atmLev =>'m')
     }
-  }
-  threads.map(&:join)
   show(*images)
 end
 
@@ -369,8 +362,8 @@ desc "plot section of ocean and atmosphere (height, pressure and model level)"
 task :test_sections do
   images = []
   secopts = {
-    :secLC      => '0,80',
-    :secRC      => '0,-80',
+#   :secLC      => '0,80',
+#   :secRC      => '0,-80',
     :secLC      => '-45,-70',
     :secRC      =>  '30,80',
     :showSecMap => "True",
