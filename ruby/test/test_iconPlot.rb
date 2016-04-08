@@ -4,26 +4,27 @@ require "iconPlot"
 
 class TestIconPlot < Minitest::Test
 
-  CALLER                 = "/home/ram/src/git/icon/scripts/postprocessing/tools/contrib/nclsh"
-  PLOTTER                = "/home/ram/src/git/icon/scripts/postprocessing/tools/icon_plot.ncl"
-  PLOTLIB                = "/home/ram/src/git/icon/scripts/postprocessing/tools"
+  CALLER                 = "/home/ram/src/iconPlot/contrib/nclsh"
+  PLOTTER                = "/home/ram/src/iconPlot/icon_plot.ncl"
+  PLOTLIB                = "/home/ram/src/iconPlot"
   LS                     = 'ls -crtlh'
-  OCE_PLOT_TEST_FILE     = ENV['HOME']+'/data/icon/oce.nc'
-  OCELSM_PLOT_TEST_FILE  = ENV['HOME']+'/data/icon/oce_lsm.nc'
-  OCELONG_PLOT_TEST_FILE = ENV['HOME']+'/data/icon/oceLong.nc'
-  ATM_PLOT_TEST_FILE     = ENV['HOME']+'/data/icon/atm.nc'
-  OCE_REGPLOT_TEST_FILE  = ENV['HOME']+'/data/icon/regular_oce.nc' #remapnn,r180x90
-  ATM_REGPLOT_TEST_FILE  = ENV['HOME']+'/data/icon/regular_atm.nc' #remapnn,n63 (no sections), r180x90 (with sections)
+  OCE_PLOT_TEST_FILE     = ENV['HOME']+'/local/data/icon/oce.nc'
+  OCELSM_PLOT_TEST_FILE  = ENV['HOME']+'/local/data/icon/oce_lsm.nc'
+  OCELONG_PLOT_TEST_FILE = ENV['HOME']+'/local/data/icon/oceLong.nc'
+  ATM_PLOT_TEST_FILE     = ENV['HOME']+'/local/data/icon/atm.nc'
+  OCE_REGPLOT_TEST_FILE  = ENV['HOME']+'/local/data/icon/regular_oce.nc' #remapnn,r180x90
+  ATM_REGPLOT_TEST_FILE  = ENV['HOME']+'/local/data/icon/regular_atm.nc' #remapnn,n63 (no sections), r180x90 (with sections)
   OFMT                   = 'png'
   PLOT_CMD               = 'sxiv'
   CDO                    = ENV['CDO'].nil? ? 'cdo' : ENV['CDO']
-  if 'thingol' == `hostname`.chomp
+  if 'luthien' == `hostname`.chomp
     def test_simple
       ip = IconPlot.new(CALLER,PLOTTER,PLOTLIB,OFMT,PLOT_CMD,CDO,true)
       ip.debug = true
       ofile          = 'test_icon_plot'
       ip.show(ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile+'_00',"T",:levIndex => 0))
       ip.show(ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile+'_01',"T",:levIndex => 2))
+      return
       ip.show(ip.vectorPlot(OCE_PLOT_TEST_FILE,   ofile+'_02',"u-veloc v-veloc",:levIndex => 2))
       ip.show(ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile+'_03',"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:mapType => "ortho"))
       ip.show(ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile+'_04',"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:secLC => "-20,-60", :secRC => "-20,60"))
