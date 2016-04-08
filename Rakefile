@@ -4,10 +4,11 @@ require 'pp'
 require 'cdo'
 require 'iconPlot'
 require 'jobqueue'
-require 'parallel'
+require 'parallelQueue'
 require 'tempfile'
 require 'minitest/autorun'
 require 'time'
+require 'colorize'
 
 #==============================================================================
 def isLocal?; `hostname`.chomp == 'thingol'; end
@@ -91,19 +92,19 @@ CLEAN.add(*Dir.glob(["test_*.png","remapnn_*nc","zonmean_*.nc"]))
 desc "check if all input files are available at the correct place"
 task :checkInput do
   @_FILES.each {|_,file|
-    puts "Search file:'#{file}' ............... #{File.exist?(file) ? '   found' : ' NOT found'}"
+    puts "Search file:'#{file}' ............... #{File.exist?(file) ? '   found'.colorize(:green) : ' NOT found'.colorize(:red)}"
   }
 end
 
 desc "move test input to remote machine"
 task :syncInput => [:checkInput] do
-  if `hostname`.chomp == 'thingol' then
-    user, host, port, remoteDir = 'm300064','localhost',40022,REMOTE_DATA_DIR
-    jq = JobQueue.new
+  if `hostname`.chomp == 'luthien' then
+    user, host, remoteDir = 'm300064','thunder5.zmaw.de',REMOTE_DATA_DIR
+    jq = ParallelQueue.new
     # use scp for file copy
     @_FILES.each {|file,_| 
       if File.exist?(file) then
-        jq.push {sh "rsync -avz  -e 'ssh -p #{port}' #{file} #{user}@#{host}:#{remoteDir}" }
+        jq.push {sh "rsync -avz  -e ssh #{file} #{user}@#{host}:#{remoteDir}" }
       else
         warn "Cannot find file #{file}"
         exit
@@ -232,7 +233,7 @@ desc "select regions"
 task :test_mapselect do
   ofile          = 'test_mapSelect_'
   varname        = 'ELEV'
-  jq = JobQueue.new
+  jq = ParallelQueue.new
   jq.push {show(scalarPlot(@_FILES[OCE_PLOT_TEST_FILE],ofile+rand.to_s,varname,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0'))}
   jq.push {show(scalarPlot(@_FILES[OCE_PLOT_TEST_FILE],ofile+rand.to_s,varname,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c'))}
   jq.push {show(scalarPlot(@_FILES[OCE_PLOT_TEST_FILE],ofile+rand.to_s,varname,:mapLLC => '-100.0,0.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c',:showGrid => true))}
