@@ -24,6 +24,7 @@ OFMT                  = 'png'
 DEFAULT_VARNAME       = 'T'
 PLOT_CMD              = 'sxiv'#isLocal? ? 'sxiv' : 'eog'
 CDO                   = ENV['CDO'].nil? ? 'cdo' : ENV['CDO']
+@cdo                  = Cdo.new(cdo: CDO)
 REMOTE_DATA_DIR       = '/home/zmaw/m300064/thunder/data/testing'
 
 OCE_PLOT_TEST_FILE    = ENV['HOME']+'/local/data/icon/oce.nc'
@@ -244,21 +245,20 @@ task :test_mask_internal do
   ifile,ofile,varname          = @_FILES[OCE_PLOT_TEST_FILE],'test_mask','ELEV'
   ifile,ofile,varname          = @_FILES[OCE_R2B2],'test_mask','t_acc'
 
-  q = JobQueue.new
+  q = ParallelQueue.new
   q.push { show(scalarPlot(ifile,ofile+"_maskOnly",varname,:maskName => 'wet_c'))  }
   q.push { show(scalarPlot(ifile,ofile+"_maskPlusGrid",varname,:maskName => 'wet_c',:showGrid => true))  }
   q.push { show(scalarPlot(ifile,ofile+"_ortho",varname,:maskName => 'wet_c',:showGrid => true,:mapType => 'ortho',:centerLon => 0.0, :centerLat => 90.0))  }
   q.push { show(scalarPlot(ifile,ofile+"_NHps", varname,:maskName => 'wet_c',:showGrid => true,:mapType => 'NHps'))  }
-  q.push { show(scalarPlot('/home/ram/data/icon/r16777_output.nc',ofile+'error_on_thunder','s_acc',:maskName =>'wet_c')) }
-  q.run
+  images = q.run
 end
 desc "masking with real missing values /_FillValue"
 task :test_mask_by_division do
   ifile,ofile,varname          = @_FILES[OCE_PLOT_TEST_FILE],'test_mask','ELEV'
   ifile,ofile,varname          = @_FILES[OCE_R2B2],'test_mask','t_acc'
 
-  q = JobQueue.new
-  ifile = Cdo.div(input: " -selname,#{varname} #{ifile} #{%w[h h_acc ELEV].include?(varname) ? "-sellevidx,1" : ''} -selname,wet_c #{ifile}",output: "test_mask_by_div.nc")
+  q = ParallelQueue.new
+  ifile = @cdo.div(input: " -selname,#{varname} #{ifile} #{%w[h h_acc ELEV].include?(varname) ? "-sellevidx,1" : ''} -selname,wet_c #{ifile}",output: "test_mask_by_div.nc")
   q.push { show(scalarPlot(ifile,ofile+"_byDiv_maskOnly",varname,))  }
   q.push { show(scalarPlot(ifile,ofile+"_byDiv_maskPlusGrid",varname,:showGrid => true))  }
   q.push { show(scalarPlot(ifile,ofile+"_byDiv_ortho",varname,:showGrid => true,:mapType => 'ortho',:centerLon => 0.0, :centerLat => 90.0))  }
@@ -285,8 +285,8 @@ desc "perform halflog plot"
 task :test_halflog do
   ofile          = 'test_halflog'
   varname        = 'T'
-  Cdo.debug=true
-  tfile = Cdo.mulc(100,:input => "-subc,5 -abs -selname,T #{@_FILES[OCE_PLOT_TEST_FILE]}")
+  @cdo.debug=true
+  tfile = @cdo.mulc(100,:input => "-subc,5 -abs -selname,T #{@_FILES[OCE_PLOT_TEST_FILE]}")
   image = scalarPlot(tfile,ofile,varname,:selMode =>'halflog',:minVar =>-1, :maxVar => 1000, :atmLe => 'm',
                                                 :mapLLC => '-10.0,-80.0' ,:mapURC =>'100.0,-10.0')
   show(image)
@@ -396,7 +396,7 @@ task :test_masked_section => @_FILES[OCELSM_PLOT_TEST_FILE] do |t|
   }
   varname = 's_acc'
   ifile = t.prerequisites[0]
-  ifile_masked = Cdo.div(input: "-selname,#{varname} #{ifile} -selname,wet_c -seltimestep,1 #{ifile}",output: "#{t.name}_masked.nc")
+  ifile_masked = @cdo.div(input: "-selname,#{varname} #{ifile} -selname,wet_c -seltimestep,1 #{ifile}",output: "#{t.name}_masked.nc")
   # enable regular grided data
   @plotter.isIcon = false
   @plotter.debug  = true
@@ -425,10 +425,10 @@ end
 desc "Compare sections on great circle and straight lines"
 task :test_secmode => @_FILES[OCELSM_PLOT_TEST_FILE] do |t|
   # create missing values
-  maskedInput = Cdo.div(input: " -selname,t_acc #{@_FILES[OCELSM_PLOT_TEST_FILE]} -selname,wet_c -seltimestep,1 #{@_FILES[OCELSM_PLOT_TEST_FILE]}",
+  maskedInput = @cdo.div(input: " -selname,t_acc #{@_FILES[OCELSM_PLOT_TEST_FILE]} -selname,wet_c -seltimestep,1 #{@_FILES[OCELSM_PLOT_TEST_FILE]}",
                         output: "test_secmode_maskedInput.nc") if false
   maskedInput = t.prerequisites[0]
-  q = JobQueue.new(2)
+  q = ParallelQueue.new
 
   {
     :atlantic      => [-45,-70,30,80],
@@ -470,7 +470,7 @@ end
 # vector plots from ICON input
 desc "plot vectors of ocean input"
 task :test_vector_oce do
-  jq = JobQueue.new
+  jq = ParallelQueue.new
   jq.push { showVector(@_FILES[OCE_PLOT_TEST_FILE],'test_vector_oce_0', 'u-veloc v-veloc') }
   jq.push { showVector(@_FILES[OCE_PLOT_TEST_FILE],'test_vector_oce_1', 'u-veloc v-veloc',:mapType     => 'ortho') }
   jq.push { showVector(@_FILES[OCE_PLOT_TEST_FILE],'test_stream_oce_2', 'u-veloc v-veloc',:streamLine  => 'True') }
@@ -484,7 +484,7 @@ task :test_vector_atm do
   ofile = 'test_vector_atm'
   images  =  []
 
-  jq = JobQueue.new
+  jq = ParallelQueue.new
   jq.push { showVector(@_FILES[ATM_PLOT_TEST_FILE],ofile+'0','U V',        :vecRefLength => 0.01) }
   jq.push { showVector(@_FILES[ATM_PLOT_TEST_FILE],ofile+'1','U V',        :vecRefLength => 0.01,:mapType => 'NHps') }
   jq.push { showVector(@_FILES[ATM_PLOT_TEST_FILE],ofile+'_stream_0','U V',:streamLine   => "True") }
@@ -681,7 +681,7 @@ if 'thingol' == `hostname`.chomp
   desc "test show grid plot with ocean, atmosphere, regular grid and ortho. projection"
   task :test_show_grid do
     require 'jobqueue'
-    jq = JobQueue.new
+    jq = ParallelQueue.new
 #   jq.push{ show(defaultPlot,@_FILES[OCE_PLOT_TEST_FILE]   ,'test_show_grid_oce',:showGrid => "True",:apLLC => '-10.0,-40.0' ,:mapURC =>'10.0,-10.0')
 #   jq.push{ show(defaultPlot(@_FILES[OCE_PLOT_TEST_FILE]   ,'test_show_grid_oce_ortho',:showGrid => "True",:mapLLC => '-30,-88', :mapURC => '30,88',:mapType => "ortho")
     jq.push{ show(scalarPlot(@_FILES[OCELSM_PLOT_TEST_FILE],'test_show_grid_oce_cell','t_acc',:showGrid => "True",:mapLLC => '-30,-88', :mapURC => '30,88')) }
@@ -721,7 +721,7 @@ end
 
 desc "test with data on a non-global grid"
 task :test_non_global do
-  q  = JobQueue.new(2)
+  q  = ParallelQueue.new
   ifile = @_FILES[TOPO_NONGLOBAL]
   q.push { system("qiv #{(scalarPlot(ifile,'test_non_global','topo',:DEBUG => true,:isIcon => false))}") }
   q.push { system("ncview #{ifile}") }
@@ -730,10 +730,10 @@ end
 
 desc "test netcdf4 input (compressed, non compresses"
 task :test_nc4 do
-  nc   = Cdo.topo(:options => '-f nc',:output => 'topo_nc.nc')
-  nc4  = Cdo.topo(:options => '-f nc4',:output => 'topo_nc4.nc')
-  nc4z = Cdo.topo(:options => '-f nc4 -z zip',:output => 'topo_nc4z.nc')
-  oceanNC4Z = Cdo.copy(:options => '-f nc4 -z zip',:input => @_FILES[OCELSM_PLOT_TEST_FILE], :output => 'oceanNC4Z.nc')
+  nc   = @cdo.topo(:options => '-f nc',:output => 'topo_nc.nc')
+  nc4  = @cdo.topo(:options => '-f nc4',:output => 'topo_nc4.nc')
+  nc4z = @cdo.topo(:options => '-f nc4 -z zip',:output => 'topo_nc4z.nc')
+  oceanNC4Z = @cdo.copy(:options => '-f nc4 -z zip',:input => @_FILES[OCELSM_PLOT_TEST_FILE], :output => 'oceanNC4Z.nc')
 
 # show(scalarPlot(nc ,'test_nc_TOPO',   'topo',:isIcon => false))
 # show(scalarPlot(nc4,'test_nc4_TOPO',  'topo',:isIcon => false))
@@ -758,7 +758,7 @@ end
 desc "check icon_plot_test.ncl"
 task :test_paths ,:loc do |t,args|
   require './findPath'
-  q                    = JobQueue.new
+  q                    = ParallelQueue.new
   lock                 = Mutex.new
   paths                = IconPathsAlongCells.getEdgesAndVerts(@_FILES[ICON_GRID])
   ofiles, allPathsFile = [], 'test_paths.pdf'
@@ -781,7 +781,7 @@ end
 
 desc "Check plots for data with non-given coordinates attribute, but given gridFile"
 task :test_no_coordinates do
-  ntime = Cdo.ntime(input: @_FILES[NOCOORDS_DATA])[0].to_i
+  ntime = @cdo.ntime(input: @_FILES[NOCOORDS_DATA])[0].to_i
   show(scalarPlot(@_FILES[NOCOORDS_DATA],'test_no_coords','t_acc',
                   :DEBUG => true,:timeStep => ntime - 1,:gridFile => @_FILES[NOCOORDS_DATA_GRID]))
   show(scalarPlot(@_FILES[NOCOORDS_DATA],'test_no_coords','t_acc',
