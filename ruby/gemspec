@@ -3,7 +3,7 @@ $:.unshift File.join(File.dirname(__FILE__),"..","lib")
 
 spec = Gem::Specification.new do |s|
   s.name              = "iconPlot"
-  s.version           = '0.0.9'
+  s.version           = '0.1.0'
   s.platform          = Gem::Platform::RUBY
   s.files             = ["lib/iconPlot.rb"] + ["gemspec"] + ["bin/nclsh"] + Dir.glob("lib/*ncl")
   s.executables       << 'nclsh'
