@@ -1,5 +1,6 @@
-$:.unshift File.join(File.dirname(__FILE__),"..","lib")
 require "minitest/autorun"
+require 'parallelQueue'
+$:.unshift File.join(File.dirname(__FILE__),"..","lib")
 require "iconPlot"
 
 class TestIconPlot < Minitest::Test
@@ -22,32 +23,29 @@ class TestIconPlot < Minitest::Test
       ip = IconPlot.new(CALLER,PLOTTER,PLOTLIB,OFMT,PLOT_CMD,CDO,true)
       ip.debug = true
       ofile          = 'test_icon_plot'
-      ip.show(ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile+'_00',"T",:levIndex => 0))
-      ip.show(ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile+'_01',"T",:levIndex => 2))
-      return
-      ip.show(ip.vectorPlot(OCE_PLOT_TEST_FILE,   ofile+'_02',"u-veloc v-veloc",:levIndex => 2))
-      ip.show(ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile+'_03',"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:mapType => "ortho"))
-      ip.show(ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile+'_04',"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:secLC => "-20,-60", :secRC => "-20,60"))
-      ip.show(ip.scalarPlot(OCELSM_PLOT_TEST_FILE,ofile+'_05',"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:secLC => "-20,-60", :secRC => "-20,60",:maskName => 'wet_c'))
-      ip.show(ip.scalarPlot(OCELSM_PLOT_TEST_FILE,ofile+'_05',"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:secLC => "-50,-60", :secRC => "0,60",:maskName => 'wet_c',:secMode => 'circle'))
-      ip.show(ip.scalarPlot(OCELSM_PLOT_TEST_FILE,ofile+'_06',"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:maskName => 'wet_c'))
-      ip.show(ip.scalarPlot(OCELSM_PLOT_TEST_FILE,ofile+'_07',"T",:levIndex => 2,:maskName => 'wet_c'))
-      ip.isIcon = false
-      ip.show(ip.scalarPlot("remapnn_r90x45_oce.nc","reg_"+ofile,"T",:levIndex => 2,:mapType => "ortho"))
-      ip.show(ip.scalarPlot("remapnn_r90x45_oce.nc","reg_"+ofile,"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:mapType => "ortho"))
-      ip.show(ip.scalarPlot("remapnn_r90x45_oce_lsm.nc","reg_lsm_"+ofile,"T",:levIndex => 2,:mapType => "ortho",:maskName => 'wet_c'))
-      ip.show(ip.scalarPlot("remapnn_r90x45_oce_lsm.nc","reg_lsm_"+ofile,"wet_c",:mapType => "ortho"))
-      ip.show(ip.scalarPlot("remapnn_r90x45_oce_lsm.nc","reg_lsm_"+ofile,"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:mapType => "ortho",:maskName => 'wet_c'))
-      ip.show(ip.scalarPlot("remapnn_r90x45_oce_lsm.nc","reg_lsm_"+ofile,"wet_c",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:mapType => "ortho",:maskName => 'wet_c'))
+      q = ParallelQueue.new
+      q.push {ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile+'_00',"T",:levIndex => 0) }
+      q.push {ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile+'_01',"T",:levIndex => 2) }
+      q.push {ip.vectorPlot(OCE_PLOT_TEST_FILE,   ofile+'_02',"u-veloc v-veloc",:levIndex => 2) }
+      q.push {ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile+'_03',"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:mapType => "ortho") }
+      q.push {ip.scalarPlot(OCE_PLOT_TEST_FILE,   ofile+'_04',"T",:vecVars => "u-veloc,v-veloc",:levIndex => 2,:secLC => "-20,-60", :secRC => "-20,60") }
+      q.push {ip.scalarPlot(OCELSM_PLOT_TEST_FILE,ofile+'_05',"T",:vecVars => "u,v",:levIndex => 2,:secLC => "-20,-60", :secRC => "-20,60",:maskName => 'wet_c') }
+      q.push {ip.scalarPlot(OCELSM_PLOT_TEST_FILE,ofile+'_05',"T",:vecVars => "u,v",:levIndex => 2,:secLC => "-50,-60", :secRC => "0,60",:maskName => 'wet_c',:secMode => 'circle') }
+      q.push {ip.scalarPlot(OCELSM_PLOT_TEST_FILE,ofile+'_06',"T",:vecVars => "u,v",:levIndex => 2,:maskName => 'wet_c') }
+      q.push {ip.scalarPlot(OCELSM_PLOT_TEST_FILE,ofile+'_07',"T",:levIndex => 2,:maskName => 'wet_c') }
+
+      images = q.run
+
+      ip.show(*images)
     end
   end
-  def test_defaults
+  def _test_defaults
     p = IconPlot.new
     assert_includes(p.caller.split(File::SEPARATOR),'gems')
     assert_includes(p.plotter.split(File::SEPARATOR),'gems')
     assert_includes(p.libdir.split(File::SEPARATOR),'gems')
   end
-  def test_levelPlot
+  def _test_levelPlot
     p = IconPlot.new
     p.show( p.levelPlot(OCELONG_PLOT_TEST_FILE,'test_levelPlot_00','T',:operation => :fldmax))
   end
