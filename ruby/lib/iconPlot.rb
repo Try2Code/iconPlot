@@ -9,13 +9,15 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
   def initialize(*args)
     super(*args)
     
+    cdoPath = ENV['CDO'].nil? ? 'cdo' : ENV['CDO']
+
     defaults = {
       :caller  => Gem.bin_path('iconPlot','nclsh'),
       :plotter => Gem.find_files("icon_plot.ncl")[0],
       :libdir  => File.dirname(Gem.find_files("icon_plot.ncl")[0]),
       :otype   => 'png',
       :display => 'sxiv',
-      :cdo     => ENV['CDO'].nil? ? 'cdo' : ENV['CDO'],
+      :cdo     => Cdo.new(cdo: cdoPath),
       :isIcon  => true,
       :debug   => false
     }
@@ -41,7 +43,10 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
     cmd << " -altLibDir=#{self.libdir} #{varIdent} -iFile=#{ifile} -oFile=#{ofile} -oType=#{self.otype}"
     cmd << " -isIcon" if self.isIcon
     cmd << " -DEBUG"  if self.debug
-    opts.each {|k,v| cmd << " -"<< [k,v].join('=') }
+    opts.each {|k,v| 
+      v = '"'+v+'"' if (:tStrg == k and not ['"',"'"].include?(v.strip[0]))
+      cmd << " -"<< [k,v].join('=')
+    }
     puts cmd if self.debug
     out = IO.popen(cmd).read
     puts out if self.debug
@@ -67,8 +72,8 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
       warn "Variable cannot be found!"
       exit -1
     end
-    Cdo.debug = true
-    unit = Cdo.showunit(:input => "-selname,#{varname} #{ifile}").first
+    self.cdo.debug = true
+    unit = self.cdo.showunit(:input => "-selname,#{varname} #{ifile}").first
     ExtCsvDiagram.plot_xy(icon,"datetime",varname,
                           "ICON: #{operation} on #{varname} (file:#{ifile})", # Change title here
                         :label_position => 'below',:skipColumnCheck => true,
@@ -85,7 +90,7 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
   def scatterPlot(ifile,ofile,xVarname,yVarname,opts={})
     # is there a variable which discribes different regions in the ocean
     regionVar = opts[:regionVar].nil? ? 'rregio_c' : opts[:regionVar]
-    hasRegion = Cdo.showname(:input => ifile).join.split.include?(regionName)
+    hasRegion = self.cdo.showname(:input => ifile).join.split.include?(regionName)
     unless hasRegion
       warn "Variable '#{regionName}' for showing regions is NOT found in the input '#{ifile}'!"
       warn "Going on without plotting regions!"
@@ -115,8 +120,8 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
 
     # read the date
     IO.popen("echo 'date|time|depth|#{varname}' > #{dataFile}")
-    Cdo.debug = true
-    Cdo.outputkey('date,time,level,value', 
+    self.cdo.debug = true
+    self.cdo.outputkey('date,time,level,value', 
                   :input => "-#{operation} -selname,#{varname} #{ifile} >>#{dataFile} 2>/dev/null")
 
     # postprocessing for correct time values
