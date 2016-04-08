@@ -14,7 +14,7 @@ def isLocal?; `hostname`.chomp == 'thingol'; end
 #==============================================================================
 @_FILES = {}
 SRC                   = ["icon_plot.ncl","icon_plot_lib.ncl"]
-HOSTS                 = ["m300064@blizzard.dkrz.de"]
+HOSTS                 = ["m300064@mistral.dkrz.de"]
 DIR                   = '/pool/data/ICON/tools'
 DST                   = HOSTS.map {|v| v + ':' + DIR}
 CP                    = 'scp -p'
@@ -195,7 +195,7 @@ task :check do
   SRC.each {|src| HOSTS.each {|host| sh ['ssh',host,['"',LS,DIR,'"'].join(' ')].join(' ') }}
 end
 
-desc "install plotting tools in /pool on blizzard"
+desc "install plotting tools in /pool on mistral"
 task :install do
   SRC.each {|src| DST.each {|dst| sh [CP,src,dst].join(' ') }}
 end
