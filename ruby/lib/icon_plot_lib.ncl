@@ -630,24 +630,24 @@ end
 ;---------------------------------------------------------------
 ; set new filename bases on the input filename and intput type
 undef("setNewFilename")
-function setNewFilename(filename,tag,itype,varname,atmlev)
+function setNewFilename(filename,tag,itype,atmlev)
 begin
   atmtag = ""
   if (itype .eq. "atm") atmtag = "atmlev"+str_capital(atmlev)+"_" end if
-  newFilename = tag+"_"+varname+"_"+atmtag+systemfunc("basename "+filename)
+  newFilename = tag+"_"+atmtag+systemfunc("basename "+filename)
   return newFilename
 end
 ;---------------------------------------------------------------
 ; set filename for the automatically remapped file
 undef("setRemapFilename")
-function setRemapFilename(filename,itype,resolution,varname,atmlev,operator)
+function setRemapFilename(filename,itype,resolution,atmlev,operator)
 begin
-  return setNewFilename(filename,operator+"_"+resolution,itype,varname,atmlev)
+  return setNewFilename(filename,operator+"_"+resolution,itype,atmlev)
 end
 undef("setZonmeanFilename")
 function setZonmeanFilename(filename,itype,atmlev)
 begin
-  return setNewFilename(filename,"zonmean",itype,"",atmlev)
+  return setNewFilename(filename,"zonmean",itype,atmlev)
 end
 ;---------------------------------------------------------------
 ; Check, if two files have the same number of time steps. Exit otherwise
@@ -907,7 +907,7 @@ end
 ;---------------------------------------------------------------
 ; Create a default NCL resource
 undef("setDefaultResource")
-function setDefaultResource(verticallabelbar,withLines,withLineLabels,fillmode,maptype)
+function setDefaultResource(verticallabelbar,withLines,withLineLabels,fillmode,maptype,makeYLinear)
 begin
   resource                          = True
   resource@gsnMaximize              = False
@@ -960,11 +960,14 @@ begin
   resource@mpGreatCircleLinesOn = True
   resource@stMinArrowSpacingF   = 0.001
 
+  ; linearize y axis if desired ===============================================
+  resource@gsnYAxisIrregular2Linear = makeYLinear
+
   return resource
 end
 ;---------------------------------------------------------------
 undef("setDefaultSectionResource")
-function setDefaultSectionResource(points,secpoints,seclc,secrc,withLines,withLineLabels)
+function setDefaultSectionResource(points,secpoints,seclc,secrc,withLines,withLineLabels,makeYLinear)
 begin
   resource                              = True;           plot mods desired
   resource@gsnFrame                     = False;                don't turn page yet
@@ -986,7 +989,8 @@ begin
   resource@lbLabelAutoStride            = True;          nice label bar label stride
   resource@gsnSpreadColors              = True;          use full range of colormap
   resource@lbOrientation                = "vertical";    vertical label bar
-  resource@pmLabelBarOrthogonalPosF     = -0.05;         move label bar closer to plot
+  resource@pmLabelBarOrthogonalPosF     = -0.04;         move label bar closer to plot
+  resource@lbTitleString      = "kg/m^3"
   resource@lbTitlePosition              = "Bottom"
 ;   resource@gsnYAxisIrregular2Log      = True
 
@@ -1007,6 +1011,10 @@ begin
 
 ; lines/labels inside the plot ================================================
   setLineAndLineLabels(resource,withLines,withLineLabels)
+
+  ; linearize y axis if desired ===============================================
+  resource@gsnYAxisIrregular2Linear = makeYLinear
+
   return resource
 end
 ;---------------------------------------------------------------
@@ -1018,7 +1026,7 @@ begin
   resource@vcVectorDrawOrder  = "Postdraw"
   resource@vcFillArrowWidthF  = 12.0
   resource@lbOrientation      = "Vertical"
-  resource@lbTitleString      = "C"
+  resource@lbTitleString      = "kg/m^3"
   resource@lbTitlePosition    = "Left"
   resource@cnInfoLabelOn      = False
   resource@lbTitleFontHeightF = 0.02
@@ -1031,7 +1039,7 @@ undef("setDefaultColors")
 procedure setDefaultColors(resource,minval,maxval,debug)
 begin
 ; white is color 135
-  if ((minval*maxval) .LT. 0.0) then ; data goes fro positiv to negative or vs.
+  if ((minval*maxval) .LT. 0.0) then ; data goes from positiv to negative or vs.
     if (abs(maxval) .GT. abs(minval)) then
       resource@gsnSpreadColorStart = 135  - toint(126*(abs(minval)/abs(maxval)))
       resource@gsnSpreadColorEnd   = 255
@@ -1194,7 +1202,7 @@ end
 undef("setSectionVertLabel")
 procedure setSectionVertLabel(resource,itype,atmlev)
 begin
-  resource@lbTitleString     = "[C]"
+  resource@lbTitleString     = "[kg/m^3]"
   label = ""
   reversYAxis = True
   if (itype .eq. "atm") then
@@ -1324,10 +1332,10 @@ undef("checkMinMaxVar")
 procedure checkMinMaxVar(minvar,maxvar)
 begin
   if ( (.not. ismissing(minvar)) .and. (.not. ismissing(maxvar)) ) then
-  if ( minvar .gt. maxvar ) then
-    print("minVar has to be larger than maxVar")
-    exit
-  end if
+    if ( minvar .gt. maxvar ) then
+      print("minVar has to be larger than maxVar")
+      exit
+    end if
   end if
 end
 ;---------------------------------------------------------------
@@ -1536,6 +1544,7 @@ begin
   dist        = gc_latlon(startLat,startLon,endLat,endLon,npoints,2)
   distRes@lat = dist@gclat
   distRes@lon = dist@gclon
+
   return distRes
 end
 ;---------------------------------------------------------------
@@ -1935,24 +1944,26 @@ begin
    "cnFillColors" : colors
   end getvalues
   ;---All triangles less than lowest level
-  vind = ind(var .lt. levels(0))
-  if(.not.all(ismissing(vind))) then
-    gscolors(vind) = colors(0)
+  vindStart = ind(var .lt. levels(0))
+  if(.not.all(ismissing(vindStart))) then
+    gscolors(vindStart) = colors(0)
   end if
 
   ;---All triangles inbetween levels
   do i = 1, dimsizes(levels) - 1
-    vind := ind(var .ge. levels(i-1) .and. var .lt. levels(i))
-    if(.not.all(ismissing(vind))) then
-      gscolors(vind) = colors(i)
+    ;print("index = "+s)
+    ;print(dimsizes(ind(var .ge. levels(i-1) .and. var .lt. levels(i))))
+    vindMiddle = ind(var .ge. levels(i-1) .and. var .lt. levels(i))
+    if(.not.all(ismissing(vindMiddle))) then
+      gscolors(vindMiddle) = colors(i)
     end if
+    delete(vindMiddle)
   end do
 
   ;---All triangles higher than highest level
-  delete(vind)
-  vind = ind(var .ge. levels(dimsizes(levels)-1))
-  if(.not.all(ismissing(vind))) then
-    gscolors(vind) = colors(dimsizes(levels)-1)
+  vindEnd = ind(var .ge. levels(dimsizes(levels)-1))
+  if(.not.all(ismissing(vindEnd))) then
+    gscolors(vindEnd) = colors(dimsizes(levels)-1)
   end if
 
   pres@gsColors = gscolors

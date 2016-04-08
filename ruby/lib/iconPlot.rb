@@ -46,6 +46,8 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
     cmd << " -DEBUG"  if self.debug
     opts.each {|k,v| 
       v = '"'+v+'"' if (:tStrg == k and not ['"',"'"].include?(v.strip[0]))
+      v = 'True' if v == true
+      v = 'False' if v == false
       cmd << " -"<< [k,v].join('=')
     }
     puts cmd if self.debug

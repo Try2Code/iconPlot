@@ -84,7 +84,7 @@ NOLAND                = ENV['HOME']+'/local/data/icon/noland/1.nc'
   NOLAND                ,
 ].each {|f| @_FILES[f] = (`hostname`.chomp == 'luthien') ? f : [REMOTE_DATA_DIR,File.basename(f)].join(File::SEPARATOR) }
 
-COMPARISON            = {:oce => @_FILES[OCE_PLOT_TEST_FILE], :atm => @_FILES[ATM_PLOT_TEST_FILE]}
+COMPARISON            = {:oce => @_FILES[OCELONG_PLOT_TEST_FILE], :atm => @_FILES[ATM_PLOT_TEST_FILE]}
 COMPARISON_REG        = {:oce => @_FILES[OCE_REGPLOT_TEST_FILE], :atm => @_FILES[ATM_REGPLOT_TEST_FILE]}
 
 
@@ -373,11 +373,12 @@ task :test_sections do
   COMPARISON.each {|itype,ifile|
     ofile = "test_section_#{itype.to_s}"
     if itype == :atm
-      scalarPlot(ifile,ofile+'h',DEFAULT_VARNAME,secopts.merge(:atmLev => "h",:tStrg => "atm: height levels"));images << ofile+'h'
-      scalarPlot(ifile,ofile+'p',DEFAULT_VARNAME,secopts.merge(:atmLev => "p",:tStrg => "atm: pressure levels"));images << ofile+'p'
-      scalarPlot(ifile,ofile+'m',DEFAULT_VARNAME,secopts.merge(:atmLev => "m",:tStrg => "atm: model levels"));images << ofile+'m'
+ #    scalarPlot(ifile,ofile+'h',DEFAULT_VARNAME,secopts.merge(:atmLev => "h",:tStrg => "atm: height levels"));images << ofile+'h'
+ #    scalarPlot(ifile,ofile+'p',DEFAULT_VARNAME,secopts.merge(:atmLev => "p",:tStrg => "atm: pressure levels"));images << ofile+'p'
+ #    scalarPlot(ifile,ofile+'m',DEFAULT_VARNAME,secopts.merge(:atmLev => "m",:tStrg => "atm: model levels"));images << ofile+'m'
     else
-      scalarPlot(ifile,ofile,DEFAULT_VARNAME,secopts.merge(:tStrg => 'oce: ocean depth')); images << ofile
+      #scalarPlot(ifile,ofile,DEFAULT_VARNAME,secopts.merge(:tStrg => 'oce: ocean depth')); images << ofile
+      scalarPlot(ifile,ofile,DEFAULT_VARNAME,secopts.merge(:tStrg => 'oce: ocean depth',:makeYLinear => true)); images << ofile
     end
   }
   images.map! {|i| i+= ".#{OFMT}"}
@@ -863,10 +864,8 @@ task :test_grid_plot => [@_FILES[AQUABOX_ASYM],@_FILES[OCELSM_PLOT_TEST_FILE]] d
   puts "# Time for box   plot: #{timeBox}"
   puts "# Time for globe plot: #{timeGlobe}"
   puts "#================================================================================="
-# q = JobQueue.new(2)
-# q.push { show(boxImage) }
-# q.push { show(globeImage) }
-# q.run
+  show(boxImage)
+  show(globeImage)
 end
 desc "check plot for box setup incl. ACC"
 task :test_box_acc => [@_FILES[AQUABOX_ACC],@_FILES[AQUABOX_ACC_GRID]] do |t|
