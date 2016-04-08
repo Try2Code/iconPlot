@@ -630,24 +630,24 @@ end
 ;---------------------------------------------------------------
 ; set new filename bases on the input filename and intput type
 undef("setNewFilename")
-function setNewFilename(filename,tag,itype,atmlev)
+function setNewFilename(filename,tag,itype,varname,atmlev)
 begin
   atmtag = ""
   if (itype .eq. "atm") atmtag = "atmlev"+str_capital(atmlev)+"_" end if
-  newFilename = tag+"_"+atmtag+systemfunc("basename "+filename)
+  newFilename = tag+"_"+varname+"_"+atmtag+systemfunc("basename "+filename)
   return newFilename
 end
 ;---------------------------------------------------------------
 ; set filename for the automatically remapped file
 undef("setRemapFilename")
-function setRemapFilename(filename,itype,resolution,atmlev,operator)
+function setRemapFilename(filename,itype,resolution,varname,atmlev,operator)
 begin
-  return setNewFilename(filename,operator+"_"+resolution,itype,atmlev)
+  return setNewFilename(filename,operator+"_"+resolution,itype,varname,atmlev)
 end
 undef("setZonmeanFilename")
 function setZonmeanFilename(filename,itype,atmlev)
 begin
-  return setNewFilename(filename,"zonmean",itype,atmlev)
+  return setNewFilename(filename,"zonmean",itype,"",atmlev)
 end
 ;---------------------------------------------------------------
 ; Check, if two files have the same number of time steps. Exit otherwise

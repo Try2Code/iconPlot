@@ -2,6 +2,7 @@ require 'fileutils'
 require 'cdo'
 require 'extcsv'
 require 'shellwords'
+require 'parallel'
 
 class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug,:isIcon)
   VERSION = '0.0.4'
@@ -105,7 +106,7 @@ class IconPlot < Struct.new(:caller,:plotter,:libdir,:otype,:display,:cdo,:debug
     FileUtils.rm(file) if File.exists?(file)
   end
   def show(*files)
-    files.flatten.each {|file| out = IO.popen("#{self.display} #{file} &").read; puts out if self.debug }
+    Parallel.map(files.flatten) {|file| out = IO.popen("#{self.display} #{file}").readlines; puts out.join if self.debug }
   end
   def defaultPlot(ifile,ofile,opts={})
     show(scalarPlot(ifile,ofile,'T',opts))
