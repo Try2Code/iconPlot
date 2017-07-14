@@ -44,6 +44,8 @@ ICE_DATA              = ENV['HOME']+'/local/data/icon/dat.ice.r14716.def.2663-67
 OCE_NML_OUTPUT        = ENV['HOME']+'/local/data/icon/oceNmlOutput.nc'
 BOX_DATA              = ENV['HOME']+'/local/data/icon/AquaBox/AquaAtlanticBox_0079km_20041017T000000Z.nc'
 NOCOORDS_DATA         = BOX_DATA
+COUPLED_DATA          = ENV['HOME']+'/local/data/icon/coupled/pre04.nc'
+COUPLED_DATA_SAMPLE   = ENV['HOME']+'/local/data/icon/coupled/cpl-masked.nc'
 BOX_GRID              = ENV['HOME']+'/local/data/icon/AquaBox/AtlanticAquaBox_0079km.nc'
 NOCOORDS_DATA_GRID    = BOX_GRID
 AQUABOX_SYM           = ENV['HOME']+'/local/data/icon/AquaBox/sym_t_mean_20y.nc'
@@ -72,6 +74,8 @@ NOLAND                = ENV['HOME']+'/local/data/icon/noland/1.nc'
   ICE_DATA              ,
   OCE_NML_OUTPUT        ,
   BOX_DATA              ,
+  COUPLED_DATA          ,
+  COUPLED_DATA_SAMPLE   ,
   BOX_GRID              ,
   AQUABOX_MPIOM         ,
   AQUABOX_SYM           ,
@@ -373,11 +377,11 @@ task :test_sections do
   COMPARISON.each {|itype,ifile|
     ofile = "test_section_#{itype.to_s}"
     if itype == :atm
- #    scalarPlot(ifile,ofile+'h',DEFAULT_VARNAME,secopts.merge(:atmLev => "h",:tStrg => "atm: height levels"));images << ofile+'h'
- #    scalarPlot(ifile,ofile+'p',DEFAULT_VARNAME,secopts.merge(:atmLev => "p",:tStrg => "atm: pressure levels"));images << ofile+'p'
- #    scalarPlot(ifile,ofile+'m',DEFAULT_VARNAME,secopts.merge(:atmLev => "m",:tStrg => "atm: model levels"));images << ofile+'m'
+      scalarPlot(ifile,ofile+'h',DEFAULT_VARNAME,secopts.merge(:atmLev => "h",:tStrg => "atm: height levels"));images << ofile+'h'
+      scalarPlot(ifile,ofile+'p',DEFAULT_VARNAME,secopts.merge(:atmLev => "p",:tStrg => "atm: pressure levels"));images << ofile+'p'
+      scalarPlot(ifile,ofile+'m',DEFAULT_VARNAME,secopts.merge(:atmLev => "m",:tStrg => "atm: model levels"));images << ofile+'m'
     else
-      #scalarPlot(ifile,ofile,DEFAULT_VARNAME,secopts.merge(:tStrg => 'oce: ocean depth')); images << ofile
+      scalarPlot(ifile,ofile,DEFAULT_VARNAME,secopts.merge(:tStrg => 'oce: ocean depth')); images << ofile
       scalarPlot(ifile,ofile,DEFAULT_VARNAME,secopts.merge(:tStrg => 'oce: ocean depth',:makeYLinear => true)); images << ofile
     end
   }
@@ -678,10 +682,9 @@ task :test_markers do
   show(scalarPlot(@_FILES[OCE_PLOT_TEST_FILE],'test_markers','T',:markCells => true,:mapLLC => '-10.0,-80.0' ,:mapURC =>'100.0,-10.0'))
 end
 
-if 'thingol' == `hostname`.chomp
+if 'luthien' == `hostname`.chomp
   desc "test show grid plot with ocean, atmosphere, regular grid and ortho. projection"
   task :test_show_grid do
-    require 'jobqueue'
     jq = ParallelQueue.new
 #   jq.push{ show(defaultPlot,@_FILES[OCE_PLOT_TEST_FILE]   ,'test_show_grid_oce',:showGrid => "True",:apLLC => '-10.0,-40.0' ,:mapURC =>'10.0,-10.0')
 #   jq.push{ show(defaultPlot(@_FILES[OCE_PLOT_TEST_FILE]   ,'test_show_grid_oce_ortho',:showGrid => "True",:mapLLC => '-30,-88', :mapURC => '30,88',:mapType => "ortho")
@@ -796,6 +799,84 @@ task :test_no_coordinates do
                   :limitMap => true,:showGrid => true,:rStrg => ' ',:bStrg => @_FILES[NOCOORDS_DATA]))
 end
 
+desc "r2b6 couples setup"
+task :test_cpl do
+  jq = ParallelQueue.new
+# jq.push {
+# show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl','Qbot',
+#                 :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|noMasking|noGrid',
+#                 :mapLLC => '-50.0,-20.0' ,:mapURC => '35.0,65.0',
+#                 :showGrid => false,:rStrg => ' ',:bStrg => ' '))
+# }
+#jq.push {
+#show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl1','t_acc',
+#                :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|Masking|noGrid',
+#                :mapLLC => '0.0,30.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c',
+#                :showGrid => true,
+#                :rStrg => ' ',:bStrg => @_FILES[COUPLED_DATA]))
+#}
+#jq.push {
+#show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl2','t_acc',
+#                :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|noMasking|Grid',
+#                :mapLLC => '0.0,30.0' ,:mapURC => '35.0,65.0',
+#                :showGrid => true,:rStrg => ' ',:bStrg => ' '))
+#}
+#jq.push {
+#show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl3','t_acc',
+#                :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|noMasking|Grid',
+#                :mapLLC => '0.0,30.0' ,:mapURC => '40.0,50.0',
+#                :showGrid => false,:rStrg => ' ',:bStrg => ' '))
+#}
+#jq.push {
+#show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl4','t_acc',
+#                :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|Masking|Grid',
+#                :mapLLC => '-50.0,0.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c',
+#                :showGrid => true,:rStrg => ' ',:bStrg => ' '))
+#}
+#jq.push {
+#show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl5','Qbot',
+#                :DEBUG => true,:timeStep => 20,:tStrg => 'mapselection|Masking|Grid',
+#                :mapType => 'NHps',:maskName => 'wet_c',:selMode => 'halflog',
+#                :colormap => "BlAqGrYeOrReVi200",
+#                :showGrid => true,:rStrg => ' ',:bStrg => ' '))
+#}
+ jq.push {
+ show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl7','s_acc',
+                 :DEBUG => true,:timeStep => 20,:tStrg => 'xxxxxxxxxxxxxxxxxxxxxxxxx',
+                 :mapType => 'sat',#:maskName => 'wet_c',#:selMode => 'halflog',
+                 :colormap => "BlAqGrYeOrReVi200",
+                 :showGrid => true,:rStrg => 'A',:bStrg => 'A'))
+ }
+ jq.push {
+ show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl71','s_acc',
+                 :DEBUG => true,:timeStep => 20,:tStrg => 'xxxxxxxxxxxxxxxxxxxxxxxxx',
+                 :mapType => 'lonlat',:maskName => 'wet_c',#:selMode => 'halflog',
+                 :colormap => "BlAqGrYeOrReVi200",
+                 :showGrid => true,:rStrg => 'A',:bStrg => 'A'))
+ }
+ jq.push {
+ show(scalarPlot(@_FILES[COUPLED_DATA_SAMPLE],'test_cpl8','s_acc',
+                 :DEBUG => true,:timeStep => 20,:tStrg => 'xxxxxxxxxxxxxxxxxxxxxxxxx',
+                 :mapType => 'sat',#:maskName => 'wet_c',#:selMode => 'halflog',
+                 :colormap => "BlAqGrYeOrReVi200",
+                 :showGrid => true,:rStrg => 'A',:bStrg => 'A'))
+ }
+ jq.push {
+ show(scalarPlot(@_FILES[COUPLED_DATA_SAMPLE],'test_cpl81','s_acc',
+                 :DEBUG => true,:timeStep => 20,:tStrg => 'xxxxxxxxxxxxxxxxxxxxxxxxx',
+                 :mapType => 'lonlat',:maskName => 'wet_c',#:selMode => 'halflog',
+                 :colormap => "BlAqGrYeOrReVi200",
+                 :showGrid => true,:rStrg => 'A',:bStrg => 'A'))
+ }
+  jq.run
+# show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl','t_acc',
+#                 :DEBUG => true,:timeStep => ntime - 1,:gridFile => @_FILES[NOCOORDS_DATA_GRID],
+#                 :limitMap => true,:showGrid => true,:rStrg => ' ',:bStrg => @_FILES[NOCOORDS_DATA]))
+# show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl','t_acc',
+#                 :DEBUG => true,:timeStep => ntime - 1,:gridFile => @_FILES[NOCOORDS_DATA_GRID],
+#                 :limitMap => true,:showGrid => true,:rStrg => ' ',:bStrg => @_FILES[NOCOORDS_DATA]))
+end
+
 desc "Sections from a limited Area"
 task :test_sections_from_limitArea do |t,args|
 # title = "'#{t.name}: default setup'"
@@ -896,6 +977,12 @@ task :test_hi do
   show(scalarPlot(ifile,'test_hi_6611','hi_acc', :DEBUG => true,:showGrid => false))
   show(scalarPlot(ifile,'test_hi_6611','hi_acc', :DEBUG => true,:showGrid => true))
 end
+
+desc "check plotting of hexagons"
+task :hexVars => @_FILES[NOLAND] do |t|
+  show(scalarPlot(t.prerequisites[0], t.name ,'vort_acc', :DEBUG => true,:showGrid => false, :rStrg => 'O',:bStrg => t.prerequisites[0]))
+  show(scalarPlot(t.prerequisites[0], t.name ,'t_acc', :mapType => 'ortho',:DEBUG => true,:showGrid => true, :rStrg => 'O',:bStrg => t.prerequisites[0]))
+end
 # Test collections
 desc "check python based PSI (bar. stream function) computation + plotting"
 task :test_psi => [:test_psi_box,:test_psi_global,:test_psi_box_on_icongrid,:test_psi_aspect,:test_psi_area] 
@@ -911,5 +998,34 @@ task "#{category}_tests".to_sym do
   runTests(tests)
 end
 }
+
+desc "check different ocean grids from pool"
+task :test_ocean_grids do
+  poolBaseDir='/pool/data/ICON/oes/fluent'
+  grids = Dir.glob(poolBaseDir+'/[A-Z]*').find_all {|d| 
+    File.directory?(d)
+  }.map {|dir|
+    [dir,File.basename(dir)+'.nc'].join('/')
+  }
+  grids << '/pool/data/ICON/grids/private/r2b4_amip/r2b4_amip.nc'
+
+  varName = 'cell_area'
+
+  Parallel.map(grids[-3..-1]) {|grid|
+#   grids[0..1].each {|grid|
+    cellGrid = @cdo.selname(varName,input: grid)
+    gridfile=File.basename(grid)[0..-4]
+    puts grid.colorize(:blue) if File.exist?(grid)
+    # creata a mask based on cell_elevation
+    maskfile = @cdo.ltc(0.0,:input => "-selname,cell_elevation #{grid}")
+    show(scalarPlot(cellGrid,'test_grid'+gridfile,varName,
+                    :DEBUG => true,:tStrg => gridfile,
+                    :maskFile => maskfile, :maskName => 'cell_elevation',
+                    :mapType => 'ortho',
+                    :colormap => "BlAqGrYeOrReVi200",#))#,
+                    :showGrid => true,:rStrg => 'A',:bStrg => 'A'))
+    #
+  }
+end
 
 # vim:ft=ruby
