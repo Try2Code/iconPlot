@@ -14,8 +14,8 @@ spec = Gem::Specification.new do |s|
   s.email             = "stark.dreamdetective@gmail.com"
   s.homepage          = "https://github.com/Try2Code/iconPlot"
   s.license           = "GPLv2"
-  s.required_ruby_version = ">= 1.8"
-  s.add_dependency('cdo')
+  s.required_ruby_version = ">= 2.0"
+  s.add_dependency('cdo','>=1.3')
   s.add_dependency('extcsv')
   s.add_dependency('gnuplot')
 end
