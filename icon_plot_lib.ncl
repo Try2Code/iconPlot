@@ -1929,7 +1929,7 @@ end
 ;---------------------------------------------------------------
 ; Plot the ICON grid: New version, req. ncl 6.2
 undef("plotGrid_62")
-function plotGrid_62(wks,plot,var,boundslon,boundslat)
+function plotGrid_62(plot,var)
 begin
   pres             = True
   pres@gsEdgesOn   = True   ; Turn on edges
@@ -1965,6 +1965,7 @@ begin
   if(.not.all(ismissing(vindEnd))) then
     gscolors(vindEnd) = colors(dimsizes(levels)-1)
   end if
+  delete(vindEnd)
 
   pres@gsColors = gscolors
   pres@gsSegments = ispan(0,dimsizes(var) * 3,3)
