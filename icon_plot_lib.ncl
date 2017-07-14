@@ -769,6 +769,12 @@ begin
     lonlat = str_split(variable@coordinates," ")
     lon    = lonlat(0)
     lat    = lonlat(1)
+    ; check for real names of coordinate; order is not pre-defines
+    lonIsLon = str_match(lon,"lon")
+    if (ismissing(lonIsLon)) then
+      lon = lonlat(1)
+      lat = lonlat(0)
+    end if
 
 
     boundslonName = filehandle->$lon$@bounds
@@ -1377,6 +1383,10 @@ begin
     lon = "lon"
     lat = "lat"
     ret = False
+  end if
+  if (DEBUG) then
+    print("DEBUG: lon name:"+lon)
+    print("DEBUG: lat name:"+lat)
   end if
   x      = filehandle->$lon$
   y      = filehandle->$lat$

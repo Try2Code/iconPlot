@@ -802,44 +802,44 @@ end
 desc "r2b6 couples setup"
 task :test_cpl do
   jq = ParallelQueue.new
-# jq.push {
-# show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl','Qbot',
-#                 :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|noMasking|noGrid',
-#                 :mapLLC => '-50.0,-20.0' ,:mapURC => '35.0,65.0',
-#                 :showGrid => false,:rStrg => ' ',:bStrg => ' '))
-# }
-#jq.push {
-#show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl1','t_acc',
-#                :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|Masking|noGrid',
-#                :mapLLC => '0.0,30.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c',
-#                :showGrid => true,
-#                :rStrg => ' ',:bStrg => @_FILES[COUPLED_DATA]))
-#}
-#jq.push {
-#show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl2','t_acc',
-#                :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|noMasking|Grid',
-#                :mapLLC => '0.0,30.0' ,:mapURC => '35.0,65.0',
-#                :showGrid => true,:rStrg => ' ',:bStrg => ' '))
-#}
-#jq.push {
-#show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl3','t_acc',
-#                :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|noMasking|Grid',
-#                :mapLLC => '0.0,30.0' ,:mapURC => '40.0,50.0',
-#                :showGrid => false,:rStrg => ' ',:bStrg => ' '))
-#}
-#jq.push {
-#show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl4','t_acc',
-#                :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|Masking|Grid',
-#                :mapLLC => '-50.0,0.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c',
-#                :showGrid => true,:rStrg => ' ',:bStrg => ' '))
-#}
-#jq.push {
-#show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl5','Qbot',
-#                :DEBUG => true,:timeStep => 20,:tStrg => 'mapselection|Masking|Grid',
-#                :mapType => 'NHps',:maskName => 'wet_c',:selMode => 'halflog',
-#                :colormap => "BlAqGrYeOrReVi200",
-#                :showGrid => true,:rStrg => ' ',:bStrg => ' '))
-#}
+  jq.push {
+  show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl','Qbot',
+                  :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|noMasking|noGrid',
+                  :mapLLC => '-50.0,-20.0' ,:mapURC => '35.0,65.0',
+                  :showGrid => false,:rStrg => ' ',:bStrg => ' '))
+  }
+ jq.push {
+ show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl1','t_acc',
+                 :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|Masking|noGrid',
+                 :mapLLC => '0.0,30.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c',
+                 :showGrid => true,
+                 :rStrg => ' ',:bStrg => @_FILES[COUPLED_DATA]))
+ }
+ jq.push {
+ show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl2','t_acc',
+                 :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|noMasking|Grid',
+                 :mapLLC => '0.0,30.0' ,:mapURC => '35.0,65.0',
+                 :showGrid => true,:rStrg => ' ',:bStrg => ' '))
+ }
+ jq.push {
+ show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl3','t_acc',
+                 :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|noMasking|Grid',
+                 :mapLLC => '0.0,30.0' ,:mapURC => '40.0,50.0',
+                 :showGrid => false,:rStrg => ' ',:bStrg => ' '))
+ }
+ jq.push {
+ show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl4','t_acc',
+                 :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|Masking|Grid',
+                 :mapLLC => '-50.0,0.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c',
+                 :showGrid => true,:rStrg => ' ',:bStrg => ' '))
+ }
+ jq.push {
+ show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl5','Qbot',
+                 :DEBUG => true,:timeStep => 20,:tStrg => 'mapselection|Masking|Grid',
+                 :mapType => 'NHps',:maskName => 'wet_c',:selMode => 'halflog',
+                 :colormap => "BlAqGrYeOrReVi200",
+                 :showGrid => true,:rStrg => ' ',:bStrg => ' '))
+ }
  jq.push {
  show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl7','s_acc',
                  :DEBUG => true,:timeStep => 20,:tStrg => 'xxxxxxxxxxxxxxxxxxxxxxxxx',
@@ -851,7 +851,7 @@ task :test_cpl do
  show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl71','s_acc',
                  :DEBUG => true,:timeStep => 20,:tStrg => 'xxxxxxxxxxxxxxxxxxxxxxxxx',
                  :mapType => 'lonlat',:maskName => 'wet_c',#:selMode => 'halflog',
-                 :colormap => "BlAqGrYeOrReVi200",
+                 :colormap => "BlAqGrYeOrReVi200",:mapLLC => '-160,0',:mapURC => '-100,60',
                  :showGrid => true,:rStrg => 'A',:bStrg => 'A'))
  }
  jq.push {
@@ -879,36 +879,36 @@ end
 
 desc "Sections from a limited Area"
 task :test_sections_from_limitArea do |t,args|
-# title = "'#{t.name}: default setup'"
-# show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
-#                 :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
-#                 :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180' ))
-# title = "'#{t.name}: withoutLines'"
-# show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
-#                 :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
-#                 :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
-#                 :withLines => false))
-# title = "'#{t.name}: withLines'"
-# show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
-#                 :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
-#                 :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
-#                 :withLines => true))
-# title = "'#{t.name}: withLineLabels'"
-# show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
-#                 :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
-#                 :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
-#                 :withLineLabels => true))
-# title = "'#{t.name}: withLineLabels'"
-# show(scalarPlot(@_FILES[AQUABOX_SYM],t.name,'t_acc', 
-#                 :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
-#                 :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
-#                 :withLineLabels => true))
-# # check min/max
-# title = "'asymetric focring'"
-# show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name+"_#{title.gsub(/ /,'-')}",'t_acc', 
-#                 :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
-#                 :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
-#                 :withLineLabels => true,:showSecMap => false,:maxVar => 20,:minVar => 0, :numLevs => 20))
+  title = "'#{t.name}: default setup'"
+  show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
+                  :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
+                  :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180' ))
+  title = "'#{t.name}: withoutLines'"
+  show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
+                  :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
+                  :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
+                  :withLines => false))
+  title = "'#{t.name}: withLines'"
+  show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
+                  :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
+                  :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
+                  :withLines => true))
+  title = "'#{t.name}: withLineLabels'"
+  show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name,'t_acc', 
+                  :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
+                  :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
+                  :withLineLabels => true))
+  title = "'#{t.name}: withLineLabels'"
+  show(scalarPlot(@_FILES[AQUABOX_SYM],t.name,'t_acc', 
+                  :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
+                  :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
+                  :withLineLabels => true))
+  # check min/max
+  title = "'asymetric focring'"
+  show(scalarPlot(@_FILES[AQUABOX_ASYM],t.name+"_#{title.gsub(/ /,'-')}",'t_acc', 
+                  :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
+                  :secLC => '-40,-40', :secRC => '-40,40',:secPoints => 100,:resolution => 'r360x180',
+                  :withLineLabels => true,:showSecMap => false,:maxVar => 20,:minVar => 0, :numLevs => 20))
 # title = "'symetric focring'"
 # show(scalarPlot(@_FILES[AQUABOX_SYM],t.name+"_#{title.gsub(/ /,'-')}",'t_acc', 
 #                 :DEBUG => true,:rStrg => '-', :bStrg => @_FILES[AQUABOX_ASYM],:tStrg => title,
