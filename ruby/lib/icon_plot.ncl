@@ -716,8 +716,9 @@
         ;plotGrid(wks,plot,var,coords(1,:),bounds,File,ResC,DEBUG)
         boundslon = bounds(0,:,:)
         boundslat = bounds(1,:,:)
-        presGrid = plotGrid_62(wks,plot,var,boundslon,boundslat)
+        presGrid = plotGrid_62(plot,var)
         gsid = gsn_add_polygon(wks,plot,ndtooned(boundslon),ndtooned(boundslat),presGrid)
+;       gsid = gsn_add_polygon(wks,plot,ndtooned(boundslat),ndtooned(boundslon),presGrid)
         ; }}}
         ;=======================================================================================
       end if

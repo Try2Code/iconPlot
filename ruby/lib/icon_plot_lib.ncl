@@ -769,6 +769,12 @@ begin
     lonlat = str_split(variable@coordinates," ")
     lon    = lonlat(0)
     lat    = lonlat(1)
+    ; check for real names of coordinate; order is not pre-defines
+    lonIsLon = str_match(lon,"lon")
+    if (ismissing(lonIsLon)) then
+      lon = lonlat(1)
+      lat = lonlat(0)
+    end if
 
 
     boundslonName = filehandle->$lon$@bounds
@@ -1378,6 +1384,10 @@ begin
     lat = "lat"
     ret = False
   end if
+  if (DEBUG) then
+    print("DEBUG: lon name:"+lon)
+    print("DEBUG: lat name:"+lat)
+  end if
   x      = filehandle->$lon$
   y      = filehandle->$lat$
   if ("radian" .eq. x@units) x = x * RAD2DEG end if
@@ -1929,7 +1939,7 @@ end
 ;---------------------------------------------------------------
 ; Plot the ICON grid: New version, req. ncl 6.2
 undef("plotGrid_62")
-function plotGrid_62(wks,plot,var,boundslon,boundslat)
+function plotGrid_62(plot,var)
 begin
   pres             = True
   pres@gsEdgesOn   = True   ; Turn on edges
@@ -1965,6 +1975,7 @@ begin
   if(.not.all(ismissing(vindEnd))) then
     gscolors(vindEnd) = colors(dimsizes(levels)-1)
   end if
+  delete(vindEnd)
 
   pres@gsColors = gscolors
   pres@gsSegments = ispan(0,dimsizes(var) * 3,3)
