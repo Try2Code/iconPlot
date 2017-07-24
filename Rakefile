@@ -254,6 +254,7 @@ task :test_mask_internal do
   q.push { show(scalarPlot(ifile,ofile+"_maskPlusGrid",varname,:maskName => 'wet_c',:showGrid => true))  }
   q.push { show(scalarPlot(ifile,ofile+"_ortho",varname,:maskName => 'wet_c',:showGrid => true,:mapType => 'ortho',:centerLon => 0.0, :centerLat => 90.0))  }
   q.push { show(scalarPlot(ifile,ofile+"_NHps", varname,:maskName => 'wet_c',:showGrid => true,:mapType => 'NHps'))  }
+  q.push { show(scalarPlot(ifile,ofile+"_NHpsLarger", varname,:maskName => 'wet_c',:showGrid => true,:mapType => 'NHps',:mapLLC => '-45.0,60.0',:mapURC => '135.0,60.0'))  }
   images = q.run
 end
 desc "masking with real missing values /_FillValue"
@@ -802,72 +803,86 @@ end
 desc "r2b6 couples setup"
 task :test_cpl do
   jq = ParallelQueue.new
-  jq.push {
-  show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl','Qbot',
-                  :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|noMasking|noGrid',
-                  :mapLLC => '-50.0,-20.0' ,:mapURC => '35.0,65.0',
-                  :showGrid => false,:rStrg => ' ',:bStrg => ' '))
-  }
+# jq.push {
+# show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl','Qbot',
+#                 :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|noMasking|noGrid',
+#                 :mapLLC => '-50.0,-20.0' ,:mapURC => '35.0,65.0',
+#                 :showGrid => false,:rStrg => ' ',:bStrg => ' '))
+# }
+#jq.push {
+#show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl1','t_acc',
+#                :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|Masking|noGrid',
+#                :mapLLC => '0.0,30.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c',
+#                :showGrid => true,
+#                :rStrg => ' ',:bStrg => @_FILES[COUPLED_DATA]))
+#}
+#jq.push {
+#show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl2','t_acc',
+#                :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|noMasking|Grid',
+#                :mapLLC => '0.0,30.0' ,:mapURC => '35.0,65.0',
+#                :showGrid => true,:rStrg => ' ',:bStrg => ' '))
+#}
+#jq.push {
+#show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl3','t_acc',
+#                :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|noMasking|Grid',
+#                :mapLLC => '0.0,30.0' ,:mapURC => '40.0,50.0',
+#                :showGrid => false,:rStrg => ' ',:bStrg => ' '))
+#}
+#jq.push {
+#show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl4','t_acc',
+#                :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|Masking|Grid',
+#                :mapLLC => '-50.0,0.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c',
+#                :showGrid => true,:rStrg => ' ',:bStrg => ' '))
+#}
+#jq.push {
+#show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl5','Qbot',
+#                :DEBUG => true,:timeStep => 20,:tStrg => 'mapselection|Masking|Grid',
+#                :mapType => 'NHps',:maskName => 'wet_c',:selMode => 'halflog',
+#                :colormap => "BlAqGrYeOrReVi200",
+#                :showGrid => true,:rStrg => ' ',:bStrg => ' '))
+#}
  jq.push {
- show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl1','t_acc',
-                 :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|Masking|noGrid',
-                 :mapLLC => '0.0,30.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c',
-                 :showGrid => true,
-                 :rStrg => ' ',:bStrg => @_FILES[COUPLED_DATA]))
- }
- jq.push {
- show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl2','t_acc',
-                 :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|noMasking|Grid',
-                 :mapLLC => '0.0,30.0' ,:mapURC => '35.0,65.0',
-                 :showGrid => true,:rStrg => ' ',:bStrg => ' '))
- }
- jq.push {
- show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl3','t_acc',
-                 :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|noMasking|Grid',
-                 :mapLLC => '0.0,30.0' ,:mapURC => '40.0,50.0',
-                 :showGrid => false,:rStrg => ' ',:bStrg => ' '))
- }
- jq.push {
- show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl4','t_acc',
-                 :DEBUG => true,:timeStep => 3,:tStrg => 'mapselection|Masking|Grid',
-                 :mapLLC => '-50.0,0.0' ,:mapURC => '35.0,65.0',:maskName => 'wet_c',
-                 :showGrid => true,:rStrg => ' ',:bStrg => ' '))
- }
- jq.push {
- show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl5','Qbot',
+ show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl5_zoom','Qbot',
                  :DEBUG => true,:timeStep => 20,:tStrg => 'mapselection|Masking|Grid',
-                 :mapType => 'NHps',:maskName => 'wet_c',:selMode => 'halflog',
+                 :mapType => 'NHps',:maskName => 'wet_c',:selMode => 'halflog',:mapLLC => '-45.0,70.0',:mapURC => '135.0,70.0',
                  :colormap => "BlAqGrYeOrReVi200",
                  :showGrid => true,:rStrg => ' ',:bStrg => ' '))
  }
  jq.push {
- show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl7','s_acc',
-                 :DEBUG => true,:timeStep => 20,:tStrg => 'xxxxxxxxxxxxxxxxxxxxxxxxx',
-                 :mapType => 'sat',#:maskName => 'wet_c',#:selMode => 'halflog',
+ show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl5_zoomShifted','Qbot',
+                 :DEBUG => true,:timeStep => 20,:tStrg => 'mapselection|Masking|Grid',
+                 :mapType => 'NHps',:maskName => 'wet_c',:selMode => 'halflog',:mapLLC => '-45.0,70.0',:mapURC => '135.0,50.0',
                  :colormap => "BlAqGrYeOrReVi200",
-                 :showGrid => true,:rStrg => 'A',:bStrg => 'A'))
+                 :showGrid => true,:rStrg => ' ',:bStrg => ' '))
  }
- jq.push {
- show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl71','s_acc',
-                 :DEBUG => true,:timeStep => 20,:tStrg => 'xxxxxxxxxxxxxxxxxxxxxxxxx',
-                 :mapType => 'lonlat',:maskName => 'wet_c',#:selMode => 'halflog',
-                 :colormap => "BlAqGrYeOrReVi200",:mapLLC => '-160,0',:mapURC => '-100,60',
-                 :showGrid => true,:rStrg => 'A',:bStrg => 'A'))
- }
- jq.push {
- show(scalarPlot(@_FILES[COUPLED_DATA_SAMPLE],'test_cpl8','s_acc',
-                 :DEBUG => true,:timeStep => 20,:tStrg => 'xxxxxxxxxxxxxxxxxxxxxxxxx',
-                 :mapType => 'sat',#:maskName => 'wet_c',#:selMode => 'halflog',
-                 :colormap => "BlAqGrYeOrReVi200",
-                 :showGrid => true,:rStrg => 'A',:bStrg => 'A'))
- }
- jq.push {
- show(scalarPlot(@_FILES[COUPLED_DATA_SAMPLE],'test_cpl81','s_acc',
-                 :DEBUG => true,:timeStep => 20,:tStrg => 'xxxxxxxxxxxxxxxxxxxxxxxxx',
-                 :mapType => 'lonlat',:maskName => 'wet_c',#:selMode => 'halflog',
-                 :colormap => "BlAqGrYeOrReVi200",
-                 :showGrid => true,:rStrg => 'A',:bStrg => 'A'))
- }
+#jq.push {
+#show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl7','s_acc',
+#                :DEBUG => true,:timeStep => 20,:tStrg => 'xxxxxxxxxxxxxxxxxxxxxxxxx',
+#                :mapType => 'sat',#:maskName => 'wet_c',#:selMode => 'halflog',
+#                :colormap => "BlAqGrYeOrReVi200",
+#                :showGrid => true,:rStrg => 'A',:bStrg => 'A'))
+#}
+#jq.push {
+#show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl71','s_acc',
+#                :DEBUG => true,:timeStep => 20,:tStrg => 'xxxxxxxxxxxxxxxxxxxxxxxxx',
+#                :mapType => 'lonlat',:maskName => 'wet_c',#:selMode => 'halflog',
+#                :colormap => "BlAqGrYeOrReVi200",:mapLLC => '-160,0',:mapURC => '-100,60',
+#                :showGrid => true,:rStrg => 'A',:bStrg => 'A'))
+#}
+#jq.push {
+#show(scalarPlot(@_FILES[COUPLED_DATA_SAMPLE],'test_cpl8','s_acc',
+#                :DEBUG => true,:timeStep => 20,:tStrg => 'xxxxxxxxxxxxxxxxxxxxxxxxx',
+#                :mapType => 'sat',#:maskName => 'wet_c',#:selMode => 'halflog',
+#                :colormap => "BlAqGrYeOrReVi200",
+#                :showGrid => true,:rStrg => 'A',:bStrg => 'A'))
+#}
+#jq.push {
+#show(scalarPlot(@_FILES[COUPLED_DATA_SAMPLE],'test_cpl81','s_acc',
+#                :DEBUG => true,:timeStep => 20,:tStrg => 'xxxxxxxxxxxxxxxxxxxxxxxxx',
+#                :mapType => 'lonlat',:maskName => 'wet_c',#:selMode => 'halflog',
+#                :colormap => "BlAqGrYeOrReVi200",
+#                :showGrid => true,:rStrg => 'A',:bStrg => 'A'))
+#}
   jq.run
 # show(scalarPlot(@_FILES[COUPLED_DATA],'test_cpl','t_acc',
 #                 :DEBUG => true,:timeStep => ntime - 1,:gridFile => @_FILES[NOCOORDS_DATA_GRID],
@@ -969,6 +984,7 @@ task :check_noland, [:var] => @_FILES[NOLAND] do |t,args|
   show(scalarPlot(t.prerequisites[0], t.name ,args.var.to_s, :DEBUG => true,                     :showGrid => true, :rStrg => 'O',:bStrg => t.prerequisites[0]))
   show(scalarPlot(t.prerequisites[0], t.name ,args.var.to_s, :DEBUG => true,:maskName => 'wet_c',:showGrid => true, :rStrg => 'O',:bStrg => t.prerequisites[0]))
   show(scalarPlot(t.prerequisites[0], t.name ,args.var.to_s, :DEBUG => true,:maskName => 'wet_c',:showGrid => true, :rStrg => 'O',:bStrg => t.prerequisites[0],:mapType => 'NHps'))
+  show(scalarPlot(t.prerequisites[0], t.name ,args.var.to_s, :DEBUG => true,:maskName => 'wet_c',:showGrid => true, :rStrg => 'O',:bStrg => t.prerequisites[0],:mapType => 'NHps' ,:mapLLC => '-45.0,60.0',:mapURC => '135.0,60.0'))
 end
 #==============================================================================
 task :test_hi do
