@@ -55,11 +55,9 @@ same but on pressure level
 
 Options can be combined execept showGrid=True (with nclsh: -showGrid) with vector and overlay plots
 
-More examples can be found here: https://code.zmaw.de/projects/cdo/wiki/Ram#ICON-plot.
-
 == Recommendations
 
-Use the provided ncl wrapper script nclsh (see contrib dir, https://github.com/Try2Code/iconPlot/tree/master/contrib) from Karl-Hermann Wieners. This will reduce the quoting to tolerable amount:
+Use the provided ncl wrapper script nclsh:
   ncl icon_plot.ncl 'iFile="iconOutput.nc"' 'secLC=(/ 0.0,-90.0 /)' 'secRC=(/ 0.0,90.0/)' 'oType="png"' 'varName="T"' vecVars='"u v"'
 becomes
   nclsh icon_plot.ncl -iFile=iconOutput.nc -secLC=0.0,-90.0 -secRC=0.0,90.0 -oType=png -varName=T -vecVars=u,v
@@ -73,16 +71,3 @@ This is useful for write script which call other NCL application.
 == License
 
 iconPlot uses the GPLv2 License
-
-:include LICENSE
-
-
----
-
-= Other stuff
-
-Author::   Ralf Mueller <stark.dreamdetective@gmail.com>
-Requires:: NCL >= 6.x, CDO 1.5.x
-License::  Copyright 2011-2014 by Ralf Mueller
-           Released under GPLv2 license.  See the LICENSE
-           file included in the distribution.
